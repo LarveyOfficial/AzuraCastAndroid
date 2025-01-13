@@ -1,56 +1,125 @@
 package com.larvey.azuracastplayer
 
-import android.net.Uri
+import android.content.Intent
+import android.os.Bundle
+import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT
+import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM
+import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS
+import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSession.ConnectionResult
+import androidx.media3.session.MediaSession.ConnectionResult.AcceptedResultBuilder
+import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
-@UnstableApi
-class MusicPlayerService: MediaLibraryService() {
 
-  /* This is the service side player, the media controller in the activity will control this one, so don't worry about it */
-  lateinit var player: Player
+class MusicPlayerService : MediaSessionService() {
+  private var mediaSession: MediaSession? = null
 
-  /* This is the session which will delegate everything you need about audio playback such as notifications, pausing player, resuming player, listening to states, etc */
-  lateinit var session: MediaLibrarySession
-
+  // Create your player and media session in the onCreate lifecycle event
+  @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
 
-    /* Step 1 out of 2: Instantiate the player (ExoPlayer) */
-    player = ExoPlayer.Builder(applicationContext)
-      .setRenderersFactory(
-        DefaultRenderersFactory(this).setExtensionRendererMode(
-          DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER /* We prefer extensions, such as FFmpeg */
+    val stopButton = CommandButton.Builder()
+      .setDisplayName("Stop")
+      .setIconResId(R.drawable.stop_button)
+      .setSessionCommand(SessionCommand("STOP_RADIO", Bundle()))
+      .build()
+
+    val player = ExoPlayer.Builder(this).build()
+    mediaSession = MediaSession.Builder(this, player)
+      .setCallback(MyCallback())
+      .setCustomLayout(ImmutableList.of(stopButton))
+      .build()
+  }
+
+  private inner class MyCallback : MediaSession.Callback {
+    @OptIn(UnstableApi::class)
+    override fun onConnect(
+      session: MediaSession,
+      controller: MediaSession.ControllerInfo
+    ): ConnectionResult {
+      // Set available player and session commands.
+      return AcceptedResultBuilder(session)
+        .setAvailablePlayerCommands(
+          ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+            .remove(COMMAND_SEEK_TO_NEXT)
+            .remove(COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+            .remove(COMMAND_SEEK_TO_PREVIOUS)
+            .remove(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+            .build()
         )
-      ).build()
+        .setAvailableSessionCommands(
+          ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+            .add(SessionCommand("STOP_RADIO", Bundle.EMPTY))
+            .build()
+        )
+        .build()
+    }
 
+    @OptIn(UnstableApi::class)
+    override fun onCustomCommand(
+      session: MediaSession,
+      controller: MediaSession.ControllerInfo,
+      customCommand: SessionCommand,
+      args: Bundle
+    ): ListenableFuture<SessionResult> {
+      if (customCommand.customAction == "STOP_RADIO") {
+        session.player.stop()
+        return Futures.immediateFuture(
+          SessionResult(SessionResult.RESULT_SUCCESS)
+        )
+      }
+      return Futures.immediateFuture(
+        SessionResult(SessionError.INFO_CANCELLED)
+      )
+    }
 
-    /* Step 2 out of 2: Instantiate the session (most important part) */
-    session = MediaLibrarySession.Builder(this, player,
-      object: MediaLibrarySession.Callback {
-        override fun onAddMediaItems(
-          mediaSession: MediaSession,
-          controller: MediaSession.ControllerInfo,
-          mediaItems: MutableList<MediaItem>
-        ): ListenableFuture<MutableList<MediaItem>> {
+    @OptIn(UnstableApi::class)
+    override fun onAddMediaItems(
+      mediaSession: MediaSession,
+      controller: MediaSession.ControllerInfo,
+      mediaItems: MutableList<MediaItem>
+    ): ListenableFuture<MutableList<MediaItem>> {
 
-          /* This is the trickiest part, if you don't do this here, nothing will play */
-          val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
-          return Futures.immediateFuture(updatedMediaItems)
-        }
-      }).build()
+      /* This is the trickiest part, if you don't do this here, nothing will play */
+      val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
+      return Futures.immediateFuture(updatedMediaItems)
+    }
+
+  }
+  // The user dismissed the app from the recent tasks
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    val player = mediaSession?.player!!
+    player.stop()
+    player.release()
+    stopSelf()
   }
 
-  override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
-    return session
+  // Remember to release the player and media session in onDestroy
+  override fun onDestroy() {
+    mediaSession?.run {
+      player.release()
+      release()
+      mediaSession = null
+    }
+    super.onDestroy()
   }
 
 
+  override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+    mediaSession
 }
