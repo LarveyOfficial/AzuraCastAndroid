@@ -69,10 +69,6 @@ fun MusicPlayer() {
     }
   }
 
-
-
-
-
   Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
     Column(modifier = Modifier.padding(innerPadding)) {
       Text(text = songTitle, fontSize = 24.sp, fontWeight = FontWeight.Bold)

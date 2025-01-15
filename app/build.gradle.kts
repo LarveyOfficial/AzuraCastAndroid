@@ -55,6 +55,8 @@ dependencies {
 
   implementation("androidx.room:room-ktx:$room_version")
 
+  implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", "2.11.0")
+
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)
@@ -68,6 +70,9 @@ dependencies {
   implementation(libs.androidx.media3.common)
   implementation(libs.androidx.media3.session)
   implementation (libs.androidx.datastore.preferences)
+  implementation(libs.androidx.lifecycle.viewmodel.compose)
+  implementation(libs.retrofit)
+  implementation(libs.converter.gson)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
