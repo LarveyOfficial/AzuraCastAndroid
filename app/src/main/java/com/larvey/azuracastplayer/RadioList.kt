@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,10 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.database.DataModelViewModel
 
 @Composable
-fun RadioList(viewModel: DataModelViewModel) {
+fun RadioList(viewModel: DataModelViewModel, innerPadding: PaddingValues) {
   val radioList = viewModel.getAllEntries().collectAsState(initial = emptyList())
 
-  Column {
+  Column (Modifier.padding(innerPadding)) {
     Button(onClick = {
       viewModel.addData("Test", "Test")
     }) {

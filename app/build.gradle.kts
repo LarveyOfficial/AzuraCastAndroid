@@ -35,13 +35,25 @@ android {
   buildFeatures {
     compose = true
   }
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.1"
+  }
+  packaging {
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+  }
 }
 
 dependencies {
 
-  implementation(libs.androidx.room.runtime)
-  ksp(libs.androidx.room.compiler)
-  implementation(libs.androidx.room.ktx)
+  val room_version = "2.6.1"
+
+  implementation("androidx.room:room-runtime:$room_version")
+
+  ksp("androidx.room:room-compiler:$room_version")
+
+  implementation("androidx.room:room-ktx:$room_version")
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
