@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.larvey.azuracastplayer.database.DataModel
 import java.net.URL
@@ -18,7 +19,16 @@ fun RadioEntry(radioListViewModel: RadioListViewModel, entry: DataModel, navCont
   LaunchedEffect(Unit) {
     radioListViewModel.getData(url)
   }
-  Card(onClick = {navController.navigate("nowPlaying/${entry.url}")}) {
+  Card(onClick = {
+    navController.navigate("nowPlaying/${entry.url}") {
+
+    popUpTo(navController.graph.findStartDestination().id) {
+      saveState = true
+    }
+    // Restore state when reelecting a previously selected item
+    restoreState = true
+    }
+  }) {
     Row {
       Text(entry.nickname)
       Spacer(Modifier.weight(1f))
