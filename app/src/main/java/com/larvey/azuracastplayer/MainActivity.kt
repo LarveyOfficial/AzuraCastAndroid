@@ -10,6 +10,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.room.Room
 import com.larvey.azuracastplayer.database.DataModelDatabase
 import com.larvey.azuracastplayer.database.DataModelViewModel
@@ -37,8 +42,23 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       AzuraCastPlayerTheme {
-        Scaffold (contentWindowInsets = WindowInsets(0.dp)) { innerPadding ->
-          RadioList(viewModel, innerPadding)
+        val navController = rememberNavController();
+
+        NavHost(
+          navController = navController,
+          startDestination = "radioList"
+        ) {
+          composable(
+            "radioList"
+          ) {
+            RadioList(viewModel, navController)
+          }
+          composable(
+            "nowPlaying/{station}",
+            arguments = listOf(navArgument("stationURL") { type = NavType.StringType })
+          ){
+            NowPlaying(it.arguments?.getString("stationURL"))
+          }
         }
       }
     }

@@ -28,11 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.database.DataModelViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RadioList(viewModel: DataModelViewModel, innerPadding: PaddingValues) {
+fun RadioList(viewModel: DataModelViewModel, navController: NavHostController) {
   val radioList = viewModel.getAllEntries().collectAsState(initial = emptyList())
 
   var showDialog = remember { mutableStateOf(false)}
@@ -46,7 +47,6 @@ fun RadioList(viewModel: DataModelViewModel, innerPadding: PaddingValues) {
   }
 
   Scaffold(
-    modifier = Modifier.padding(innerPadding),
     topBar = {
       TopAppBar(
         colors = topAppBarColors(
@@ -74,14 +74,7 @@ fun RadioList(viewModel: DataModelViewModel, innerPadding: PaddingValues) {
           .padding(all = 16.dp)
       ) {
         itemsIndexed(radioList.value) { index, item ->
-          val url = "https://" + URL(item.url).host
-          Row {
-            Text(item.nickname)
-            Spacer(Modifier.weight(1f))
-            Text(item.url)
-            Spacer(Modifier.weight(1f))
-            Text(text = radioListViewModel.stationData[url]?.nowPlaying?.song?.title.toString())
-          }
+          RadioEntry(radioListViewModel, item, navController)
         }
       }
     }
