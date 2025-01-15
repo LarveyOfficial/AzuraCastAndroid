@@ -20,7 +20,7 @@ fun RadioEntry(radioListViewModel: RadioListViewModel, entry: DataModel, navCont
     radioListViewModel.getData(url)
   }
   Card(onClick = {
-    navController.navigate("nowPlaying/${entry.url}") {
+    navController.navigate("nowPlaying/${URL(entry.url).host.toString()}") {
 
     popUpTo(navController.graph.findStartDestination().id) {
       saveState = true
