@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.Flow
 
 
 @Dao
-interface DataModelDao {
+interface SavedStationDao {
 
   @Upsert
-  suspend fun upsertDataModel(dataModel: DataModel)
+  suspend fun insertStation(savedStation: SavedStation)
 
-  @Query("SELECT * FROM datamodel")
-  fun getAllEntries(): Flow<List<DataModel>>
+  @Query("SELECT * FROM savedstation")
+  fun getAllEntries(): Flow<List<SavedStation>>
 
 }

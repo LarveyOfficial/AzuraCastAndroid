@@ -1,16 +1,29 @@
 package com.larvey.azuracastplayer
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import com.larvey.azuracastplayer.database.DataModel
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Modifier
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlaying(stationURL: String?) {
-  if (stationURL != null) {
-    Text(text = "Now Playing: $stationURL")
-  } else {
-    Text(text = "No station selected")
-
+fun NowPlaying(showBottomSheet: MutableState<Boolean>) {
+  val sheetState = rememberModalBottomSheetState(
+    skipPartiallyExpanded = true
+  )
+  if (showBottomSheet.value) {
+    ModalBottomSheet(
+      modifier = Modifier.fillMaxHeight(),
+      sheetState = sheetState,
+      onDismissRequest = {
+        showBottomSheet.value = false
+      }
+    ) {
+      Text("This is a Sheet")
+    }
   }
 }

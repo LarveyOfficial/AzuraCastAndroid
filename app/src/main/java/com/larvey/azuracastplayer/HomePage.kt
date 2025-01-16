@@ -2,15 +2,14 @@ package com.larvey.azuracastplayer
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -26,23 +25,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.larvey.azuracastplayer.database.DataModelViewModel
+import com.larvey.azuracastplayer.database.SavedStationsViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RadioList(viewModel: DataModelViewModel, navController: NavHostController) {
-  val radioList = viewModel.getAllEntries().collectAsState(initial = emptyList())
+fun HomePage(savedStationsViewModel: SavedStationsViewModel) {
+  val radioList = savedStationsViewModel.getAllEntries().collectAsState(initial = emptyList())
 
   var showDialog = remember { mutableStateOf(false)}
+  var showBottomSheet = remember { mutableStateOf(false)}
   val radioListViewModel: RadioListViewModel = viewModel()
   LaunchedEffect(radioList.value) {
     for (item in radioList.value) {
-      Log.d("DEBUG", "yo")
-      val url = "https://" + URL(item.url).host
-      radioListViewModel.getData(url)
+      radioListViewModel.searchStationHost(item.url)
     }
   }
 
@@ -64,6 +61,13 @@ fun RadioList(viewModel: DataModelViewModel, navController: NavHostController) {
       ) {
         Icon(Icons.Rounded.Add, contentDescription = "Add")
       }
+    },
+    bottomBar = {
+      BottomAppBar {
+        Button(onClick = { showBottomSheet.value = true }) {
+          Text("Show Sheet")
+        }
+      }
     }
     ) {
     innerPadding ->
@@ -74,15 +78,17 @@ fun RadioList(viewModel: DataModelViewModel, navController: NavHostController) {
           .padding(all = 16.dp)
       ) {
         itemsIndexed(radioList.value) { index, item ->
-          RadioEntry(radioListViewModel, item, navController)
+          StationEntry(radioListViewModel, item)
         }
       }
     }
   }
+  NowPlaying(showBottomSheet)
   when {
-    showDialog.value -> AddRadioDialog(
+    showDialog.value -> AddStationDialog(
       showDialog = showDialog,
-      viewModel = viewModel
+      savedStationsViewModel = savedStationsViewModel,
+      radioListViewModel = radioListViewModel
     )
   }
 }
