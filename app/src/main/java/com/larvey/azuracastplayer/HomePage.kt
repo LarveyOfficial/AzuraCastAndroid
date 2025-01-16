@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer
 
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,11 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.database.SavedStationsViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(savedStationsViewModel: SavedStationsViewModel) {
+fun HomePage(savedStationsViewModel: SavedStationsViewModel, nowPlayingViewModel: NowPlayingViewModel) {
   val radioList = savedStationsViewModel.getAllEntries().collectAsState(initial = emptyList())
 
   var showDialog = remember { mutableStateOf(false)}
@@ -78,12 +76,12 @@ fun HomePage(savedStationsViewModel: SavedStationsViewModel) {
           .padding(all = 16.dp)
       ) {
         itemsIndexed(radioList.value) { index, item ->
-          StationEntry(radioListViewModel, item)
+          StationEntry(nowPlayingViewModel, item, showBottomSheet)
         }
       }
     }
   }
-  NowPlaying(showBottomSheet)
+  NowPlaying(showBottomSheet, nowPlayingViewModel)
   when {
     showDialog.value -> AddStationDialog(
       showDialog = showDialog,

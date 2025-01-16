@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NowPlaying(showBottomSheet: MutableState<Boolean>) {
+fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowPlayingViewModel) {
   val sheetState = rememberModalBottomSheetState(
     skipPartiallyExpanded = true
   )
@@ -23,7 +23,7 @@ fun NowPlaying(showBottomSheet: MutableState<Boolean>) {
         showBottomSheet.value = false
       }
     ) {
-      Text("This is a Sheet")
+      Text(if (nowPlayingViewModel.songTitle.value == "null") "Loading..." else nowPlayingViewModel.songTitle.value)
     }
   }
 }

@@ -8,7 +8,6 @@ import kotlinx.coroutines.launch
 
 class RadioListViewModel : ViewModel() {
   val stationHostData = mutableStateMapOf<String, List<StationJSON>>()
-  val stationData = mutableStateMapOf<String, StationJSON>()
 
   fun searchStationHost(url: String) {
     viewModelScope.launch{
@@ -17,10 +16,6 @@ class RadioListViewModel : ViewModel() {
         url
       )
     }
-  }
-
-  fun getStationData(url: String, shortcode: String) {
-
   }
 
 }
