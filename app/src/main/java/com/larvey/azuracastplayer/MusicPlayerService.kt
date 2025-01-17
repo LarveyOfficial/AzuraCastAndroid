@@ -2,16 +2,18 @@ package com.larvey.azuracastplayer
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT
 import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM
 import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS
 import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
@@ -39,13 +41,21 @@ class MusicPlayerService : MediaSessionService() {
       .setSessionCommand(SessionCommand("STOP_RADIO", Bundle()))
       .build()
 
-    val player = ExoPlayer.Builder(this).build()
+
+    val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
+      override fun play() {
+        Log.d("DEBUG", "SEEKING")
+        super.seekToDefaultPosition()
+        super.play()
+      }
+    }
     mediaSession = MediaSession.Builder(this, player)
       .setCallback(MyCallback())
       .setCustomLayout(ImmutableList.of(stopButton))
       .build()
   }
 
+  @UnstableApi
   private inner class MyCallback : MediaSession.Callback {
     @OptIn(UnstableApi::class)
     override fun onConnect(
@@ -56,10 +66,6 @@ class MusicPlayerService : MediaSessionService() {
       return AcceptedResultBuilder(session)
         .setAvailablePlayerCommands(
           ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
-            .remove(COMMAND_SEEK_TO_NEXT)
-            .remove(COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
-            .remove(COMMAND_SEEK_TO_PREVIOUS)
-            .remove(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
             .build()
         )
         .setAvailableSessionCommands(

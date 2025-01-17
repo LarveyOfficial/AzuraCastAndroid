@@ -59,9 +59,11 @@ dependencies {
 
   implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", "2.11.0")
 
-  implementation(libs.coil.compose)
+  implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
 
   implementation(libs.androidx.core.ktx)
+  implementation (libs.androidx.material.icons.extended)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))

@@ -56,6 +56,10 @@ class MainActivity : ComponentActivity() {
       DisposableEffect(Unit) {
         onDispose {
           nowPlayingViewModel.mediaPlayer.release()
+          nowPlayingViewModel.staticData.value = null
+          nowPlayingViewModel.nowPlayingURL.value = ""
+          nowPlayingViewModel.nowPlayingURI.value = ""
+          nowPlayingViewModel.nowPlayingShortCode.value = ""
           android.os.Process.killProcess(android.os.Process.myPid())
         }
       }

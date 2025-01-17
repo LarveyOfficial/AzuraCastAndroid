@@ -3,8 +3,10 @@ package com.larvey.azuracastplayer.views
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.BottomAppBar
@@ -23,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.viewmodels.SavedStationsViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,8 +53,8 @@ fun MyRadios(savedStationsViewModel: SavedStationsViewModel, nowPlayingViewModel
     topBar = {
       TopAppBar(
         colors = topAppBarColors(
-          containerColor = MaterialTheme.colorScheme.primaryContainer,
-          titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          containerColor = MaterialTheme.colorScheme.background,
+          titleContentColor = MaterialTheme.colorScheme.onBackground,
         ),
         title = { Text("Radio List") }
       )

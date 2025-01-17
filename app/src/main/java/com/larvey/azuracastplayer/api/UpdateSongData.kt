@@ -2,10 +2,14 @@ package com.larvey.azuracastplayer.api
 
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.OptIn
+import androidx.compose.runtime.MutableState
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import com.larvey.azuracastplayer.classes.StationJSON
 import okhttp3.OkHttpClient
 import retrofit2.http.GET
@@ -29,7 +33,8 @@ fun updateSongData(
   url: String, shortCode: String,
   uri: String?,
   reset: Boolean,
-  mediaPlayer: Player? = null
+  mediaPlayer: Player? = null,
+  staticData: MutableState<StationJSON?>
 ) {
   val okHttpClient = OkHttpClient.Builder().build()
 
@@ -44,21 +49,24 @@ fun updateSongData(
   val staticCall: Call<StationJSON> = retroFitAPI.getStaticJSON(shortCode)
 
   staticCall!!.enqueue(object : Callback<StationJSON?> {
+    @OptIn(UnstableApi::class)
     override fun onResponse(
       call: Call<StationJSON?>,
       response: Response<StationJSON?>
     ) {
       if (response.isSuccessful) {
-        val staticData = response.body()
-        if (staticData == null) return
-        staticDataMap.put(Pair(url, shortCode), staticData)
-
+        val data = response.body()
+        if (data == null) return
+        staticData.value = data
+        staticDataMap.put(Pair(url, shortCode), data)
         val metaData = MediaMetadata.Builder()
-          .setDisplayTitle(staticData.nowPlaying.song.title)
-          .setArtist(staticData.nowPlaying.song.artist)
+          .setDisplayTitle(data.nowPlaying.song.title)
+          .setArtist(data.nowPlaying.song.artist)
           .setMediaType(MEDIA_TYPE_RADIO_STATION)
-          .setAlbumTitle(staticData.nowPlaying.song.album)
-          .setArtworkUri(Uri.parse(staticData.nowPlaying.song.art))
+          .setAlbumTitle(data.nowPlaying.song.album)
+          .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
+          .setDurationMs(1) // Forces the cool squiggly line
+          .setGenre(data.nowPlaying.song.genre)
           .build()
 
         val newMedia = MediaItem.Builder()
