@@ -34,7 +34,7 @@ fun updateSongData(
   url: String, shortCode: String,
   uri: String?,
   reset: Boolean,
-  mediaPlayer: MediaController? = null,
+  mediaPlayer: Player? = null,
   staticData: MutableState<StationJSON?>
 ) {
   val okHttpClient = OkHttpClient.Builder().build()
@@ -75,6 +75,7 @@ fun updateSongData(
           .setMediaMetadata(metaData)
           .build()
 
+        Log.d("DEBUG-UPDATER", "$newMedia $mediaPlayer")
         mediaPlayer?.replaceMediaItem(0, newMedia)
 
         if (reset == true) {

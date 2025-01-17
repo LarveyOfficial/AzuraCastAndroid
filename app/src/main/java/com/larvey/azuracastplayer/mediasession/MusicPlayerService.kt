@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.service
+package com.larvey.azuracastplayer.mediasession
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -31,7 +31,6 @@ class MusicPlayerService : MediaSessionService() {
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
-
     val stopButton = CommandButton.Builder()
       .setDisplayName("Stop")
       .setIconResId(R.drawable.stop_button)
@@ -53,6 +52,8 @@ class MusicPlayerService : MediaSessionService() {
         getSingleTopActivity()?.let{ builder.setSessionActivity(it) }
       }
       .build()
+
+
   }
 
   @UnstableApi

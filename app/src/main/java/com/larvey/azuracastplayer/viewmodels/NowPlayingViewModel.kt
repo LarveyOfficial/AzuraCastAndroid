@@ -33,39 +33,8 @@ class NowPlayingViewModel : ViewModel() {
   var playerIsPlaying = mutableStateOf(false)
 
 
-
-  fun oldStuff(mediaControllerFuture: ListenableFuture<MediaController>) {
-    mediaControllerFuture.addListener({
-      var mediaPlayer = object : ForwardingPlayer(mediaControllerFuture.get()) {
-        override fun play() {
-          Log.d("DEBUG", "SEEKING")
-          super.seekToDefaultPosition()
-          super.play()
-        }
-      }
-      mediaPlayer.addListener(object : Player.Listener {
-        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-          super.onMediaMetadataChanged(mediaMetadata)
-//          if (mediaMetadata.title != null) setMediaMetadata(url = nowPlayingURL.value, shortCode = nowPlayingShortCode.value)
-        }
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-          playerIsPlaying.value = isPlaying
-        }
-
-        override fun onPlayerError(error: PlaybackException) {
-          Log.d("BITCH", "FUCK ${error.toString()}")
-          if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
-            mediaPlayer.seekToDefaultPosition()
-            mediaPlayer.prepare()
-          }
-        }
-
-      })
-    }, MoreExecutors.directExecutor())
-
-  }
-
-  fun setMediaMetadata(url: String, shortCode: String, mediaPlayer: MediaController?, reset: Boolean? = false) {
+  fun setMediaMetadata(url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false) {
+    Log.d("DEBUG", "$url, $shortCode, ${mediaPlayer?.mediaMetadata?.title}, $reset")
     updateSongData(
       staticDataMap = staticDataMap,
       url = url,
@@ -77,7 +46,7 @@ class NowPlayingViewModel : ViewModel() {
     )
   }
 
-  fun setPlaybackSource(uri: Uri, url: String, shortCode: String, mediaPlayer: MediaController?) {
+  fun setPlaybackSource(uri: Uri, url: String, shortCode: String, mediaPlayer: Player?) {
     mediaPlayer?.stop()
     nowPlayingURI.value = uri.toString()
     nowPlayingURL.value = url

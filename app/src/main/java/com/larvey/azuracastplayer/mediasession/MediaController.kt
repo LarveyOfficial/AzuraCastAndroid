@@ -1,17 +1,21 @@
-package com.larvey.azuracastplayer
+package com.larvey.azuracastplayer.mediasession
 
 import android.content.ComponentName
 import android.content.Context
+import android.util.Log
+import androidx.annotation.OptIn
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
-import com.larvey.azuracastplayer.service.MusicPlayerService
 
 /**
  * A Composable function that provides a managed MediaController instance.
@@ -21,7 +25,8 @@ import com.larvey.azuracastplayer.service.MusicPlayerService
  */
 @Composable
 fun rememberManagedMediaController(
-  lifecycle: Lifecycle = LocalLifecycleOwner.current.lifecycle
+  lifecycle: Lifecycle = LocalLifecycleOwner.current.lifecycle,
+  setMediaMetadata: ((Player?) -> Unit)? = null
 ): State<MediaController?> {
   // Application context is used to prevent memory leaks
   val appContext = LocalContext.current.applicationContext
@@ -31,8 +36,8 @@ fun rememberManagedMediaController(
   DisposableEffect(lifecycle) {
     val observer = LifecycleEventObserver { _, event ->
       when (event) {
-        Lifecycle.Event.ON_START -> controllerManager.initialize()
-        Lifecycle.Event.ON_STOP -> controllerManager.release()
+        Lifecycle.Event.ON_START -> controllerManager.initialize(setMediaMetadata)
+//        Lifecycle.Event.ON_STOP -> controllerManager.release()
         else -> {}
       }
     }
@@ -62,19 +67,39 @@ internal class MediaControllerManager private constructor(context: Context) : Re
    *
    * If the MediaController has not been built or has been released, this method will build a new one.
    */
-  @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-  internal fun initialize() {
+  @OptIn(UnstableApi::class)
+  internal fun initialize(setMediaMetadata: ((Player?) -> Unit)? = null) {
     if (factory == null || factory?.isDone == true) {
       factory = MediaController.Builder(
         appContext,
         SessionToken(appContext, ComponentName(appContext, MusicPlayerService::class.java))
       ).buildAsync()
+
     }
     factory?.addListener(
-      { controller.value = factory?.let { if (it.isDone) it.get() else null } },
+      {
+        controller.value = factory?.let { if (it.isDone) it.get() else null }
+
+        controller.value?.addListener(object : Player.Listener {
+          override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            super.onMediaMetadataChanged(mediaMetadata)
+            if (controller.value?.isPlaying == true) {
+              Log.d("DEBUG-session", controller.value?.mediaMetadata?.title.toString())
+              setMediaMetadata?.invoke(
+                controller.value
+              )
+            }
+          }
+        })
+
+
+
+      },
       MoreExecutors.directExecutor()
     )
   }
+
+
 
   /**
    * Releases the MediaController.
