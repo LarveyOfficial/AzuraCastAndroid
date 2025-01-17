@@ -1,7 +1,7 @@
 package com.larvey.azuracastplayer.api
 
 import android.util.Log
-import com.larvey.azuracastplayer.StationJSON
+import com.larvey.azuracastplayer.classes.StationJSON
 import retrofit2.Callback
 import okhttp3.OkHttpClient
 import retrofit2.Call

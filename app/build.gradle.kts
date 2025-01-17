@@ -59,6 +59,8 @@ dependencies {
 
   implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", "2.11.0")
 
+  implementation(libs.coil.compose)
+
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)

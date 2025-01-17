@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.database
+package com.larvey.azuracastplayer.classes
 
 import androidx.room.Entity
 

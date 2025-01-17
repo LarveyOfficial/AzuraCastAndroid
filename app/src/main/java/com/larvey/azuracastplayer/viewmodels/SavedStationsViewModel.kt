@@ -1,7 +1,9 @@
-package com.larvey.azuracastplayer.database
+package com.larvey.azuracastplayer.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.larvey.azuracastplayer.classes.SavedStation
+import com.larvey.azuracastplayer.database.SavedStationDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 

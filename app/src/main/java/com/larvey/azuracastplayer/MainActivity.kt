@@ -7,15 +7,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.room.Room
+import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
 import com.larvey.azuracastplayer.database.SavedStationsDatabase
-import com.larvey.azuracastplayer.database.SavedStationsViewModel
+import com.larvey.azuracastplayer.viewmodels.SavedStationsViewModel
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
+import com.larvey.azuracastplayer.views.MyRadios
 
 @Suppress("UNCHECKED_CAST")
 class MainActivity : ComponentActivity() {
@@ -40,29 +41,30 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent {
-      val context = LocalContext.current
-      val sessionToken = SessionToken(context, ComponentName(context, MusicPlayerService::class.java))
-      val mediacontrollerFuture = MediaController.Builder(context, sessionToken).buildAsync()
+      val sessionToken = SessionToken(applicationContext, ComponentName(applicationContext, MusicPlayerService::class.java))
+      val mediaControllerFuture = MediaController.Builder(applicationContext, sessionToken).buildAsync()
 
       val nowPlayingViewModel by viewModels<NowPlayingViewModel>(
         factoryProducer = {
           object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-              return NowPlayingViewModel(mediacontrollerFuture) as T
+              return NowPlayingViewModel(mediaControllerFuture) as T
             }
           }
         }
       )
-
       DisposableEffect(Unit) {
         onDispose {
-          nowPlayingViewModel.mediaPlayer.stop()
           nowPlayingViewModel.mediaPlayer.release()
+          android.os.Process.killProcess(android.os.Process.myPid())
         }
       }
 
       AzuraCastPlayerTheme {
-        HomePage(savedStationsViewModel, nowPlayingViewModel)
+        MyRadios(
+          savedStationsViewModel,
+          nowPlayingViewModel
+        )
       }
     }
   }

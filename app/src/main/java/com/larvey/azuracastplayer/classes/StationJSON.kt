@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer
+package com.larvey.azuracastplayer.classes
 import com.google.gson.annotations.SerializedName
 
 data class StationJSON(

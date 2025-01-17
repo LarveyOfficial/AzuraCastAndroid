@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer
+package com.larvey.azuracastplayer.components
 
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -8,6 +8,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
+import coil3.compose.AsyncImage
+import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,6 +17,9 @@ fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowP
   val sheetState = rememberModalBottomSheetState(
     skipPartiallyExpanded = true
   )
+
+
+
   if (showBottomSheet.value) {
     ModalBottomSheet(
       modifier = Modifier.fillMaxHeight(),
@@ -23,6 +28,9 @@ fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowP
         showBottomSheet.value = false
       }
     ) {
+
+      AsyncImage(model = "", contentDescription = nowPlayingViewModel.songTitle.value)
+
       Text(if (nowPlayingViewModel.songTitle.value == "null") "Loading..." else nowPlayingViewModel.songTitle.value)
     }
   }

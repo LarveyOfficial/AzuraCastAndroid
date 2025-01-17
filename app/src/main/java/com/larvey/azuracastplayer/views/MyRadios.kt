@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer
+package com.larvey.azuracastplayer.views
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,17 +24,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.larvey.azuracastplayer.database.SavedStationsViewModel
+import com.larvey.azuracastplayer.viewmodels.SavedStationsViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.larvey.azuracastplayer.components.AddStationDialog
+import com.larvey.azuracastplayer.components.NowPlaying
+import com.larvey.azuracastplayer.components.StationEntry
+import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
+import com.larvey.azuracastplayer.viewmodels.RadioListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(savedStationsViewModel: SavedStationsViewModel, nowPlayingViewModel: NowPlayingViewModel) {
+fun MyRadios(savedStationsViewModel: SavedStationsViewModel, nowPlayingViewModel: NowPlayingViewModel) {
   val radioList = savedStationsViewModel.getAllEntries().collectAsState(initial = emptyList())
-
   var showDialog = remember { mutableStateOf(false)}
   var showBottomSheet = remember { mutableStateOf(false)}
   val radioListViewModel: RadioListViewModel = viewModel()
+
   LaunchedEffect(radioList.value) {
     for (item in radioList.value) {
       radioListViewModel.searchStationHost(item.url)
@@ -76,16 +81,23 @@ fun HomePage(savedStationsViewModel: SavedStationsViewModel, nowPlayingViewModel
           .padding(all = 16.dp)
       ) {
         itemsIndexed(radioList.value) { index, item ->
-          StationEntry(nowPlayingViewModel, item, showBottomSheet)
+          StationEntry(
+            nowPlayingViewModel,
+            item,
+            showBottomSheet
+          )
         }
       }
     }
   }
-  NowPlaying(showBottomSheet, nowPlayingViewModel)
+  NowPlaying(
+    showBottomSheet,
+    nowPlayingViewModel
+  )
   when {
     showDialog.value -> AddStationDialog(
       showDialog = showDialog,
-      savedStationsViewModel = savedStationsViewModel,
+      addData = savedStationsViewModel::addData,
       radioListViewModel = radioListViewModel
     )
   }

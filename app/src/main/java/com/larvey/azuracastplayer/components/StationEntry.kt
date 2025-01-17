@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer
+package com.larvey.azuracastplayer.components
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Row
@@ -9,13 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
-import com.larvey.azuracastplayer.database.SavedStation
-import java.net.URL
+import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
+import com.larvey.azuracastplayer.classes.SavedStation
 
 @Composable
 fun StationEntry(nowPlayingViewModel: NowPlayingViewModel, entry: SavedStation, showBottomSheet: MutableState<Boolean>) {
   LaunchedEffect(Unit) {
-    nowPlayingViewModel.fetchStaticJSON(entry.url, entry.shortcode)
+    nowPlayingViewModel.setMediaMetadata(entry.url, entry.shortcode)
   }
   Card(onClick = {
     val uri = Uri.parse(nowPlayingViewModel.staticDataMap[Pair(entry.url, entry.shortcode)]?.station?.mounts?.get(0)?.url)
