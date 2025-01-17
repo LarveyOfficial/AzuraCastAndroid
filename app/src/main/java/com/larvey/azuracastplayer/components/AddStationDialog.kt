@@ -23,19 +23,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.larvey.azuracastplayer.classes.StationJSON
 import com.larvey.azuracastplayer.viewmodels.RadioListViewModel
 import java.net.URL
 
 @Composable
-fun AddStationDialog(showDialog: MutableState<Boolean>, addData: (name: String, shortcode: String, url: String) -> Unit, radioListViewModel: RadioListViewModel) {
+fun AddStationDialog(
+  hideDialog: () -> Unit,
+  addData: (name: String, shortcode: String, url: String) -> Unit,
+  stationHostData: SnapshotStateMap<String, List<StationJSON>>,
+  searchStationHost: (url: String) -> Unit
+) {
   var radioURL by remember { mutableStateOf("")}
   var formatedURL by remember { mutableStateOf("") }
   var searching by remember {mutableStateOf(false)}
-  Dialog(onDismissRequest = {showDialog.value = false}) {
+  Dialog(onDismissRequest = {hideDialog()}) {
     Card (
       modifier = Modifier
         .fillMaxWidth()
@@ -67,16 +74,16 @@ fun AddStationDialog(showDialog: MutableState<Boolean>, addData: (name: String, 
           Column {
             HorizontalDivider( modifier = Modifier.padding(vertical = 8.dp))
             AnimatedContent(
-              targetState = radioListViewModel.stationHostData[formatedURL],
+              targetState = stationHostData[formatedURL],
             ) { hostData ->
               if (hostData != null) {
                 LazyColumn {
-                  itemsIndexed(hostData) { index, item ->
+                  itemsIndexed(hostData) { _, item ->
                     ElevatedCard (
                       modifier = Modifier.fillMaxWidth().padding(2.dp),
                       onClick = {
                         addData(item.station.name, item.station.shortcode, formatedURL)
-                        showDialog.value = false
+                        hideDialog()
                       }
                     ) {
                       Text(item.station.name, modifier = Modifier.padding(8.dp))
@@ -97,7 +104,7 @@ fun AddStationDialog(showDialog: MutableState<Boolean>, addData: (name: String, 
           horizontalArrangement = Arrangement.End
         ) {
           TextButton(onClick = {
-            showDialog.value = false
+            hideDialog()
           }) {
             Text("Cancel")
           }
@@ -112,7 +119,7 @@ fun AddStationDialog(showDialog: MutableState<Boolean>, addData: (name: String, 
             } catch (e: Exception) {
               return@TextButton
             }
-            radioListViewModel.searchStationHost(formatedURL)
+            searchStationHost(formatedURL)
             searching = true
           }) {
             Text("Search")

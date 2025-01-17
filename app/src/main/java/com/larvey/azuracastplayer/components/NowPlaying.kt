@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import androidx.media3.session.MediaController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.R
@@ -34,7 +35,7 @@ import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
   ExperimentalGlideComposeApi::class
 )
 @Composable
-fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowPlayingViewModel) {
+fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowPlayingViewModel, mediaPlayer: MediaController) {
   val sheetState = rememberModalBottomSheetState(
     skipPartiallyExpanded = true
   )
@@ -63,7 +64,7 @@ fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowP
           AnimatedContent(targetState = nowPlayingViewModel.playerIsPlaying.value) { targetState ->
             if (targetState) {
               IconButton (onClick = {
-                nowPlayingViewModel.mediaPlayer.pause()
+                mediaPlayer.pause()
               }) {
                 Icon(
                   imageVector = Icons.Rounded.Stop,
@@ -72,7 +73,7 @@ fun NowPlaying(showBottomSheet: MutableState<Boolean>, nowPlayingViewModel: NowP
                 ) }
             } else {
               IconButton (onClick = {
-                nowPlayingViewModel.mediaPlayer.play()
+                mediaPlayer.play()
               }) {
                 Icon(
                 imageVector = Icons.Rounded.PlayArrow,
