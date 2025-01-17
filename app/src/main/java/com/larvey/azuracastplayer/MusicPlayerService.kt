@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -52,6 +53,9 @@ class MusicPlayerService : MediaSessionService() {
     mediaSession = MediaSession.Builder(this, player)
       .setCallback(MyCallback())
       .setCustomLayout(ImmutableList.of(stopButton))
+      . also { builder ->
+        getSingleTopActivity()?.let{ builder.setSessionActivity(it) }
+      }
       .build()
   }
 
@@ -123,6 +127,13 @@ class MusicPlayerService : MediaSessionService() {
       mediaSession = null
     }
     super.onDestroy()
+  }
+
+  private fun getSingleTopActivity(): PendingIntent? {
+    return PendingIntent.getActivity(
+      applicationContext, 0,
+      Intent(applicationContext, MainActivity::class.java),
+      PendingIntent.FLAG_IMMUTABLE)
   }
 
 

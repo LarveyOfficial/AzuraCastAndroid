@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent {
+
       val sessionToken = SessionToken(applicationContext, ComponentName(applicationContext, MusicPlayerService::class.java))
       val mediaControllerFuture = MediaController.Builder(applicationContext, sessionToken).buildAsync()
 
