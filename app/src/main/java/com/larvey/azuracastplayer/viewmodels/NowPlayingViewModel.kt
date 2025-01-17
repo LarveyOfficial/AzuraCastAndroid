@@ -14,16 +14,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import com.larvey.azuracastplayer.api.initialStationData
 import com.larvey.azuracastplayer.classes.StationJSON
 import com.larvey.azuracastplayer.api.updateSongData
 
 @OptIn(UnstableApi::class)
-class NowPlayingViewModel
-  (private val mediaControllerFuture: ListenableFuture<MediaController>) : ViewModel() {
+class NowPlayingViewModel : ViewModel() {
 
   val staticDataMap = mutableStateMapOf<Pair<String, String>, StationJSON>()
 
-  lateinit var mediaPlayer: Player
 
   val staticData = mutableStateOf<StationJSON?>(null)
 
@@ -34,39 +33,8 @@ class NowPlayingViewModel
   var playerIsPlaying = mutableStateOf(false)
 
 
-
-  init {
-    mediaControllerFuture.addListener({
-      mediaPlayer = object : ForwardingPlayer(mediaControllerFuture.get()) {
-        override fun play() {
-          Log.d("DEBUG", "SEEKING")
-          super.seekToDefaultPosition()
-          super.play()
-        }
-      }
-      mediaPlayer.addListener(object : Player.Listener {
-        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-          super.onMediaMetadataChanged(mediaMetadata)
-          if (mediaMetadata.title != null) setMediaMetadata(url = nowPlayingURL.value, shortCode = nowPlayingShortCode.value)
-        }
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-          playerIsPlaying.value = isPlaying
-        }
-
-        override fun onPlayerError(error: PlaybackException) {
-          Log.d("BITCH", "FUCK ${error.toString()}")
-          if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
-            mediaPlayer.seekToDefaultPosition()
-            mediaPlayer.prepare()
-          }
-        }
-
-      })
-    }, MoreExecutors.directExecutor())
-
-  }
-
-  fun setMediaMetadata(url: String, shortCode: String, reset: Boolean? = false) {
+  fun setMediaMetadata(url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false) {
+    Log.d("DEBUG", "$url, $shortCode, ${mediaPlayer?.mediaMetadata?.title}, $reset")
     updateSongData(
       staticDataMap = staticDataMap,
       url = url,
@@ -78,14 +46,26 @@ class NowPlayingViewModel
     )
   }
 
-  fun setPlaybackSource(uri: Uri, url: String, shortcode: String) {
-    mediaPlayer.stop()
+  fun setPlaybackSource(uri: Uri, url: String, shortCode: String, mediaPlayer: Player?) {
+    mediaPlayer?.stop()
     nowPlayingURI.value = uri.toString()
     nowPlayingURL.value = url
-    nowPlayingShortCode.value = shortcode
+    nowPlayingShortCode.value = shortCode
 
-    setMediaMetadata(url, shortcode, true)
+    setMediaMetadata(
+      url = url,
+      shortCode = shortCode,
+      mediaPlayer = mediaPlayer,
+      reset = true
+    )
+  }
 
+  fun getStationInformation(url: String, shortCode: String) {
+    initialStationData(
+      staticDataMap = staticDataMap,
+      url = url,
+      shortCode = shortCode
+    )
   }
 
 

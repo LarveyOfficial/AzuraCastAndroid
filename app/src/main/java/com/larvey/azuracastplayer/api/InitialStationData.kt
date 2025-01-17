@@ -22,20 +22,17 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Path
 
 
-interface RetroFitStatic {
+interface RetroFitInitial {
   @GET("/api/nowplaying_static/{shortCode}.json")
   fun getStaticJSON(
     @Path("shortCode") shortCode: String,
   ): Call<StationJSON>
 }
 
-fun updateSongData(
+fun initialStationData(
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
-  url: String, shortCode: String,
-  uri: String?,
-  reset: Boolean,
-  mediaPlayer: Player? = null,
-  staticData: MutableState<StationJSON?>
+  url: String,
+  shortCode: String
 ) {
   val okHttpClient = OkHttpClient.Builder().build()
 
@@ -45,7 +42,7 @@ fun updateSongData(
     .addConverterFactory(GsonConverterFactory.create())
     .build()
 
-  val retroFitAPI = retroFit.create(RetroFitStatic::class.java)
+  val retroFitAPI = retroFit.create(RetroFitInitial::class.java)
 
   val staticCall: Call<StationJSON> = retroFitAPI.getStaticJSON(shortCode)
 
@@ -56,32 +53,8 @@ fun updateSongData(
       response: Response<StationJSON?>
     ) {
       if (response.isSuccessful) {
-        val data = response.body()
-        if (data == null) return
-        staticData.value = data
-        staticDataMap.put(Pair(url, shortCode), data)
-        val metaData = MediaMetadata.Builder()
-          .setDisplayTitle(data.nowPlaying.song.title)
-          .setArtist(data.nowPlaying.song.artist)
-          .setMediaType(MEDIA_TYPE_RADIO_STATION)
-          .setAlbumTitle(data.nowPlaying.song.album)
-          .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
-          .setDurationMs(1) // Forces the cool squiggly line
-          .setGenre(data.nowPlaying.song.genre)
-          .build()
-
-        val newMedia = MediaItem.Builder()
-          .setMediaId(uri.toString())
-          .setMediaMetadata(metaData)
-          .build()
-
-        Log.d("DEBUG-UPDATER", "$newMedia $mediaPlayer")
-        mediaPlayer?.replaceMediaItem(0, newMedia)
-
-        if (reset == true) {
-          mediaPlayer?.prepare()
-          mediaPlayer?.play()
-        }
+        val data = response.body() ?: return
+        staticDataMap[Pair(url, shortCode)] = data
 
       }
     }

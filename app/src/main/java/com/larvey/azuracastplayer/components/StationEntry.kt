@@ -11,28 +11,32 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.media3.session.MediaController
 import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
 import com.larvey.azuracastplayer.classes.SavedStation
 
 @Composable
-fun StationEntry(nowPlayingViewModel: NowPlayingViewModel, entry: SavedStation, showBottomSheet: MutableState<Boolean>) {
+fun StationEntry(
+  station: SavedStation,
+  setPlaybackSource: (url: String, shortCode: String) -> Unit,
+  getStationData: (url: String, shortCode: String) -> Unit,
+) {
   LaunchedEffect(Unit) {
-    //TODO: Make it so it goes into a map again... Make this a separate call, the things they do are way to different at this point...
-    nowPlayingViewModel.setMediaMetadata(entry.url, entry.shortcode)
+    getStationData(station.url, station.shortcode)
   }
+
   Card(
     onClick = {
-      val uri = Uri.parse(nowPlayingViewModel.staticDataMap[Pair(entry.url, entry.shortcode)]?.station?.mounts?.get(0)?.url)
-      nowPlayingViewModel.setPlaybackSource(uri, entry.url, entry.shortcode)
-      showBottomSheet.value = true }
+      setPlaybackSource(station.url, station.shortcode)
+    }
 
     ) {
     Row(modifier = Modifier.padding(8.dp)){
-      Text(entry.name)
+      Text(station.name)
       Spacer(Modifier.weight(1f))
-      Text(entry.url)
+      Text(station.url)
       Spacer(Modifier.weight(1f))
-      Text(entry.shortcode)
+      Text(station.shortcode)
     }
   }
 
