@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
           mutableStateOf(mediaController?.state())
         }
 
-        LaunchedEffect(playerState?.mediaMetadata?.title) {
+        LaunchedEffect(playerState?.mediaMetadata) {
           if (nowPlayingViewModel.nowPlayingURL.value != "") {
             nowPlayingViewModel.setMediaMetadata(
               nowPlayingViewModel.nowPlayingURL.value,
