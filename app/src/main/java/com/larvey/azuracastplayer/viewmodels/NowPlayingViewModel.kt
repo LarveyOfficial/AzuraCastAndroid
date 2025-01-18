@@ -32,7 +32,6 @@ class NowPlayingViewModel : ViewModel() {
 
 
   fun setMediaMetadata(url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false) {
-    Log.d("DEBUG", "$url, $shortCode, ${mediaPlayer?.mediaMetadata?.title}, $reset")
     updateSongData(
       staticDataMap = staticDataMap,
       url = url,
