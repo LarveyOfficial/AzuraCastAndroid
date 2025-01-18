@@ -81,7 +81,15 @@ class MainActivity : ComponentActivity() {
             radioListViewModel.searchStationHost(item.url)
           }
         }
-        val mediaController by rememberManagedMediaController()
+        val mediaController by rememberManagedMediaController(
+          setMediaMetadata = { player ->
+//            nowPlayingViewModel.setMediaMetadata(
+//              nowPlayingViewModel.nowPlayingURL.value,
+//              nowPlayingViewModel.nowPlayingShortCode.value,
+//              player
+//            )
+            Log.d("DEBUG", "Old metadata call")
+          })
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
