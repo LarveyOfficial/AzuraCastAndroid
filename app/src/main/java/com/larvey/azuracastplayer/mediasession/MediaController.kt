@@ -25,8 +25,7 @@ import com.google.common.util.concurrent.MoreExecutors
  */
 @Composable
 fun rememberManagedMediaController(
-  lifecycle: Lifecycle = LocalLifecycleOwner.current.lifecycle,
-  setMediaMetadata: ((Player?) -> Unit)? = null
+  lifecycle: Lifecycle = LocalLifecycleOwner.current.lifecycle
 ): State<MediaController?> {
   // Application context is used to prevent memory leaks
   val appContext = LocalContext.current.applicationContext
@@ -36,7 +35,7 @@ fun rememberManagedMediaController(
   DisposableEffect(lifecycle) {
     val observer = LifecycleEventObserver { _, event ->
       when (event) {
-        Lifecycle.Event.ON_START -> controllerManager.initialize(setMediaMetadata)
+        Lifecycle.Event.ON_START -> controllerManager.initialize()
 //        Lifecycle.Event.ON_STOP -> controllerManager.release()
         else -> {}
       }
@@ -68,7 +67,7 @@ internal class MediaControllerManager private constructor(context: Context) : Re
    * If the MediaController has not been built or has been released, this method will build a new one.
    */
   @OptIn(UnstableApi::class)
-  internal fun initialize(setMediaMetadata: ((Player?) -> Unit)? = null) {
+  internal fun initialize() {
     if (factory == null || factory?.isDone == true) {
       factory = MediaController.Builder(
         appContext,
@@ -79,17 +78,6 @@ internal class MediaControllerManager private constructor(context: Context) : Re
     factory?.addListener(
       {
         controller.value = factory?.let { if (it.isDone) it.get() else null }
-
-        controller.value?.addListener(object : Player.Listener {
-          override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-            super.onMediaMetadataChanged(mediaMetadata)
-            if (controller.value?.isPlaying == true) {
-              setMediaMetadata?.invoke(
-                controller.value
-              )
-            }
-          }
-        })
       },
       MoreExecutors.directExecutor()
     )
