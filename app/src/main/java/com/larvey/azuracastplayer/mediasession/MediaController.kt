@@ -84,16 +84,12 @@ internal class MediaControllerManager private constructor(context: Context) : Re
           override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
             super.onMediaMetadataChanged(mediaMetadata)
             if (controller.value?.isPlaying == true) {
-              Log.d("DEBUG-session", controller.value?.mediaMetadata?.title.toString())
               setMediaMetadata?.invoke(
                 controller.value
               )
             }
           }
         })
-
-
-
       },
       MoreExecutors.directExecutor()
     )

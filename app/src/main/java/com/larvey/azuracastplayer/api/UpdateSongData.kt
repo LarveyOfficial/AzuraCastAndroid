@@ -75,7 +75,6 @@ fun updateSongData(
           .setMediaMetadata(metaData)
           .build()
 
-        Log.d("DEBUG-UPDATER", "$newMedia $mediaPlayer")
         mediaPlayer?.replaceMediaItem(0, newMedia)
 
         if (reset == true) {

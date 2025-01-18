@@ -30,8 +30,6 @@ class NowPlayingViewModel : ViewModel() {
   var nowPlayingShortCode = mutableStateOf("")
   var nowPlayingURI = mutableStateOf("")
 
-  var playerIsPlaying = mutableStateOf(false)
-
 
   fun setMediaMetadata(url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false) {
     Log.d("DEBUG", "$url, $shortCode, ${mediaPlayer?.mediaMetadata?.title}, $reset")

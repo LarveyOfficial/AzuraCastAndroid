@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -82,15 +83,26 @@ class MainActivity : ComponentActivity() {
         }
         val mediaController by rememberManagedMediaController(
           setMediaMetadata = { player ->
-            nowPlayingViewModel.setMediaMetadata(
-              nowPlayingViewModel.nowPlayingURL.value,
-              nowPlayingViewModel.nowPlayingShortCode.value,
-              player
-            )
+//            nowPlayingViewModel.setMediaMetadata(
+//              nowPlayingViewModel.nowPlayingURL.value,
+//              nowPlayingViewModel.nowPlayingShortCode.value,
+//              player
+//            )
+            Log.d("DEBUG", "Old metadata call")
           })
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
+        }
+
+        LaunchedEffect(playerState?.mediaMetadata?.title) {
+          if (nowPlayingViewModel.nowPlayingURL.value != "") {
+            nowPlayingViewModel.setMediaMetadata(
+              nowPlayingViewModel.nowPlayingURL.value,
+              nowPlayingViewModel.nowPlayingShortCode.value,
+              mediaController
+            )
+          }
         }
 
         DisposableEffect (key1 = mediaController) {
@@ -135,13 +147,16 @@ class MainActivity : ComponentActivity() {
             savedRadioList = savedRadioList,
             innerPadding = innerPadding,
             setPlaybackSource = { url, shortCode ->
-              val uri = Uri.parse(nowPlayingViewModel.staticDataMap[Pair(url, shortCode)]?.station?.mounts?.get(0)?.url)
-              nowPlayingViewModel.setPlaybackSource(
-                uri = uri,
-                url = url,
-                shortCode = shortCode,
-                mediaPlayer = mediaController
-              )
+              nowPlayingViewModel.staticDataMap[Pair(url, shortCode)]?.station?.mounts?.get(0)?.url?.let{
+                val uri = Uri.parse(it)
+                nowPlayingViewModel.setPlaybackSource(
+                  uri = uri,
+                  url = url,
+                  shortCode = shortCode,
+                  mediaPlayer = mediaController
+                )
+              }
+
             },
             getStationData = { url, shortCode ->
               nowPlayingViewModel.getStationInformation(url, shortCode)
