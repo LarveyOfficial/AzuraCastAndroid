@@ -22,6 +22,7 @@
             android:name=".MainActivity"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.AzuraCastPlayer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
