@@ -1,7 +1,6 @@
 package com.larvey.azuracastplayer.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -55,9 +54,9 @@ fun NowPlaying(
   ) {
     Column(
       modifier = Modifier.fillMaxSize(),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center
+      horizontalAlignment = Alignment.CenterHorizontally
     ) {
+      Spacer(modifier = Modifier.size(96.dp))
       AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
         GlideImage(
           model = it,
@@ -68,7 +67,7 @@ fun NowPlaying(
           transition = CrossFade
         )
       }
-      Spacer(modifier = Modifier.size(16.dp))
+      Spacer(modifier = Modifier.size(32.dp))
       Text(
         text = playerState?.mediaMetadata?.displayTitle.toString(),
         modifier = Modifier.width(384.dp),
@@ -83,6 +82,7 @@ fun NowPlaying(
         textAlign = TextAlign.Center,
         style = MaterialTheme.typography.titleMedium
       )
+      Spacer(modifier = Modifier.size(32.dp))
       AnimatedContent(targetState = playerState?.isPlaying) { targetState ->
         if (targetState == true) {
           IconButton(onClick = {
