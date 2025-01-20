@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -87,6 +88,16 @@ class MainActivity : ComponentActivity() {
       }
     }
   )
+
+  override fun onPause() {
+    Log.d("DEBUG", "Pausing")
+    super.onPause()
+  }
+
+  override fun onResume() {
+    Log.d("DEBUG", "Resuming")
+    super.onResume()
+  }
 
   @OptIn(ExperimentalMaterial3Api::class,
     ExperimentalGlideComposeApi::class

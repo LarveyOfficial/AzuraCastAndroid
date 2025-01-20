@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.views
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -27,10 +28,12 @@ fun MyRadios(
   getStationData: (url: String, shortCode: String) -> Unit,
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>
 ) {
-  LaunchedEffect(Unit) {
-    while (true) {
+  LaunchedEffect(savedRadioList) {
+    while (savedRadioList != emptyList<SavedStation>()) {
+      Log.d("DEBUG", "Waiting 30 seconds to fetch data")
       delay(30000)
       for (item in savedRadioList) {
+        Log.d("DEBUG", "Fetching Data for ${item.name}")
         getStationData(item.url, item.shortcode)
       }
     }
