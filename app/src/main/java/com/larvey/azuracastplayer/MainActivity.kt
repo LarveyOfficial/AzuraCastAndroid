@@ -7,32 +7,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
@@ -40,31 +25,25 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
-import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import com.larvey.azuracastplayer.classes.SavedStation
 import com.larvey.azuracastplayer.components.AddStationDialog
+import com.larvey.azuracastplayer.components.MiniPlayer
 import com.larvey.azuracastplayer.components.NowPlaying
-import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
 import com.larvey.azuracastplayer.database.SavedStationsDatabase
 import com.larvey.azuracastplayer.mediasession.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
-import com.larvey.azuracastplayer.viewmodels.SavedStationsViewModel
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
-import com.larvey.azuracastplayer.viewmodels.RadioSearchViewModel
+import com.larvey.azuracastplayer.viewmodels.NowPlayingViewModel
+import com.larvey.azuracastplayer.viewmodels.SavedStationsViewModel
 import com.larvey.azuracastplayer.views.MyRadios
 import kotlinx.coroutines.delay
 
@@ -89,17 +68,43 @@ class MainActivity : ComponentActivity() {
     }
   )
 
+  private var savedRadioList: List<SavedStation> = emptyList()
+  private var fetchData = mutableStateOf(true)
+  private lateinit var nowPlayingViewModel: NowPlayingViewModel
+
   override fun onPause() {
-    Log.d("DEBUG", "Pausing")
+    Log.d(
+      "DEBUG",
+      "Pausing"
+    )
+    fetchData.value = false
     super.onPause()
   }
 
   override fun onResume() {
-    Log.d("DEBUG", "Resuming")
+    Log.d(
+      "DEBUG",
+      "Resuming"
+    )
+    if (savedRadioList != emptyList<SavedStation>()) {
+      for (item in savedRadioList) {
+        Log.d(
+          "DEBUG",
+          "Fetching Data for ${item.name}"
+        )
+        nowPlayingViewModel.getStationInformation(
+          item.url,
+          item.shortcode
+        )
+      }
+    }
+    fetchData.value = true
+
     super.onResume()
   }
 
-  @OptIn(ExperimentalMaterial3Api::class,
+  @OptIn(
+    ExperimentalMaterial3Api::class,
     ExperimentalGlideComposeApi::class
   )
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,9 +112,11 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       AzuraCastPlayerTheme {
-        val nowPlayingViewModel: NowPlayingViewModel = viewModel()
+        fetchData = remember { mutableStateOf(true) }
+        nowPlayingViewModel = viewModel()
 
-        val savedRadioList by savedStationsViewModel.getAllEntries().collectAsState(initial = emptyList())
+        savedRadioList =
+          savedStationsViewModel.getAllEntries().collectAsState(initial = emptyList()).value
 
         var showAddDialog by remember { mutableStateOf(false) }
         var showNowPlaying by remember { mutableStateOf(false) }
@@ -130,10 +137,33 @@ class MainActivity : ComponentActivity() {
           }
         }
 
+        LaunchedEffect(
+          key1 = fetchData.value,
+          key2 = savedRadioList
+        ) {
+          while (savedRadioList != emptyList<SavedStation>() && fetchData.value == true) {
+            Log.d(
+              "DEBUG",
+              "Waiting 30 seconds to fetch data"
+            )
+            delay(30000)
+            for (item in savedRadioList) {
+              if (fetchData.value) {
+                Log.d(
+                  "DEBUG",
+                  "Fetching Data for ${item.name}"
+                )
+                nowPlayingViewModel.getStationInformation(
+                  item.url,
+                  item.shortcode
+                )
+              }
+            }
+          }
+        }
 
 
-
-        DisposableEffect (key1 = mediaController) {
+        DisposableEffect(key1 = mediaController) {
           mediaController?.run {
             playerState = state()
           }
@@ -142,7 +172,7 @@ class MainActivity : ComponentActivity() {
           }
         }
 
-        Scaffold (
+        Scaffold(
           topBar = {
             TopAppBar(
               colors = topAppBarColors(
@@ -158,7 +188,10 @@ class MainActivity : ComponentActivity() {
                 showAddDialog = true
               }
             ) {
-              Icon(Icons.Rounded.Add, contentDescription = "Add")
+              Icon(
+                Icons.Rounded.Add,
+                contentDescription = "Add"
+              )
             }
           },
           bottomBar = {
@@ -171,74 +204,19 @@ class MainActivity : ComponentActivity() {
                 targetOffsetY = { fullHeight -> fullHeight * 2 }
               )
             ) {
-              BottomAppBar () {
-                Surface (
-                  onClick = {
-                  showNowPlaying = true
+              BottomAppBar {
+                MiniPlayer(
+                  playerState = playerState,
+                  showNowPlaying = {
+                    showNowPlaying = true
                   },
-                  modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-                ) {
-                  Row (
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 8.dp)
-                  ) {
-                    AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
-                      GlideImage(
-                        model = it,
-                        contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
-                        modifier = Modifier.fillMaxHeight()
-                          .clip(RoundedCornerShape(8.dp)),
-                        transition = CrossFade
-                      )
-                    }
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Column {
-                      Text(
-                        text = playerState?.mediaMetadata?.displayTitle.toString(),
-                        maxLines = 1,
-                        modifier = Modifier
-                          .widthIn(max = 256.dp)
-                          .basicMarquee(iterations = Int.MAX_VALUE),
-                        fontWeight = FontWeight.Bold
-                      )
-                      Text(
-                        text = playerState?.mediaMetadata?.artist.toString(),
-                        maxLines = 1,
-                        modifier = Modifier
-                          .widthIn(max = 256.dp)
-                          .basicMarquee(iterations = Int.MAX_VALUE),
-                        style = MaterialTheme.typography.labelLarge
-                      )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    AnimatedContent(
-                      targetState = playerState?.isPlaying,
-                      modifier = Modifier.padding(end = 15.dp)
-                    ) { targetState ->
-                      if (targetState == true) {
-                        IconButton (onClick = {
-                          mediaController?.pause()
-                        }) {
-                          Icon(
-                            imageVector = Icons.Rounded.Pause,
-                            contentDescription = "Pause",
-                            modifier = Modifier.size(64.dp)
-                          ) }
-                      } else {
-                        IconButton (onClick = {
-                          mediaController?.play()
-                        }) {
-                          Icon(
-                            imageVector = Icons.Rounded.PlayArrow,
-                            contentDescription = "Play",
-                            modifier = Modifier.size(64.dp)
-                          ) }
-                      }
-                    }
+                  pause = {
+                    mediaController?.pause()
+                  },
+                  play = {
+                    mediaController?.play()
                   }
-                }
+                )
               }
             }
           }
@@ -248,7 +226,10 @@ class MainActivity : ComponentActivity() {
             savedRadioList = savedRadioList,
             innerPadding = innerPadding,
             setPlaybackSource = { url, shortCode ->
-              nowPlayingViewModel.staticDataMap[Pair(url, shortCode)]?.station?.mounts?.get(0)?.url?.let{
+              nowPlayingViewModel.staticDataMap[Pair(
+                url,
+                shortCode
+              )]?.station?.mounts?.get(0)?.url?.let {
                 val uri = Uri.parse(it)
                 nowPlayingViewModel.setPlaybackSource(
                   uri = uri,
@@ -259,7 +240,10 @@ class MainActivity : ComponentActivity() {
               }
             },
             getStationData = { url, shortCode ->
-              nowPlayingViewModel.getStationInformation(url, shortCode)
+              nowPlayingViewModel.getStationInformation(
+                url,
+                shortCode
+              )
             },
             staticDataMap = nowPlayingViewModel.staticDataMap
           )
@@ -272,6 +256,7 @@ class MainActivity : ComponentActivity() {
               addData = savedStationsViewModel::saveStation
             )
           }
+
           showNowPlaying -> {
             NowPlaying(
               hideNowPlaying = {

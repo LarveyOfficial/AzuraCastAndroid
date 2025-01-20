@@ -22,13 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.larvey.azuracastplayer.classes.StationJSON
 import com.larvey.azuracastplayer.viewmodels.RadioSearchViewModel
 import java.net.URL
 
@@ -39,17 +37,17 @@ fun AddStationDialog(
 ) {
   val radioSearchViewModel: RadioSearchViewModel = viewModel()
 
-  var radioURL by remember { mutableStateOf("")}
+  var radioURL by remember { mutableStateOf("") }
   var formatedURL by remember { mutableStateOf("") }
-  var searching by remember {mutableStateOf(false)}
-
-  Dialog(onDismissRequest = {hideDialog()}) {
-    Card (
+  var searching by remember { mutableStateOf(false) }
+  
+  Dialog(onDismissRequest = { hideDialog() }) {
+    Card(
       modifier = Modifier
         .fillMaxWidth()
         .padding(16.dp),
       shape = RoundedCornerShape(16.dp)
-    ){
+    ) {
       Column(
         modifier = Modifier
           .fillMaxWidth()
@@ -73,21 +71,30 @@ fun AddStationDialog(
         )
         AnimatedVisibility(searching) {
           Column {
-            HorizontalDivider( modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             AnimatedContent(
               targetState = radioSearchViewModel.stationHostData[formatedURL],
             ) { hostData ->
               if (hostData != null) {
                 LazyColumn {
                   itemsIndexed(hostData) { _, item ->
-                    ElevatedCard (
-                      modifier = Modifier.fillMaxWidth().padding(2.dp),
+                    ElevatedCard(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(2.dp),
                       onClick = {
-                        addData(item.station.name, item.station.shortcode, formatedURL)
+                        addData(
+                          item.station.name,
+                          item.station.shortcode,
+                          formatedURL
+                        )
                         hideDialog()
                       }
                     ) {
-                      Text(item.station.name, modifier = Modifier.padding(8.dp))
+                      Text(
+                        item.station.name,
+                        modifier = Modifier.padding(8.dp)
+                      )
                     }
                   }
 

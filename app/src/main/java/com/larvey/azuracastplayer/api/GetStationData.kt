@@ -2,9 +2,9 @@ package com.larvey.azuracastplayer.api
 
 import android.util.Log
 import com.larvey.azuracastplayer.classes.StationJSON
-import retrofit2.Callback
 import okhttp3.OkHttpClient
 import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -17,7 +17,6 @@ interface RetroFitPlaying {
 
 fun getStationHostData(stationData: MutableMap<String, List<StationJSON>>, url: String) {
   val okHttpClient = OkHttpClient.Builder().build()
-
   val retroFit = Retrofit.Builder()
     .baseUrl("https://$url")
     .client(okHttpClient)
@@ -37,18 +36,23 @@ fun getStationHostData(stationData: MutableMap<String, List<StationJSON>>, url: 
         val nowPlayingData: List<StationJSON> = response.body()!!
         if (nowPlayingData.isEmpty()) return
 
-        stationData.put(url, nowPlayingData)
+        stationData.put(
+          url,
+          nowPlayingData
+        )
       }
-
     }
 
     override fun onFailure(
       call: Call<List<StationJSON>?>,
       t: Throwable
     ) {
-      Log.d("DEBUG", "Fuck")
+      Log.d(
+        "DEBUG",
+        "Fuck"
+      )
       return
     }
   })
 
-  }
+}

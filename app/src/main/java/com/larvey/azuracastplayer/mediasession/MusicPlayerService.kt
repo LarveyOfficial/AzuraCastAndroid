@@ -3,7 +3,6 @@ package com.larvey.azuracastplayer.mediasession
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
@@ -34,7 +33,12 @@ class MusicPlayerService : MediaSessionService() {
     val stopButton = CommandButton.Builder()
       .setDisplayName("Stop")
       .setIconResId(R.drawable.stop_button)
-      .setSessionCommand(SessionCommand("STOP_RADIO", Bundle()))
+      .setSessionCommand(
+        SessionCommand(
+          "STOP_RADIO",
+          Bundle()
+        )
+      )
       .build()
 
 
@@ -44,11 +48,14 @@ class MusicPlayerService : MediaSessionService() {
         super.seekToDefaultPosition()
       }
     }
-    mediaSession = MediaSession.Builder(this, player)
+    mediaSession = MediaSession.Builder(
+      this,
+      player
+    )
       .setCallback(MyCallback())
       .setCustomLayout(ImmutableList.of(stopButton))
-      . also { builder ->
-        getSingleTopActivity()?.let{ builder.setSessionActivity(it) }
+      .also { builder ->
+        getSingleTopActivity()?.let { builder.setSessionActivity(it) }
       }
       .build()
 
@@ -70,7 +77,12 @@ class MusicPlayerService : MediaSessionService() {
         )
         .setAvailableSessionCommands(
           ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-            .add(SessionCommand("STOP_RADIO", Bundle.EMPTY))
+            .add(
+              SessionCommand(
+                "STOP_RADIO",
+                Bundle.EMPTY
+              )
+            )
             .build()
         )
         .build()
@@ -102,11 +114,13 @@ class MusicPlayerService : MediaSessionService() {
     ): ListenableFuture<MutableList<MediaItem>> {
 
       /* This is the trickiest part, if you don't do this here, nothing will play */
-      val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
+      val updatedMediaItems =
+        mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
       return Futures.immediateFuture(updatedMediaItems)
     }
 
   }
+
   // The user dismissed the app from the recent tasks
   override fun onTaskRemoved(rootIntent: Intent?) {
     val player = mediaSession?.player!!
@@ -127,9 +141,14 @@ class MusicPlayerService : MediaSessionService() {
 
   private fun getSingleTopActivity(): PendingIntent? {
     return PendingIntent.getActivity(
-      applicationContext, 0,
-      Intent(applicationContext, MainActivity::class.java),
-      PendingIntent.FLAG_IMMUTABLE)
+      applicationContext,
+      0,
+      Intent(
+        applicationContext,
+        MainActivity::class.java
+      ),
+      PendingIntent.FLAG_IMMUTABLE
+    )
   }
 
 

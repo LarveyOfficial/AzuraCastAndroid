@@ -7,11 +7,15 @@ import com.larvey.azuracastplayer.database.SavedStationDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-class SavedStationsViewModel (private val dao: SavedStationDao): ViewModel() {
+class SavedStationsViewModel(private val dao: SavedStationDao) : ViewModel() {
 
   fun saveStation(name: String, shortcode: String, url: String) {
     viewModelScope.launch {
-      val newEntry = SavedStation(name = name, shortcode = shortcode, url = url)
+      val newEntry = SavedStation(
+        name = name,
+        shortcode = shortcode,
+        url = url
+      )
       dao.insertStation(newEntry)
     }
   }

@@ -1,91 +1,92 @@
 package com.larvey.azuracastplayer.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.state.PlayerState
 
-@OptIn(
-  ExperimentalMaterial3Api::class,
-  ExperimentalGlideComposeApi::class
-)
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun NowPlaying(
-  hideNowPlaying: () -> Unit,
+fun MiniPlayer(
   playerState: PlayerState?,
+  showNowPlaying: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit
 ) {
-  val sheetState = rememberModalBottomSheetState(
-    skipPartiallyExpanded = true
-  )
-  ModalBottomSheet(
-    modifier = Modifier.fillMaxHeight(),
-    sheetState = sheetState,
-    onDismissRequest = {
-      hideNowPlaying()
+  Surface (
+    onClick = {
+      showNowPlaying()
     },
-    shape = RoundedCornerShape(0)
+    modifier = Modifier
+      .fillMaxSize()
+      .clip(RoundedCornerShape(8.dp))
   ) {
-    Column(
-      modifier = Modifier.fillMaxSize(),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center
+    Row (
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.padding(start = 16.dp)
     ) {
       AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
         GlideImage(
           model = it,
           contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
           modifier = Modifier
-            .size(384.dp)
-            .clip(RoundedCornerShape(16.dp)),
+            .fillMaxHeight()
+            .padding(vertical = 6.dp)
+            .clip(RoundedCornerShape(8.dp)),
           transition = CrossFade
         )
       }
-      Spacer(modifier = Modifier.size(16.dp))
-      Text(
-        text = playerState?.mediaMetadata?.displayTitle.toString(),
-        modifier = Modifier.width(384.dp),
-        textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold
-      )
-      Spacer(modifier = Modifier.size(4.dp))
-      Text(
-        text = playerState?.mediaMetadata?.artist.toString(),
-        modifier = Modifier.width(384.dp),
-        textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.titleMedium
-      )
-      AnimatedContent(targetState = playerState?.isPlaying) { targetState ->
+      Spacer(modifier = Modifier.size(8.dp))
+      Column {
+        Text(
+          text = playerState?.mediaMetadata?.displayTitle.toString(),
+          maxLines = 1,
+          modifier = Modifier
+            .widthIn(max = 256.dp)
+            .basicMarquee(iterations = Int.MAX_VALUE),
+          fontWeight = FontWeight.Bold
+        )
+        Text(
+          text = playerState?.mediaMetadata?.artist.toString(),
+          maxLines = 1,
+          modifier = Modifier
+            .widthIn(max = 256.dp)
+            .basicMarquee(iterations = Int.MAX_VALUE),
+          style = MaterialTheme.typography.labelLarge
+        )
+      }
+      Spacer(modifier = Modifier.weight(1f))
+      AnimatedContent(
+        targetState = playerState?.isPlaying,
+        modifier = Modifier.padding(end = 15.dp)
+      ) { targetState ->
         if (targetState == true) {
-          IconButton(onClick = {
+          IconButton (onClick = {
             pause()
           }) {
             Icon(
@@ -95,7 +96,7 @@ fun NowPlaying(
             )
           }
         } else {
-          IconButton(onClick = {
+          IconButton (onClick = {
             play()
           }) {
             Icon(

@@ -2,15 +2,12 @@ package com.larvey.azuracastplayer.mediasession
 
 import android.content.ComponentName
 import android.content.Context
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Player
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -59,7 +56,9 @@ internal class MediaControllerManager private constructor(context: Context) : Re
   var controller = mutableStateOf<MediaController?>(null)
     private set
 
-  init { initialize() }
+  init {
+    initialize()
+  }
 
   /**
    * Initializes the MediaController.
@@ -71,7 +70,13 @@ internal class MediaControllerManager private constructor(context: Context) : Re
     if (factory == null || factory?.isDone == true) {
       factory = MediaController.Builder(
         appContext,
-        SessionToken(appContext, ComponentName(appContext, MusicPlayerService::class.java))
+        SessionToken(
+          appContext,
+          ComponentName(
+            appContext,
+            MusicPlayerService::class.java
+          )
+        )
       ).buildAsync()
 
     }
@@ -82,7 +87,6 @@ internal class MediaControllerManager private constructor(context: Context) : Re
       MoreExecutors.directExecutor()
     )
   }
-
 
 
   /**
@@ -99,8 +103,14 @@ internal class MediaControllerManager private constructor(context: Context) : Re
   }
 
   // Lifecycle methods for the RememberObserver interface.
-  override fun onAbandoned() { release() }
-  override fun onForgotten() { release() }
+  override fun onAbandoned() {
+    release()
+  }
+
+  override fun onForgotten() {
+    release()
+  }
+
   override fun onRemembered() {}
 
   companion object {

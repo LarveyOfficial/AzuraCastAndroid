@@ -15,23 +15,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.classes.SavedStation
 import com.larvey.azuracastplayer.classes.StationJSON
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -43,41 +35,58 @@ fun StationListEntry(
 ) {
 
   LaunchedEffect(Unit) {
-    getStationData(station.url, station.shortcode)
+    getStationData(
+      station.url,
+      station.shortcode
+    )
   }
 
-  val stationData = staticDataMap[Pair(station.url, station.shortcode)]
+  val stationData = staticDataMap[Pair(
+    station.url,
+    station.shortcode
+  )]
 
   Card(
     onClick = {
-      setPlaybackSource(station.url, station.shortcode)
+      setPlaybackSource(
+        station.url,
+        station.shortcode
+      )
     }
 
-    ) {
-    Row(modifier = Modifier
-      .padding(8.dp)
-      .fillMaxWidth(),
+  ) {
+    Row(
+      modifier = Modifier
+        .padding(8.dp)
+        .fillMaxWidth(),
       verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
       GlideImage(
         model = stationData?.nowPlaying?.song?.art.toString(),
         contentDescription = "${stationData?.station?.name}",
-        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp))
+        modifier = Modifier
+          .size(64.dp)
+          .clip(RoundedCornerShape(8.dp))
       )
       Spacer(modifier = Modifier.width(8.dp))
-      Column (verticalArrangement = Arrangement.Center) {
+      Column(verticalArrangement = Arrangement.Center) {
         Text(
           text = station.name,
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold
         )
         if (stationData?.nowPlaying?.song?.title.toString() != "null") {
-          Text(
-            text = "Now playing: ${stationData?.nowPlaying?.song?.title}",
-            maxLines = 1,
-            modifier = Modifier
-              .basicMarquee(iterations = Int.MAX_VALUE),
-          )
+          Row {
+            Text(
+              text = "Now playing: "
+            )
+            Text(
+              text = "${stationData?.nowPlaying?.song?.title}",
+              maxLines = 1,
+              modifier = Modifier
+                .basicMarquee(iterations = Int.MAX_VALUE)
+            )
+          }
         }
       }
 
