@@ -40,7 +40,6 @@ class MusicPlayerService : MediaSessionService() {
 
     val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
       override fun play() {
-        Log.d("DEBUG", "SEEKING")
         super.play()
         super.seekToDefaultPosition()
       }

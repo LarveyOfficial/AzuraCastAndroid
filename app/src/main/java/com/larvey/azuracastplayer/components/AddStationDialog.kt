@@ -18,7 +18,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,20 +27,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.larvey.azuracastplayer.classes.StationJSON
-import com.larvey.azuracastplayer.viewmodels.RadioListViewModel
+import com.larvey.azuracastplayer.viewmodels.RadioSearchViewModel
 import java.net.URL
 
 @Composable
 fun AddStationDialog(
   hideDialog: () -> Unit,
   addData: (name: String, shortcode: String, url: String) -> Unit,
-  stationHostData: SnapshotStateMap<String, List<StationJSON>>,
-  searchStationHost: (url: String) -> Unit
 ) {
+  val radioSearchViewModel: RadioSearchViewModel = viewModel()
+
   var radioURL by remember { mutableStateOf("")}
   var formatedURL by remember { mutableStateOf("") }
   var searching by remember {mutableStateOf(false)}
+
   Dialog(onDismissRequest = {hideDialog()}) {
     Card (
       modifier = Modifier
@@ -74,7 +75,7 @@ fun AddStationDialog(
           Column {
             HorizontalDivider( modifier = Modifier.padding(vertical = 8.dp))
             AnimatedContent(
-              targetState = stationHostData[formatedURL],
+              targetState = radioSearchViewModel.stationHostData[formatedURL],
             ) { hostData ->
               if (hostData != null) {
                 LazyColumn {
@@ -119,7 +120,7 @@ fun AddStationDialog(
             } catch (e: Exception) {
               return@TextButton
             }
-            searchStationHost(formatedURL)
+            radioSearchViewModel.searchStationHost(formatedURL)
             searching = true
           }) {
             Text("Search")

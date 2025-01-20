@@ -2,10 +2,10 @@ package com.larvey.azuracastplayer.classes
 
 import androidx.room.Entity
 
-@Entity(primaryKeys = ["name","shortcode"])
+@Entity(primaryKeys = ["name","url"])
 data class SavedStation (
   val name: String,
+  val url: String,
   val shortcode: String,
-  val url: String
 )
 

@@ -7,7 +7,7 @@ import com.larvey.azuracastplayer.classes.StationJSON
 import com.larvey.azuracastplayer.api.getStationHostData
 import kotlinx.coroutines.launch
 
-class RadioListViewModel : ViewModel() {
+class RadioSearchViewModel : ViewModel() {
   val stationHostData = mutableStateMapOf<String, List<StationJSON>>()
 
   fun searchStationHost(url: String) {

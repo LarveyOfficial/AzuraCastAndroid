@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class SavedStationsViewModel (private val dao: SavedStationDao): ViewModel() {
-  fun addData(name: String, shortcode: String, url: String) {
+
+  fun saveStation(name: String, shortcode: String, url: String) {
     viewModelScope.launch {
       val newEntry = SavedStation(name = name, shortcode = shortcode, url = url)
       dao.insertStation(newEntry)
@@ -16,4 +17,16 @@ class SavedStationsViewModel (private val dao: SavedStationDao): ViewModel() {
   }
 
   fun getAllEntries(): Flow<List<SavedStation>> = dao.getAllEntries()
+
+  fun removeStation(station: SavedStation) {
+    viewModelScope.launch {
+      dao.deleteStation(station)
+    }
+  }
+
+  fun updateStation(station: SavedStation) {
+    viewModelScope.launch {
+      dao.updateStation(station)
+    }
+  }
 }
