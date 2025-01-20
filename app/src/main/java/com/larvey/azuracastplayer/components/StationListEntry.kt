@@ -43,10 +43,7 @@ fun StationListEntry(
 ) {
 
   LaunchedEffect(Unit) {
-    while (true) {
-      getStationData(station.url, station.shortcode)
-      delay(30000)
-    }
+    getStationData(station.url, station.shortcode)
   }
 
   val stationData = staticDataMap[Pair(station.url, station.shortcode)]

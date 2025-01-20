@@ -10,11 +10,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.classes.SavedStation
 import com.larvey.azuracastplayer.classes.StationJSON
 import com.larvey.azuracastplayer.components.StationListEntry
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,22 +27,31 @@ fun MyRadios(
   getStationData: (url: String, shortCode: String) -> Unit,
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>
 ) {
-    Column (modifier = Modifier.padding(innerPadding))  {
-      LazyColumn(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(all = 16.dp)
-      ) {
-        itemsIndexed(savedRadioList) { _, item ->
-          StationListEntry(
-            station = item,
-            setPlaybackSource = setPlaybackSource,
-            getStationData = getStationData,
-            staticDataMap = staticDataMap
-          )
-          Spacer(Modifier.height(8.dp))
-        }
+  LaunchedEffect(Unit) {
+    while (true) {
+      delay(30000)
+      for (item in savedRadioList) {
+        getStationData(item.url, item.shortcode)
       }
     }
+  }
+
+  Column (modifier = Modifier.padding(innerPadding))  {
+    LazyColumn(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(all = 16.dp)
+    ) {
+      itemsIndexed(savedRadioList) { _, item ->
+        StationListEntry(
+          station = item,
+          setPlaybackSource = setPlaybackSource,
+          getStationData = getStationData,
+          staticDataMap = staticDataMap
+        )
+        Spacer(Modifier.height(8.dp))
+      }
+    }
+  }
 }
 
