@@ -52,8 +52,8 @@ data class Mount(
   val id: Long,
   val name: String,
   val url: String,
-  val bitrate: Long,
-  val format: String,
+  val bitrate: Long?,
+  val format: String?,
   val listeners: Listeners,
   val path: String,
   @SerializedName("is_default")

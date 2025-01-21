@@ -1,9 +1,11 @@
 package com.larvey.azuracastplayer
 
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -109,7 +111,14 @@ class MainActivity : ComponentActivity() {
   )
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    enableEdgeToEdge()
+
+    enableEdgeToEdge(
+      navigationBarStyle = SystemBarStyle.light(
+        Color.TRANSPARENT,
+        Color.TRANSPARENT
+      )
+    )
+
     setContent {
       AzuraCastPlayerTheme {
         fetchData = remember { mutableStateOf(true) }
@@ -204,7 +213,9 @@ class MainActivity : ComponentActivity() {
                 targetOffsetY = { fullHeight -> fullHeight * 2 }
               )
             ) {
-              BottomAppBar {
+              BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+              ) {
                 MiniPlayer(
                   playerState = playerState,
                   showNowPlaying = {
@@ -248,7 +259,6 @@ class MainActivity : ComponentActivity() {
             staticDataMap = nowPlayingViewModel.staticDataMap
           )
         }
-
         when {
           showAddDialog -> {
             AddStationDialog(

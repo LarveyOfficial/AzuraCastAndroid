@@ -38,15 +38,16 @@ fun MiniPlayer(
   pause: () -> Unit,
   play: () -> Unit
 ) {
-  Surface (
+  Surface(
     onClick = {
       showNowPlaying()
     },
     modifier = Modifier
       .fillMaxSize()
-      .clip(RoundedCornerShape(8.dp))
+      .clip(RoundedCornerShape(8.dp)),
+    color = MaterialTheme.colorScheme.surfaceContainer
   ) {
-    Row (
+    Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier.padding(start = 16.dp)
     ) {
@@ -86,7 +87,7 @@ fun MiniPlayer(
         modifier = Modifier.padding(end = 15.dp)
       ) { targetState ->
         if (targetState == true) {
-          IconButton (onClick = {
+          IconButton(onClick = {
             pause()
           }) {
             Icon(
@@ -96,7 +97,7 @@ fun MiniPlayer(
             )
           }
         } else {
-          IconButton (onClick = {
+          IconButton(onClick = {
             play()
           }) {
             Icon(

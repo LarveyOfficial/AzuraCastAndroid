@@ -8,7 +8,7 @@ import com.larvey.azuracastplayer.classes.StationJSON
 import kotlinx.coroutines.launch
 
 class RadioSearchViewModel : ViewModel() {
-  val stationHostData = mutableStateMapOf<String, List<StationJSON>>()
+  var stationHostData = mutableStateMapOf<String, List<StationJSON>>()
 
   fun searchStationHost(url: String) {
     viewModelScope.launch {
