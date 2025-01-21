@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
         }
 
         LaunchedEffect(playerState?.mediaMetadata) {
-          if (nowPlayingViewModel.nowPlayingURL.value != "") {
+          if (nowPlayingViewModel.nowPlayingURL.value != "" && playerState?.currentMediaItem?.mediaId != null) {
             nowPlayingViewModel.setMediaMetadata(
               nowPlayingViewModel.nowPlayingURL.value,
               nowPlayingViewModel.nowPlayingShortCode.value,
@@ -205,7 +205,7 @@ class MainActivity : ComponentActivity() {
           },
           bottomBar = {
             AnimatedVisibility(
-              visible = playerState?.currentMediaItem != null,
+              visible = playerState?.currentMediaItem?.mediaId != null,
               enter = slideInVertically(
                 initialOffsetY = { fullHeight -> fullHeight * 2 }
               ),

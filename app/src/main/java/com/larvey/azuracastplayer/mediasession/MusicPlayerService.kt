@@ -97,6 +97,7 @@ class MusicPlayerService : MediaSessionService() {
     ): ListenableFuture<SessionResult> {
       if (customCommand.customAction == "STOP_RADIO") {
         session.player.stop()
+        session.player.clearMediaItems()
         return Futures.immediateFuture(
           SessionResult(SessionResult.RESULT_SUCCESS)
         )
