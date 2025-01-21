@@ -256,7 +256,10 @@ class MainActivity : ComponentActivity() {
                 shortCode
               )
             },
-            staticDataMap = nowPlayingViewModel.staticDataMap
+            staticDataMap = nowPlayingViewModel.staticDataMap,
+            deleteRadio = { station ->
+              savedStationsViewModel.removeStation(station)
+            }
           )
         }
         when {

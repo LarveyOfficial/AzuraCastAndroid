@@ -23,10 +23,10 @@ fun MyRadios(
   innerPadding: PaddingValues,
   setPlaybackSource: (url: String, shortCode: String) -> Unit,
   getStationData: (url: String, shortCode: String) -> Unit,
-  staticDataMap: MutableMap<Pair<String, String>, StationJSON>
+  staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
+  deleteRadio: (savedStation: SavedStation) -> Unit
 ) {
-
-
+  
   Column(modifier = Modifier.padding(innerPadding)) {
     LazyColumn(
       modifier = Modifier
@@ -38,7 +38,8 @@ fun MyRadios(
           station = item,
           setPlaybackSource = setPlaybackSource,
           getStationData = getStationData,
-          staticDataMap = staticDataMap
+          staticDataMap = staticDataMap,
+          deleteRadio = deleteRadio
         )
         Spacer(Modifier.height(8.dp))
       }
