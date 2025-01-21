@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.components
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -99,10 +98,6 @@ fun StationListEntry(
         onLongClick = {
           haptics.performHapticFeedback(HapticFeedbackType.LongPress)
           showDropdown = true
-          Log.d(
-            "DEBUG",
-            "x: ${offset.x}, y: ${offset.y}"
-          )
         }
       )
   ) {
