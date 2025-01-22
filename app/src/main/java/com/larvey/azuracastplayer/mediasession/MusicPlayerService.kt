@@ -7,6 +7,7 @@ import android.service.media.MediaBrowserService.BrowserRoot
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -29,21 +30,22 @@ import com.larvey.azuracastplayer.R
 class MusicPlayerService : MediaLibraryService() {
   private var mediaSession: MediaLibrarySession? = null
 
+  val rootItem = MediaItem.Builder()
+    .setMediaId("root")
+    .setMediaMetadata(
+      MediaMetadata.Builder()
+        .setIsBrowsable(false)
+        .setIsPlayable(false)
+        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+        .setTitle("MyMusicAppRootWhichIsNotVisibleToControllers")
+        .build()
+    )
+    .build()
+
   // Create your player and media session in the onCreate lifecycle event
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
-    val stopButton = CommandButton.Builder()
-      .setDisplayName("Stop")
-      .setIconResId(R.drawable.stop_button)
-      .setSessionCommand(
-        SessionCommand(
-          "STOP_RADIO",
-          Bundle()
-        )
-      )
-      .build()
-
 
     val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
       override fun play() {
@@ -61,7 +63,6 @@ class MusicPlayerService : MediaLibraryService() {
       player,
       MyCallback()
     )
-      .setCustomLayout(ImmutableList.of(stopButton))
       .also { builder ->
         getSingleTopActivity()?.let { builder.setSessionActivity(it) }
       }
@@ -69,8 +70,8 @@ class MusicPlayerService : MediaLibraryService() {
 
     setMediaNotificationProvider(mediaNotificationProvider)
 
-  }
 
+  }
 
   @UnstableApi
   private inner class MyCallback : MediaLibrarySession.Callback {
@@ -80,22 +81,38 @@ class MusicPlayerService : MediaLibraryService() {
       controller: MediaSession.ControllerInfo
     ): ConnectionResult {
       // Set available player and session commands.
-      return AcceptedResultBuilder(session)
-        .setAvailablePlayerCommands(
-          ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
-            .build()
-        )
-        .setAvailableSessionCommands(
-          ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-            .add(
-              SessionCommand(
-                "STOP_RADIO",
-                Bundle.EMPTY
-              )
+      if (session.isMediaNotificationController(controller)) {
+        val stopButton = CommandButton.Builder()
+          .setDisplayName("Stop")
+          .setIconResId(R.drawable.stop_button)
+          .setSessionCommand(
+            SessionCommand(
+              "STOP_RADIO",
+              Bundle()
             )
-            .build()
-        )
-        .build()
+          )
+          .build()
+        return AcceptedResultBuilder(session)
+          .setCustomLayout(ImmutableList.of(stopButton))
+          .setAvailablePlayerCommands(
+            ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+              .build()
+          )
+          .setAvailableSessionCommands(
+            ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+              .add(
+                SessionCommand(
+                  "STOP_RADIO",
+                  Bundle.EMPTY
+                )
+              )
+              .build()
+          )
+          .build()
+      }
+      return AcceptedResultBuilder(session).build()
+
+
     }
 
     @OptIn(UnstableApi::class)
@@ -133,11 +150,7 @@ class MusicPlayerService : MediaLibraryService() {
     override fun onGetLibraryRoot(
       session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?
     ): ListenableFuture<LibraryResult<MediaItem>> {
-      return super.onGetLibraryRoot(
-        session,
-        browser,
-        params
-      )
+      return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
     }
 
   }
