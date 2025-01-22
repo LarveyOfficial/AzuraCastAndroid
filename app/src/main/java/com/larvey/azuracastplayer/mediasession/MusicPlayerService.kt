@@ -3,6 +3,7 @@ package com.larvey.azuracastplayer.mediasession
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.service.media.MediaBrowserService.BrowserRoot
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
