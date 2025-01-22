@@ -10,10 +10,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.MediaSession.ConnectionResult.AcceptedResultBuilder
-import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
@@ -24,8 +25,8 @@ import com.larvey.azuracastplayer.MainActivity
 import com.larvey.azuracastplayer.R
 
 
-class MusicPlayerService : MediaSessionService() {
-  private var mediaSession: MediaSession? = null
+class MusicPlayerService : MediaLibraryService() {
+  private var mediaSession: MediaLibrarySession? = null
 
   // Create your player and media session in the onCreate lifecycle event
   @OptIn(UnstableApi::class)
@@ -51,14 +52,14 @@ class MusicPlayerService : MediaSessionService() {
     }
 
     val mediaNotificationProvider = DefaultMediaNotificationProvider(this)
-    
+
     mediaNotificationProvider.setSmallIcon(R.drawable.azuracast)
 
-    mediaSession = MediaSession.Builder(
+    mediaSession = MediaLibrarySession.Builder(
       this,
-      player
+      player,
+      MyCallback()
     )
-      .setCallback(MyCallback())
       .setCustomLayout(ImmutableList.of(stopButton))
       .also { builder ->
         getSingleTopActivity()?.let { builder.setSessionActivity(it) }
@@ -69,8 +70,9 @@ class MusicPlayerService : MediaSessionService() {
 
   }
 
+
   @UnstableApi
-  private inner class MyCallback : MediaSession.Callback {
+  private inner class MyCallback : MediaLibrarySession.Callback {
     @OptIn(UnstableApi::class)
     override fun onConnect(
       session: MediaSession,
@@ -127,6 +129,16 @@ class MusicPlayerService : MediaSessionService() {
       return Futures.immediateFuture(updatedMediaItems)
     }
 
+    override fun onGetLibraryRoot(
+      session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?
+    ): ListenableFuture<LibraryResult<MediaItem>> {
+      return super.onGetLibraryRoot(
+        session,
+        browser,
+        params
+      )
+    }
+
   }
 
   // The user dismissed the app from the recent tasks
@@ -160,6 +172,6 @@ class MusicPlayerService : MediaSessionService() {
   }
 
 
-  override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+  override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
     mediaSession
 }
