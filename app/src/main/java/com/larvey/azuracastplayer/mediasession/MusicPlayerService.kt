@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
 import androidx.media3.common.Player
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -24,11 +25,16 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.MainActivity
 import com.larvey.azuracastplayer.R
+import com.larvey.azuracastplayer.classes.NowPlayingData
 
 
-class MusicPlayerService : MediaLibraryService() {
+class MusicPlayerService() : MediaLibraryService() {
+
+  lateinit var app: NowPlayingData
+
   private var mediaSession: MediaLibrarySession? = null
 
   val rootItem = MediaItem.Builder()
@@ -47,6 +53,8 @@ class MusicPlayerService : MediaLibraryService() {
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
+
+    app = (applicationContext as AppSetup).nowPlayingData
 
     val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
       override fun play() {
@@ -87,7 +95,7 @@ class MusicPlayerService : MediaLibraryService() {
   }
 
   @UnstableApi
-  private inner class MyCallback : MediaLibrarySession.Callback {
+  private inner class MyCallback() : MediaLibrarySession.Callback {
     @OptIn(UnstableApi::class)
     override fun onConnect(
       session: MediaSession,
@@ -152,6 +160,7 @@ class MusicPlayerService : MediaLibraryService() {
       mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
 
+
       /* This is the trickiest part, if you don't do this here, nothing will play */
       val updatedMediaItems =
         mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
@@ -173,6 +182,12 @@ class MusicPlayerService : MediaLibraryService() {
       session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String,
       page: Int, pageSize: Int, params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+
+      Log.d(
+        "DEBUG",
+        app.testingStuff.toString()
+      )
+
 
       val metaData = MediaMetadata.Builder()
         .setTitle("Miku")

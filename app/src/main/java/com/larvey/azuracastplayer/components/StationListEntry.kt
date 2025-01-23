@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -52,10 +53,10 @@ import com.larvey.azuracastplayer.classes.StationJSON
 @Composable
 fun StationListEntry(
   station: SavedStation,
-  setPlaybackSource: (url: String, shortCode: String) -> Unit,
-  getStationData: (url: String, shortCode: String) -> Unit,
-  staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
-  deleteRadio: (station: SavedStation) -> Unit
+  setPlaybackSource: (String, String) -> Unit,
+  getStationData: (String, String) -> Unit,
+  staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
+  deleteRadio: (SavedStation) -> Unit
 ) {
   val haptics = LocalHapticFeedback.current
   LaunchedEffect(Unit) {
@@ -70,10 +71,12 @@ fun StationListEntry(
 
   var showDelete by remember { mutableStateOf(false) }
 
-  val stationData = staticDataMap[Pair(
-    station.url,
-    station.shortcode
-  )]
+  val stationData = staticDataMap?.get(
+    Pair(
+      station.url,
+      station.shortcode
+    )
+  )
 
   Card(
     colors = CardDefaults.cardColors(

@@ -1,22 +1,19 @@
-package com.larvey.azuracastplayer.viewmodels
+package com.larvey.azuracastplayer.classes
 
 import android.net.Uri
-import androidx.annotation.OptIn
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
 import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
 import com.larvey.azuracastplayer.api.initialStationData
 import com.larvey.azuracastplayer.api.updateSongData
-import com.larvey.azuracastplayer.classes.StationJSON
 
-@OptIn(UnstableApi::class)
-class NowPlayingViewModel : ViewModel() {
+class NowPlayingData {
 
   val staticDataMap = mutableStateMapOf<Pair<String, String>, StationJSON>()
 
   val staticData = mutableStateOf<StationJSON?>(null)
+
+  val testingStuff = mutableStateOf("Testing")
 
   var nowPlayingURL = mutableStateOf("")
   var nowPlayingShortCode = mutableStateOf("")
@@ -58,6 +55,4 @@ class NowPlayingViewModel : ViewModel() {
       shortCode = shortCode
     )
   }
-
-
 }

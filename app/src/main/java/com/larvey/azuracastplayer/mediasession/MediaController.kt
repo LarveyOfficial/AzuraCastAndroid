@@ -8,11 +8,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import com.larvey.azuracastplayer.mediasession.MediaControllerManager.Companion.pubGetData
 
 /**
  * A Composable function that provides a managed MediaController instance.
@@ -20,10 +22,14 @@ import com.google.common.util.concurrent.MoreExecutors
  * @param lifecycle The lifecycle of the owner of this MediaController. Defaults to the lifecycle of the LocalLifecycleOwner.
  * @return A State object containing the MediaController instance. The Composable will automatically re-compose whenever the state changes.
  */
+
+
 @Composable
 fun rememberManagedMediaController(
+  getData: () -> List<MediaItem>,
   lifecycle: Lifecycle = LocalLifecycleOwner.current.lifecycle
 ): State<MediaController?> {
+  pubGetData = getData
   // Application context is used to prevent memory leaks
   val appContext = LocalContext.current.applicationContext
   val controllerManager = remember { MediaControllerManager.getInstance(appContext) }
@@ -116,6 +122,8 @@ internal class MediaControllerManager private constructor(context: Context) : Re
   companion object {
     @Volatile
     private var instance: MediaControllerManager? = null
+
+    lateinit var pubGetData: () -> List<MediaItem>
 
     /**
      * Returns the Singleton instance of the MediaControllerManager.
