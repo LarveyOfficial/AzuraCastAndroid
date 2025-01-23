@@ -2,11 +2,14 @@ package com.larvey.azuracastplayer.mediasession
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -18,6 +21,7 @@ import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.MainActivity
@@ -28,7 +32,7 @@ class MusicPlayerService : MediaLibraryService() {
   private var mediaSession: MediaLibrarySession? = null
 
   val rootItem = MediaItem.Builder()
-    .setMediaId("root")
+    .setMediaId("/")
     .setMediaMetadata(
       MediaMetadata.Builder()
         .setIsBrowsable(false)
@@ -103,7 +107,7 @@ class MusicPlayerService : MediaLibraryService() {
 
       return ConnectionResult.accept(
         availableSessionCommands.build(),
-        connectionResult.availablePlayerCommands
+        Player.Commands.Builder().addAllCommands().remove(Player.COMMAND_GET_TIMELINE).build()
       )
 
     }
@@ -160,6 +164,32 @@ class MusicPlayerService : MediaLibraryService() {
       return Futures.immediateFuture(
         LibraryResult.ofItem(
           rootItem,
+          params
+        )
+      )
+    }
+
+    override fun onGetChildren(
+      session: MediaLibrarySession, browser: MediaSession.ControllerInfo, parentId: String,
+      page: Int, pageSize: Int, params: LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+
+      val metaData = MediaMetadata.Builder()
+        .setTitle("Miku")
+        .setMediaType(MEDIA_TYPE_RADIO_STATION)
+        .setArtworkUri(Uri.parse("https://miku.fm/api/station/miku/art/7997275befea25c8eca2664b-1737174744.jpg"))
+        .setDurationMs(1) // Forces the cool squiggly line
+        .setIsBrowsable(false)
+        .setIsPlayable(true)
+        .build()
+      val media = MediaItem.Builder()
+        .setMediaId("Miku")
+        .setMediaMetadata(metaData)
+        .build()
+
+      return Futures.immediateFuture(
+        LibraryResult.ofItemList(
+          listOf(media),
           params
         )
       )
