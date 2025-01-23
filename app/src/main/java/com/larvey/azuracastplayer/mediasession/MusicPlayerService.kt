@@ -3,7 +3,6 @@ package com.larvey.azuracastplayer.mediasession
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
-import android.service.media.MediaBrowserService.BrowserRoot
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
@@ -16,11 +15,9 @@ import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
-import androidx.media3.session.MediaSession.ConnectionResult.AcceptedResultBuilder
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
-import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.MainActivity
@@ -58,6 +55,7 @@ class MusicPlayerService : MediaLibraryService() {
 
     mediaNotificationProvider.setSmallIcon(R.drawable.azuracast)
 
+
     mediaSession = MediaLibrarySession.Builder(
       this,
       player,
@@ -66,9 +64,20 @@ class MusicPlayerService : MediaLibraryService() {
       .also { builder ->
         getSingleTopActivity()?.let { builder.setSessionActivity(it) }
       }
-      .build()
 
+      .build()
     setMediaNotificationProvider(mediaNotificationProvider)
+
+    mediaSession?.setCustomLayout(
+      listOf(
+        CommandButton.Builder(CommandButton.ICON_STOP).setDisplayName("Stop").setSessionCommand(
+          SessionCommand(
+            "STOP_RADIO",
+            Bundle.EMPTY
+          )
+        ).build()
+      )
+    )
 
 
   }
@@ -80,39 +89,37 @@ class MusicPlayerService : MediaLibraryService() {
       session: MediaSession,
       controller: MediaSession.ControllerInfo
     ): ConnectionResult {
-      // Set available player and session commands.
-      if (session.isMediaNotificationController(controller)) {
-        val stopButton = CommandButton.Builder()
-          .setDisplayName("Stop")
-          .setIconResId(R.drawable.stop_button)
-          .setSessionCommand(
+      val connectionResult = super.onConnect(
+        session,
+        controller
+      )
+      val availableSessionCommands = connectionResult.availableSessionCommands.buildUpon()
+      availableSessionCommands.add(
+        SessionCommand(
+          "STOP_RADIO",
+          Bundle.EMPTY
+        )
+      )
+
+      return ConnectionResult.accept(
+        availableSessionCommands.build(),
+        connectionResult.availablePlayerCommands
+      )
+
+    }
+
+    override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
+      session.setCustomLayout(
+        controller,
+        listOf(
+          CommandButton.Builder(CommandButton.ICON_STOP).setDisplayName("Stop").setSessionCommand(
             SessionCommand(
               "STOP_RADIO",
-              Bundle()
+              Bundle.EMPTY
             )
-          )
-          .build()
-        return AcceptedResultBuilder(session)
-          .setCustomLayout(ImmutableList.of(stopButton))
-          .setAvailablePlayerCommands(
-            ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
-              .build()
-          )
-          .setAvailableSessionCommands(
-            ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-              .add(
-                SessionCommand(
-                  "STOP_RADIO",
-                  Bundle.EMPTY
-                )
-              )
-              .build()
-          )
-          .build()
-      }
-      return AcceptedResultBuilder(session).build()
-
-
+          ).build()
+        )
+      )
     }
 
     @OptIn(UnstableApi::class)
@@ -150,7 +157,12 @@ class MusicPlayerService : MediaLibraryService() {
     override fun onGetLibraryRoot(
       session: MediaLibrarySession, browser: MediaSession.ControllerInfo, params: LibraryParams?
     ): ListenableFuture<LibraryResult<MediaItem>> {
-      return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
+      return Futures.immediateFuture(
+        LibraryResult.ofItem(
+          rootItem,
+          params
+        )
+      )
     }
 
   }
