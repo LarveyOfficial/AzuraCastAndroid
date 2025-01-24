@@ -37,7 +37,8 @@
 -keepattributes Signature
 -keepattributes Exceptions
 
--keep class com.larvey.azuracastplayer.classes.* { *; }
+-keep class com.larvey.azuracastplayer.classes.models.* { *; }
+-keep class com.larvey.azuracastplayer.classes.data.* { *; }
 -keep class com.google.gson.reflect.TypeToken
 -keep class * extends com.google.gson.reflect.TypeToken
 -keep public class * implements java.lang.reflect.Type

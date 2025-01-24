@@ -19,6 +19,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   val nowPlayingData = (app as AppSetup).nowPlayingData
   val savedStationsDB = (app as AppSetup).savedStationsDB
 
+
   var fetchData = mutableStateOf(true)
 
   var savedRadioList = mutableStateListOf<SavedStation>()
@@ -32,6 +33,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   }
 
   fun updateRadioList() {
+
     if (fetchData.value) {
       for (item in savedRadioList) {
         Log.d(
@@ -87,6 +89,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     CoroutineScope(Dispatchers.IO).launch {
       savedRadioList.clear()
       savedRadioList.addAll(savedStationsDB.getAllEntries())
+      (getApplication() as AppSetup).savedStations = savedRadioList
       if (updateMetadata == true) {
         updateRadioList()
       }

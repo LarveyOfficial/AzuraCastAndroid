@@ -69,7 +69,7 @@ class MusicPlayerService() : MediaLibraryService() {
 
     mediaNotificationProvider.setSmallIcon(R.drawable.azuracast)
 
-    
+
     mediaSession = MediaLibrarySession.Builder(
       this,
       player,

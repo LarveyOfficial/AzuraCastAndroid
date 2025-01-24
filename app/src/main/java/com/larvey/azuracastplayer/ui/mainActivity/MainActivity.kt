@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity() {
                 shortCode,
                 mediaController
               )
+
             },
             staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
             deleteRadio = { station ->
