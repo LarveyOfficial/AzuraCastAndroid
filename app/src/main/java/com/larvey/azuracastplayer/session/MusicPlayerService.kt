@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer.session
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
@@ -54,12 +55,21 @@ class MusicPlayerService() : MediaLibraryService() {
       }
     }
 
+    player.addListener(object : Player.Listener {
+      override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+        nowPlaying.setMediaMetadata(
+          nowPlaying.nowPlayingURL.value,
+          nowPlaying.nowPlayingShortCode.value,
+          player
+        )
+      }
+    })
+
     val mediaNotificationProvider = DefaultMediaNotificationProvider(this)
 
     mediaNotificationProvider.setSmallIcon(R.drawable.azuracast)
 
-
-
+    
     mediaSession = MediaLibrarySession.Builder(
       this,
       player,
@@ -145,15 +155,22 @@ class MusicPlayerService() : MediaLibraryService() {
 
     @OptIn(UnstableApi::class)
     override fun onAddMediaItems(
-      mediaSession: MediaSession,
+      mediaSessiona: MediaSession,
       controller: MediaSession.ControllerInfo,
       mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
+
+      val item = (applicationContext as AppSetup).savedStations.filter {
+        it.url == Uri.parse(mediaItems[0].mediaId).host && it.shortcode == Uri.parse(mediaItems[0].mediaId).pathSegments[1]
+      }
 
 
       /* This is the trickiest part, if you don't do this here, nothing will play */
       val updatedMediaItems =
         mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
+      nowPlaying.nowPlayingShortCode.value = item[0].shortcode
+      nowPlaying.nowPlayingURL.value = item[0].url
+      nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId.toString()
       return Futures.immediateFuture(updatedMediaItems)
     }
 
@@ -204,6 +221,8 @@ class MusicPlayerService() : MediaLibraryService() {
       for (item in (applicationContext as AppSetup).savedStations) {
         val metaData = MediaMetadata.Builder()
           .setTitle(item.name)
+          .setSubtitle(item.shortcode)
+          .setDescription(item.url)
           .setMediaType(MEDIA_TYPE_RADIO_STATION)
           .setDurationMs(1)
           .setIsBrowsable(false)

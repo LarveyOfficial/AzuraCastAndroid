@@ -86,11 +86,6 @@ class MainActivity : ComponentActivity() {
           mainActivityViewModel?.getStationList(false)
         }
 
-        LaunchedEffect(playerState?.mediaMetadata) {
-          if (mainActivityViewModel?.nowPlayingData?.nowPlayingURL?.value != "" && playerState?.currentMediaItem?.mediaId != null) {
-            mainActivityViewModel?.updateCurrentMetadata(mediaController)
-          }
-        }
 
         LaunchedEffect(key1 = mainActivityViewModel?.savedRadioList) {
           while (mainActivityViewModel?.savedRadioList != null && mainActivityViewModel?.savedRadioList != emptyList<SavedStation>()) {

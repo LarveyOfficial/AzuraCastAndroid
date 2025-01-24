@@ -79,10 +79,16 @@ fun refreshMetadata(
           .setMediaMetadata(metaData)
           .build()
 
+        val mediaItems = listOf(newMedia)
+
+        val updatedMediaItems =
+          mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
+
         mediaPlayer?.replaceMediaItem(
           0,
-          newMedia
+          updatedMediaItems[0]
         )
+
 
         if (reset == true) {
           mediaPlayer?.prepare()
