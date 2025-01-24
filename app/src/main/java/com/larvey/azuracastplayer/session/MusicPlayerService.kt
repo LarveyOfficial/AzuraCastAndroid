@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -48,20 +49,35 @@ class MusicPlayerService() : MediaLibraryService() {
 
     savedStationsDB = (applicationContext as AppSetup).savedStationsDB
 
-    val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
+    val player = object : ForwardingPlayer(
+      ExoPlayer.Builder(this).setAudioAttributes(
+        AudioAttributes.DEFAULT,
+        true
+      ).build()
+    ) {
       override fun play() {
         super.play()
         super.seekToDefaultPosition()
       }
+
+      override fun stop() {
+        super.stop()
+        nowPlaying.nowPlayingShortCode.value = ""
+        nowPlaying.nowPlayingURI.value = ""
+        nowPlaying.nowPlayingURL.value = ""
+      }
+
     }
 
     player.addListener(object : Player.Listener {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-        nowPlaying.setMediaMetadata(
-          nowPlaying.nowPlayingURL.value,
-          nowPlaying.nowPlayingShortCode.value,
-          player
-        )
+        if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
+          nowPlaying.setMediaMetadata(
+            nowPlaying.nowPlayingURL.value,
+            nowPlaying.nowPlayingShortCode.value,
+            player
+          )
+        }
       }
     })
 
@@ -186,7 +202,7 @@ class MusicPlayerService() : MediaLibraryService() {
                 .setIsBrowsable(false)
                 .setIsPlayable(false)
                 .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                .setTitle("MyMusicAppRootWhichIsNotVisibleToControllers")
+                .setTitle("AzuraCast Player")
                 .build()
             )
             .build(),
@@ -258,6 +274,7 @@ class MusicPlayerService() : MediaLibraryService() {
   // Remember to release the player and media session in onDestroy
   override fun onDestroy() {
     mediaSession?.run {
+      player.stop()
       player.release()
       release()
       mediaSession = null
