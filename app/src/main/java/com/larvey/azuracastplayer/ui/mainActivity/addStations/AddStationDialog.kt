@@ -207,7 +207,7 @@ fun AddStationDialog(
                   listOfStations.add(
                     SavedStation(
                       item.name,
-                      formatedURL,
+                      formatedURL.lowercase(),
                       item.shortcode,
                       item.defaultMount
                     )
