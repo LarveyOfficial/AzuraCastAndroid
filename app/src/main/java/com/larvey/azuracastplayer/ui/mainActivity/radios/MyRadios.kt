@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.views
+package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,9 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.larvey.azuracastplayer.classes.SavedStation
-import com.larvey.azuracastplayer.classes.StationJSON
-import com.larvey.azuracastplayer.components.StationListEntry
+import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.data.StationJSON
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +22,6 @@ fun MyRadios(
   savedRadioList: List<SavedStation>?,
   innerPadding: PaddingValues,
   setPlaybackSource: (String, String) -> Unit,
-  getStationData: (String, String) -> Unit,
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
   deleteRadio: (SavedStation) -> Unit
 ) {
@@ -39,7 +37,6 @@ fun MyRadios(
           StationListEntry(
             station = item,
             setPlaybackSource = setPlaybackSource,
-            getStationData = getStationData,
             staticDataMap = staticDataMap,
             deleteRadio = deleteRadio
           )

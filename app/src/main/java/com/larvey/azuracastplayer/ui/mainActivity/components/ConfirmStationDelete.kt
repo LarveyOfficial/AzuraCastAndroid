@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.components
+package com.larvey.azuracastplayer.ui.mainActivity.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text

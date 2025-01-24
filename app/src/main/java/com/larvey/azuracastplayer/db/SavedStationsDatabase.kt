@@ -1,8 +1,8 @@
-package com.larvey.azuracastplayer.database
+package com.larvey.azuracastplayer.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.larvey.azuracastplayer.classes.SavedStation
+import com.larvey.azuracastplayer.classes.data.SavedStation
 
 @Database(
   entities = [SavedStation::class],

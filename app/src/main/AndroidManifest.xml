@@ -24,21 +24,18 @@
             android:resource="@xml/automotive_app_desc" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.mainActivity.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/Theme.AzuraCastPlayer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <action android:name="androidx.media3.session.MediaSessionService" />
-                <action android:name="androidx.media3.session.MediaLibraryService" />
-                <action android:name="android.media.browse.MediaBrowserService" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <service
-            android:name=".mediasession.MusicPlayerService"
+            android:name=".session.MusicPlayerService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
 

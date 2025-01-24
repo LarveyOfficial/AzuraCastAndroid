@@ -1,8 +1,7 @@
-package com.larvey.azuracastplayer.mediasession
+package com.larvey.azuracastplayer.session
 
 import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
@@ -10,7 +9,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
 import androidx.media3.common.Player
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
@@ -26,35 +24,28 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.AppSetup
-import com.larvey.azuracastplayer.MainActivity
 import com.larvey.azuracastplayer.R
-import com.larvey.azuracastplayer.classes.NowPlayingData
+import com.larvey.azuracastplayer.classes.models.NowPlayingData
+import com.larvey.azuracastplayer.classes.models.SavedStationsDB
+import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
 
 
 class MusicPlayerService() : MediaLibraryService() {
 
-  lateinit var app: NowPlayingData
+  lateinit var nowPlaying: NowPlayingData
+
+  lateinit var savedStationsDB: SavedStationsDB
 
   private var mediaSession: MediaLibrarySession? = null
-
-  val rootItem = MediaItem.Builder()
-    .setMediaId("/")
-    .setMediaMetadata(
-      MediaMetadata.Builder()
-        .setIsBrowsable(false)
-        .setIsPlayable(false)
-        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-        .setTitle("MyMusicAppRootWhichIsNotVisibleToControllers")
-        .build()
-    )
-    .build()
 
   // Create your player and media session in the onCreate lifecycle event
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
 
-    app = (applicationContext as AppSetup).nowPlayingData
+    nowPlaying = (applicationContext as AppSetup).nowPlayingData
+
+    savedStationsDB = (applicationContext as AppSetup).savedStationsDB
 
     val player = object : ForwardingPlayer(ExoPlayer.Builder(this).build()) {
       override fun play() {
@@ -66,6 +57,7 @@ class MusicPlayerService() : MediaLibraryService() {
     val mediaNotificationProvider = DefaultMediaNotificationProvider(this)
 
     mediaNotificationProvider.setSmallIcon(R.drawable.azuracast)
+
 
 
     mediaSession = MediaLibrarySession.Builder(
@@ -90,8 +82,6 @@ class MusicPlayerService() : MediaLibraryService() {
         ).build()
       )
     )
-
-
   }
 
   @UnstableApi
@@ -172,7 +162,17 @@ class MusicPlayerService() : MediaLibraryService() {
     ): ListenableFuture<LibraryResult<MediaItem>> {
       return Futures.immediateFuture(
         LibraryResult.ofItem(
-          rootItem,
+          MediaItem.Builder()
+            .setMediaId("/")
+            .setMediaMetadata(
+              MediaMetadata.Builder()
+                .setIsBrowsable(false)
+                .setIsPlayable(false)
+                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                .setTitle("MyMusicAppRootWhichIsNotVisibleToControllers")
+                .build()
+            )
+            .build(),
           params
         )
       )
@@ -183,28 +183,44 @@ class MusicPlayerService() : MediaLibraryService() {
       page: Int, pageSize: Int, params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
 
-      Log.d(
-        "DEBUG",
-        app.testingStuff.toString()
-      )
+      if (parentId != "/") {
+
+        val metaData = MediaMetadata.Builder()
+          .setIsBrowsable(true)
+          .setIsPlayable(false)
+          .setTitle("Radio Stations")
+          .build()
+
+        return Futures.immediateFuture(
+          LibraryResult.ofItemList(
+            listOf(MediaItem.Builder().setMediaId("Stations").setMediaMetadata(metaData).build()),
+            params
+          )
+        )
+      }
+      var stations = mutableListOf<MediaItem>()
 
 
-      val metaData = MediaMetadata.Builder()
-        .setTitle("Miku")
-        .setMediaType(MEDIA_TYPE_RADIO_STATION)
-        .setArtworkUri(Uri.parse("https://miku.fm/api/station/miku/art/7997275befea25c8eca2664b-1737174744.jpg"))
-        .setDurationMs(1) // Forces the cool squiggly line
-        .setIsBrowsable(false)
-        .setIsPlayable(true)
-        .build()
-      val media = MediaItem.Builder()
-        .setMediaId("Miku")
-        .setMediaMetadata(metaData)
-        .build()
+      for (item in (applicationContext as AppSetup).savedStations) {
+        val metaData = MediaMetadata.Builder()
+          .setTitle(item.name)
+          .setMediaType(MEDIA_TYPE_RADIO_STATION)
+          .setDurationMs(1)
+          .setIsBrowsable(false)
+          .setIsPlayable(true)
+          .build()
+
+        val mediaItem = MediaItem.Builder()
+          .setMediaId(item.defaultMount)
+          .setMediaMetadata(metaData)
+          .build()
+
+        stations.add(mediaItem)
+      }
 
       return Futures.immediateFuture(
         LibraryResult.ofItemList(
-          listOf(media),
+          stations,
           params
         )
       )

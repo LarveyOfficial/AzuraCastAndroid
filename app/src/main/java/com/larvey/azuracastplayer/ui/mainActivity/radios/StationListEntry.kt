@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.components
+package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,8 +41,9 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.larvey.azuracastplayer.classes.SavedStation
-import com.larvey.azuracastplayer.classes.StationJSON
+import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 
 @OptIn(
   ExperimentalGlideComposeApi::class,
@@ -54,17 +54,10 @@ import com.larvey.azuracastplayer.classes.StationJSON
 fun StationListEntry(
   station: SavedStation,
   setPlaybackSource: (String, String) -> Unit,
-  getStationData: (String, String) -> Unit,
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
   deleteRadio: (SavedStation) -> Unit
 ) {
   val haptics = LocalHapticFeedback.current
-  LaunchedEffect(Unit) {
-    getStationData(
-      station.url,
-      station.shortcode
-    )
-  }
   var offset by remember { mutableStateOf(Offset.Zero) }
 
   var showDropdown by remember { mutableStateOf(false) }

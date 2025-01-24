@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.components
+package com.larvey.azuracastplayer.ui.nowPlaying
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column

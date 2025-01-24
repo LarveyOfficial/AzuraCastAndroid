@@ -9,7 +9,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import com.larvey.azuracastplayer.classes.StationJSON
+import com.larvey.azuracastplayer.classes.data.StationJSON
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
@@ -27,7 +27,7 @@ interface RetroFitStatic {
   ): Call<StationJSON>
 }
 
-fun updateSongData(
+fun refreshMetadata(
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
   url: String, shortCode: String,
   uri: String?,

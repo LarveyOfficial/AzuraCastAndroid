@@ -1,19 +1,18 @@
-package com.larvey.azuracastplayer.classes
+package com.larvey.azuracastplayer.classes.models
 
 import android.net.Uri
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.media3.common.Player
-import com.larvey.azuracastplayer.api.initialStationData
-import com.larvey.azuracastplayer.api.updateSongData
+import com.larvey.azuracastplayer.api.fetchStationData
+import com.larvey.azuracastplayer.api.refreshMetadata
+import com.larvey.azuracastplayer.classes.data.StationJSON
 
 class NowPlayingData {
 
   val staticDataMap = mutableStateMapOf<Pair<String, String>, StationJSON>()
 
   val staticData = mutableStateOf<StationJSON?>(null)
-
-  val testingStuff = mutableStateOf("Testing")
 
   var nowPlayingURL = mutableStateOf("")
   var nowPlayingShortCode = mutableStateOf("")
@@ -23,7 +22,7 @@ class NowPlayingData {
   fun setMediaMetadata(
     url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false
   ) {
-    updateSongData(
+    refreshMetadata(
       staticDataMap = staticDataMap,
       url = url,
       shortCode = shortCode,
@@ -49,7 +48,7 @@ class NowPlayingData {
   }
 
   fun getStationInformation(url: String, shortCode: String) {
-    initialStationData(
+    fetchStationData(
       staticDataMap = staticDataMap,
       url = url,
       shortCode = shortCode

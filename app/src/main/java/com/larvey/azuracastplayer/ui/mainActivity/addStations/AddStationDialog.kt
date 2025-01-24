@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.components
+package com.larvey.azuracastplayer.ui.mainActivity.addStations
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -32,21 +32,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.larvey.azuracastplayer.classes.StationJSON
-import com.larvey.azuracastplayer.viewmodels.RadioSearchViewModel
+import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.data.StationJSON
 import java.net.URL
+
+data class AddableStation(
+  val name: String,
+  val shortcode: String,
+  val defaultMount: String
+)
 
 @Composable
 fun AddStationDialog(
   hideDialog: () -> Unit,
-  addData: (name: String, shortcode: String, url: String) -> Unit,
+  addData: (stations: List<SavedStation>) -> Unit,
 ) {
   val radioSearchViewModel: RadioSearchViewModel = viewModel()
 
   var radioURL by remember { mutableStateOf("") }
   var formatedURL by remember { mutableStateOf("") }
 
-  var checkedStations by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+  var checkedStations by remember { mutableStateOf(emptyList<AddableStation>()) }
 
   Dialog(onDismissRequest = {
     radioSearchViewModel.stationHostData =
@@ -104,23 +110,26 @@ fun AddStationDialog(
                         ),
                       onClick = {
                         checkedStations = if (checkedStations.contains(
-                            Pair(
+                            AddableStation(
                               item.station.name,
-                              item.station.shortcode
+                              item.station.shortcode,
+                              item.station.mounts[0].url
                             )
                           )
                         ) {
                           checkedStations.minus(
-                            Pair(
+                            AddableStation(
                               item.station.name,
-                              item.station.shortcode
+                              item.station.shortcode,
+                              item.station.mounts[0].url
                             )
                           )
                         } else {
                           checkedStations.plus(
-                            Pair(
+                            AddableStation(
                               item.station.name,
-                              item.station.shortcode
+                              item.station.shortcode,
+                              item.station.mounts[0].url
                             )
                           )
                         }
@@ -135,9 +144,10 @@ fun AddStationDialog(
                       ) {
                         Checkbox(
                           checked = checkedStations.contains(
-                            Pair(
+                            AddableStation(
                               item.station.name,
-                              item.station.shortcode
+                              item.station.shortcode,
+                              item.station.mounts[0].url
                             )
                           ),
                           onCheckedChange = null
@@ -192,13 +202,18 @@ fun AddStationDialog(
               }
             } else {
               TextButton(onClick = {
+                var listOfStations = mutableListOf<SavedStation>()
                 for (item in checkedStations) {
-                  addData(
-                    item.first,
-                    item.second,
-                    formatedURL
+                  listOfStations.add(
+                    SavedStation(
+                      item.name,
+                      formatedURL,
+                      item.shortcode,
+                      item.defaultMount
+                    )
                   )
                 }
+                addData(listOfStations)
                 checkedStations = emptyList()
                 radioSearchViewModel.stationHostData =
                   mutableStateMapOf<String, List<StationJSON>>()

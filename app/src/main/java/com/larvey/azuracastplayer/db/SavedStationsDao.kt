@@ -1,12 +1,11 @@
-package com.larvey.azuracastplayer.database
+package com.larvey.azuracastplayer.db
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
-import com.larvey.azuracastplayer.classes.SavedStation
-import kotlinx.coroutines.flow.Flow
+import com.larvey.azuracastplayer.classes.data.SavedStation
 
 
 @Dao
@@ -16,7 +15,7 @@ interface SavedStationDao {
   suspend fun insertStation(savedStation: SavedStation)
 
   @Query("SELECT * FROM savedstation")
-  fun getAllEntries(): Flow<List<SavedStation>>
+  fun getAllEntries(): List<SavedStation>
 
   @Delete
   suspend fun deleteStation(savedStation: SavedStation)

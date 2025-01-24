@@ -3,7 +3,7 @@ package com.larvey.azuracastplayer.api
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
-import com.larvey.azuracastplayer.classes.StationJSON
+import com.larvey.azuracastplayer.classes.data.StationJSON
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
@@ -21,7 +21,7 @@ interface RetroFitInitial {
   ): Call<StationJSON>
 }
 
-fun initialStationData(
+fun fetchStationData(
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
   url: String,
   shortCode: String

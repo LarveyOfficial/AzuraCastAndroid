@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.classes
+package com.larvey.azuracastplayer.classes.data
 
 import com.google.gson.annotations.SerializedName
 
