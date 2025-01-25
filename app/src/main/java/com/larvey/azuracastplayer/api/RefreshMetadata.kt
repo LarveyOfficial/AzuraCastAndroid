@@ -66,16 +66,16 @@ fun refreshMetadata(
         )
 
         val metaData = MediaMetadata.Builder()
-          .setMediaType(MEDIA_TYPE_MUSIC)
+          .setMediaType(MEDIA_TYPE_MUSIC) // idk if this does anything
           .setDisplayTitle(data.nowPlaying.song.title)
-          .setSubtitle(data.nowPlaying.song.artist)
+          .setSubtitle(data.nowPlaying.song.artist) // Android Auto for some reason uses Subtitle as the Artist
           .setArtist(data.nowPlaying.song.artist)
           .setAlbumTitle(data.nowPlaying.song.album)
           .setAlbumArtist(data.nowPlaying.song.artist)
+          .setDescription(data.nowPlaying.song.album) // Android Auto for some reason uses Description as the Album name
           .setGenre(data.nowPlaying.song.genre)
           .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
-          .setDurationMs(data.nowPlaying.duration * 1000) // Forces the cool squiggly line
-
+          .setDurationMs(data.nowPlaying.duration * 1000) // Gaming
           .build()
 
         val newMedia = MediaItem.Builder()
