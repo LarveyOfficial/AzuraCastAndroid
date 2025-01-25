@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
@@ -279,7 +280,15 @@ class MusicPlayerService() : MediaLibraryService() {
       release()
       mediaSession = null
     }
+    Log.d(
+      "DEBUG-MEDIA",
+      "Good-Bye! \uD83D\uDC4B\uD83C\uDFFB"
+    )
     super.onDestroy()
+    nowPlaying.nowPlayingShortCode.value = ""
+    nowPlaying.nowPlayingURL.value = ""
+    nowPlaying.nowPlayingURI.value = ""
+    android.os.Process.killProcess(android.os.Process.myPid())
   }
 
   private fun getSingleTopActivity(): PendingIntent? {

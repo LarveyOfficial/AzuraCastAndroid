@@ -108,6 +108,17 @@ class MainActivity : ComponentActivity() {
           }
         }
 
+        DisposableEffect(key1 = this) {
+          onDispose {
+            mediaController?.run {
+              pause()
+              stop()
+              release()
+            }
+          }
+        }
+
+
         Scaffold(
           topBar = {
             TopAppBar(

@@ -1,7 +1,6 @@
 package com.larvey.azuracastplayer
 
 import android.app.Application
-import android.util.Log
 import androidx.room.Room
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
@@ -24,10 +23,6 @@ class AppSetup : Application() {
 
   override fun onCreate() {
     super.onCreate()
-    Log.d(
-      "DEBUGBRO",
-      "App Started"
-    )
     db = Room.databaseBuilder(
       context = applicationContext,
       klass = SavedStationsDatabase::class.java,
