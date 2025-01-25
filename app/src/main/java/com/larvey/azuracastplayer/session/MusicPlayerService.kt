@@ -10,7 +10,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -68,6 +68,12 @@ class MusicPlayerService() : MediaLibraryService() {
         nowPlaying.nowPlayingURL.value = ""
       }
 
+      override fun getCurrentPosition(): Long {
+        if (nowPlaying.staticData.value?.nowPlaying?.playedAt != null) {
+          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000)
+        }
+        return super.currentPosition
+      }
     }
 
     player.addListener(object : Player.Listener {
@@ -238,9 +244,9 @@ class MusicPlayerService() : MediaLibraryService() {
       for (item in (applicationContext as AppSetup).savedStations) {
         val metaData = MediaMetadata.Builder()
           .setTitle(item.name)
-          .setSubtitle(item.shortcode)
-          .setDescription(item.url)
-          .setMediaType(MEDIA_TYPE_RADIO_STATION)
+          .setAlbumTitle("This is a test")
+          .setArtist(item.url)
+          .setMediaType(MEDIA_TYPE_MUSIC)
           .setDurationMs(1)
           .setIsBrowsable(false)
           .setIsPlayable(true)

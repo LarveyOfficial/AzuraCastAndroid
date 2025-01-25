@@ -6,7 +6,7 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.MutableState
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.larvey.azuracastplayer.classes.data.StationJSON
@@ -64,14 +64,18 @@ fun refreshMetadata(
           ),
           data
         )
+
         val metaData = MediaMetadata.Builder()
+          .setMediaType(MEDIA_TYPE_MUSIC)
           .setDisplayTitle(data.nowPlaying.song.title)
+          .setSubtitle(data.nowPlaying.song.artist)
           .setArtist(data.nowPlaying.song.artist)
-          .setMediaType(MEDIA_TYPE_RADIO_STATION)
           .setAlbumTitle(data.nowPlaying.song.album)
-          .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
-          .setDurationMs(1) // Forces the cool squiggly line
+          .setAlbumArtist(data.nowPlaying.song.artist)
           .setGenre(data.nowPlaying.song.genre)
+          .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
+          .setDurationMs(data.nowPlaying.duration * 1000) // Forces the cool squiggly line
+
           .build()
 
         val newMedia = MediaItem.Builder()
@@ -88,7 +92,6 @@ fun refreshMetadata(
           0,
           updatedMediaItems[0]
         )
-
 
         if (reset == true) {
           mediaPlayer?.prepare()
