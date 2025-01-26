@@ -12,9 +12,9 @@ android {
   defaultConfig {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 31
-    targetSdk = 34
+    targetSdk = 35
     versionCode = 1
-    versionName = "1.0"
+    versionName = "alpha-1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -61,13 +61,17 @@ dependencies {
 
   implementation("androidx.room:room-ktx:$room_version")
 
-  implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", "2.11.0")
+  implementation(
+    "com.fasterxml.jackson.module",
+    "jackson-module-kotlin",
+    "2.11.0"
+  )
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
 
   implementation(libs.androidx.core.ktx)
-  implementation (libs.androidx.material.icons.extended)
+  implementation(libs.androidx.material.icons.extended)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
@@ -79,7 +83,7 @@ dependencies {
   implementation(libs.androidx.media3.ui)
   implementation(libs.androidx.media3.common)
   implementation(libs.androidx.media3.session)
-  implementation (libs.androidx.datastore.preferences)
+  implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.retrofit)
   implementation(libs.converter.gson)
