@@ -70,6 +70,9 @@ class MusicPlayerService() : MediaLibraryService() {
 
       override fun getCurrentPosition(): Long {
         if (nowPlaying.staticData.value?.nowPlaying?.playedAt != null) {
+          if ((System.currentTimeMillis() / 1000) < nowPlaying.staticData.value?.nowPlaying?.playedAt!!) {
+            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) // System Time sync issue. Trying to prevent negative time elapsed
+          }
           return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000)
         }
         return super.currentPosition
