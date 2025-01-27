@@ -71,8 +71,6 @@ dependencies {
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
-  implementation (libs.accompanist.systemuicontroller)
-
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.material.icons.extended)
   implementation(libs.androidx.lifecycle.runtime.ktx)

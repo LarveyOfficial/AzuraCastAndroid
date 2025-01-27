@@ -1,5 +1,7 @@
 package com.larvey.azuracastplayer.ui.nowPlaying
 
+import android.os.Build
+import android.view.RoundedCorner
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.size
@@ -19,11 +23,13 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -39,8 +45,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.SideEffect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -48,7 +56,6 @@ import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -85,18 +92,6 @@ fun NowPlaying(
       )
     )
 
-//    val systemUiController = rememberSystemUiController()
-//
-//    SideEffect {
-//      // Update all of the system bar colors to be transparent, and use
-//      // dark icons if we're in light theme
-//      systemUiController.setNavigationBarColor(
-//        color = Color.Transparent
-//      )
-//
-//      // setStatusBarsColor() and setNavigationBarsColor() also exist
-//    }
-
     LaunchedEffect(lifecycleOwner) {
       updateTime(
         isVisible = playerState.currentMediaItem != null,
@@ -108,13 +103,17 @@ fun NowPlaying(
       )
     }
 
+
     val sheetState = rememberModalBottomSheetState(
       skipPartiallyExpanded = true
     )
 
+
+
     ModalBottomSheet(
       modifier = Modifier.fillMaxSize(),
       sheetState = sheetState,
+      shape = RoundedCornerShape(getRoundedCornerRadius()),
       onDismissRequest = {
         hideNowPlaying()
       },
@@ -231,3 +230,15 @@ suspend fun updateTime(
   }
 }
 
+@Composable
+fun getRoundedCornerRadius(): Dp {
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val view = LocalView.current
+    val windowInsets = view.rootWindowInsets
+    val roundedCorner = windowInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)
+    val radiusPx = roundedCorner?.radius ?: 0
+    val density = LocalDensity.current
+    return with(density) { radiusPx.toDp() }
+  }
+  return 0.dp
+}

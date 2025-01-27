@@ -44,7 +44,7 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
-  var mainActivityViewModel: MainActivityViewModel? = null
+  private var mainActivityViewModel: MainActivityViewModel? = null
 
   override fun onPause() {
     super.onPause()
@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
         Color.TRANSPARENT
       )
     )
+
     setContent {
       AzuraCastPlayerTheme {
         mainActivityViewModel = viewModel()
