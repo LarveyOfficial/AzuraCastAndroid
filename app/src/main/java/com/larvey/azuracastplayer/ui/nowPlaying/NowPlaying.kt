@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,7 +77,6 @@ fun NowPlaying(
     )
   )
 
-
   LaunchedEffect(lifecycleOwner) {
     updateTime(
       isVisible = playerState?.currentMediaItem != null,
@@ -100,12 +98,7 @@ fun NowPlaying(
     onDismissRequest = {
       hideNowPlaying()
     },
-    windowInsets = WindowInsets(
-      0,
-      0,
-      0,
-      0
-    ),
+
     dragHandle = {}
   ) {
     Column(

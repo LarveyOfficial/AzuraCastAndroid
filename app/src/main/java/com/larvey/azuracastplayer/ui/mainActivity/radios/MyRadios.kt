@@ -21,9 +21,10 @@ import com.larvey.azuracastplayer.classes.data.StationJSON
 fun MyRadios(
   savedRadioList: List<SavedStation>?,
   innerPadding: PaddingValues,
-  setPlaybackSource: (String, String) -> Unit,
+  setPlaybackSource: (String, String, String) -> Unit,
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
-  deleteRadio: (SavedStation) -> Unit
+  deleteRadio: (SavedStation) -> Unit,
+  editRadio: (SavedStation) -> Unit
 ) {
 
   Column(modifier = Modifier.padding(innerPadding)) {
@@ -38,7 +39,8 @@ fun MyRadios(
             station = item,
             setPlaybackSource = setPlaybackSource,
             staticDataMap = staticDataMap,
-            deleteRadio = deleteRadio
+            deleteRadio = deleteRadio,
+            editRadio = editRadio
           )
           Spacer(Modifier.height(8.dp))
         }

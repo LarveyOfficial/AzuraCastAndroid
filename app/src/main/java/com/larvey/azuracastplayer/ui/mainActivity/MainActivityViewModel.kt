@@ -24,14 +24,6 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
 
   var savedRadioList = mutableStateListOf<SavedStation>()
 
-  fun updateCurrentMetadata(mediaController: MediaController?) {
-    nowPlayingData.setMediaMetadata(
-      nowPlayingData.nowPlayingURL.value,
-      nowPlayingData.nowPlayingShortCode.value,
-      mediaController
-    )
-  }
-
   fun updateRadioList() {
 
     if (fetchData.value) {
@@ -49,24 +41,28 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     }
   }
 
-  fun setPlaybackSource(url: String, shortCode: String, mediaController: MediaController?) {
-    nowPlayingData.staticDataMap[Pair(
-      url,
-      shortCode
-    )]?.station?.mounts?.get(0)?.url?.let {
-      val uri = Uri.parse(it)
-      nowPlayingData.setPlaybackSource(
-        uri = uri,
-        url = url,
-        shortCode = shortCode,
-        mediaPlayer = mediaController
-      )
-    }
+  fun setPlaybackSource(
+    url: String, uri: String, shortCode: String, mediaController: MediaController?
+  ) {
+    val uri = Uri.parse(uri)
+    nowPlayingData.setPlaybackSource(
+      uri = uri,
+      url = url,
+      shortCode = shortCode,
+      mediaPlayer = mediaController
+    )
   }
 
   fun deleteStation(station: SavedStation) {
     viewModelScope.launch {
       savedStationsDB.removeStation(station)
+      getStationList()
+    }
+  }
+
+  fun editStation(newStation: SavedStation) {
+    viewModelScope.launch {
+      savedStationsDB.updateStation(newStation)
       getStationList()
     }
   }

@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
             }
           }
         }
-        
+
 
 
         Scaffold(
@@ -175,9 +175,10 @@ class MainActivity : ComponentActivity() {
           MyRadios(
             savedRadioList = mainActivityViewModel?.savedRadioList,
             innerPadding = innerPadding,
-            setPlaybackSource = { url, shortCode ->
+            setPlaybackSource = { url, uri, shortCode ->
               mainActivityViewModel?.setPlaybackSource(
                 url,
+                uri,
                 shortCode,
                 mediaController
               )
@@ -186,6 +187,9 @@ class MainActivity : ComponentActivity() {
             staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
             deleteRadio = { station ->
               mainActivityViewModel?.deleteStation(station)
+            },
+            editRadio = { newStation ->
+              mainActivityViewModel?.editStation(newStation)
             }
           )
         }

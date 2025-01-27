@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -44,6 +45,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
+import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
 
 @OptIn(
   ExperimentalGlideComposeApi::class,
@@ -53,9 +55,10 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelet
 @Composable
 fun StationListEntry(
   station: SavedStation,
-  setPlaybackSource: (String, String) -> Unit,
+  setPlaybackSource: (String, String, String) -> Unit,
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
-  deleteRadio: (SavedStation) -> Unit
+  deleteRadio: (SavedStation) -> Unit,
+  editRadio: (SavedStation) -> Unit
 ) {
   val haptics = LocalHapticFeedback.current
   var offset by remember { mutableStateOf(Offset.Zero) }
@@ -63,6 +66,8 @@ fun StationListEntry(
   var showDropdown by remember { mutableStateOf(false) }
 
   var showDelete by remember { mutableStateOf(false) }
+
+  var showEdit by remember { mutableStateOf(false) }
 
   val stationData = staticDataMap?.get(
     Pair(
@@ -87,6 +92,7 @@ fun StationListEntry(
         onClick = {
           setPlaybackSource(
             station.url,
+            station.defaultMount,
             station.shortcode
           )
 
@@ -155,6 +161,19 @@ fun StationListEntry(
               )
             }
           )
+          DropdownMenuItem(
+            text = { Text("Edit") },
+            onClick = {
+              showEdit = true
+              showDropdown = false
+            },
+            leadingIcon = {
+              Icon(
+                imageVector = Icons.Rounded.Edit,
+                contentDescription = "Edit Radio"
+              )
+            }
+          )
         }
       }
     }
@@ -168,6 +187,15 @@ fun StationListEntry(
           deleteRadio(station)
         },
         stationName = station.name
+      )
+    }
+
+    showEdit -> {
+      EditStation(
+        hideDialog = { showEdit = false },
+        station = station,
+        stationData = stationData,
+        editStation = editRadio
       )
     }
   }

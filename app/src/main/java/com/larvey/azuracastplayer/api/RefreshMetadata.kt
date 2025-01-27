@@ -56,8 +56,8 @@ fun refreshMetadata(
       if (response.isSuccessful) {
         val data = response.body()
         if (data == null) return
-        staticData.value = data
-        staticDataMap.put(
+
+        staticData.value = staticDataMap.put(
           Pair(
             url,
             shortCode
