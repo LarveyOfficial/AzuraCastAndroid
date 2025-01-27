@@ -58,8 +58,7 @@ class MainActivity : ComponentActivity() {
 
   @androidx.annotation.OptIn(UnstableApi::class)
   @OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalGlideComposeApi::class
+    ExperimentalMaterial3Api::class
   )
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)

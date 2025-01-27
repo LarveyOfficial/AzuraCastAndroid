@@ -11,7 +11,7 @@ android {
 
   defaultConfig {
     applicationId = "com.larvey.azuracastplayer"
-    minSdk = 31
+    minSdk = 29
     targetSdk = 35
     versionCode = 2
     versionName = "alpha-1.1"
@@ -71,6 +71,7 @@ dependencies {
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
+  implementation (libs.accompanist.systemuicontroller)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.material.icons.extended)
