@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.mainActivity.addStations
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,6 +55,8 @@ fun AddStationDialog(
   var formatedURL by remember { mutableStateOf("") }
 
   var checkedStations by remember { mutableStateOf(emptyList<AddableStation>()) }
+
+  var context = LocalContext.current
 
   Dialog(onDismissRequest = {
     radioSearchViewModel.stationHostData =
@@ -98,6 +102,15 @@ fun AddStationDialog(
               if (hostData != null) {
                 LazyColumn {
                   itemsIndexed(hostData) { _, item ->
+
+                    val mounts = item.station.mounts.filterNot {
+                      listOf(
+                        "flac",
+                        "opus",
+                        "ogg"
+                      ).contains(it.format)
+                    }
+
                     ElevatedCard(
                       colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -109,29 +122,37 @@ fun AddStationDialog(
                           2.dp
                         ),
                       onClick = {
-                        checkedStations = if (checkedStations.contains(
-                            AddableStation(
-                              item.station.name,
-                              item.station.shortcode,
-                              item.station.mounts[0].url
+                        if (mounts.isNotEmpty()) {
+                          checkedStations = if (checkedStations.contains(
+                              AddableStation(
+                                item.station.name,
+                                item.station.shortcode,
+                                mounts[0].url
+                              )
                             )
-                          )
-                        ) {
-                          checkedStations.minus(
-                            AddableStation(
-                              item.station.name,
-                              item.station.shortcode,
-                              item.station.mounts[0].url
+                          ) {
+                            checkedStations.minus(
+                              AddableStation(
+                                item.station.name,
+                                item.station.shortcode,
+                                mounts[0].url
+                              )
                             )
-                          )
+                          } else {
+                            checkedStations.plus(
+                              AddableStation(
+                                item.station.name,
+                                item.station.shortcode,
+                                mounts[0].url
+                              )
+                            )
+                          }
                         } else {
-                          checkedStations.plus(
-                            AddableStation(
-                              item.station.name,
-                              item.station.shortcode,
-                              item.station.mounts[0].url
-                            )
-                          )
+                          Toast.makeText(
+                            context,
+                            "No compatible mounts available for this station",
+                            Toast.LENGTH_LONG
+                          ).show()
                         }
                       }
                     ) {
@@ -147,7 +168,7 @@ fun AddStationDialog(
                             AddableStation(
                               item.station.name,
                               item.station.shortcode,
-                              item.station.mounts[0].url
+                              mounts[0].url
                             )
                           ),
                           onCheckedChange = null

@@ -89,20 +89,27 @@ fun EditStation(
             onDismissRequest = { expandedDropdown = false }
           ) {
             mounts.forEach { mount ->
-              DropdownMenuItem(
-                text = {
-                  Text(
-                    mount,
-                    style = MaterialTheme.typography.bodyLarge
-                  )
-                },
-                onClick = {
-                  textFieldState.setTextAndPlaceCursorAtEnd(mount)
-                  setMount = stationData.station.mounts.find { it.name == mount }?.url!!
-                  expandedDropdown = false
-                },
-                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-              )
+              if (!listOf(
+                  "flac",
+                  "ogg",
+                  "opus"
+                ).contains(stationData.station.mounts.find { it.name == mount }!!.format)
+              ) {
+                DropdownMenuItem(
+                  text = {
+                    Text(
+                      mount,
+                      style = MaterialTheme.typography.bodyLarge
+                    )
+                  },
+                  onClick = {
+                    textFieldState.setTextAndPlaceCursorAtEnd(mount)
+                    setMount = stationData.station.mounts.find { it.name == mount }?.url!!
+                    expandedDropdown = false
+                  },
+                  contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+              }
             }
           }
         }
