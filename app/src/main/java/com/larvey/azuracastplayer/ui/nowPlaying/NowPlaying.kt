@@ -30,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -77,7 +78,7 @@ fun NowPlaying(
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
 
-  val scope = rememberCoroutineScope()
+  rememberCoroutineScope()
 
   if (playerState?.currentMediaItem == null) hideNowPlaying()
 
@@ -135,7 +136,10 @@ fun NowPlaying(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
       ) {
+
         Spacer(modifier = Modifier.size(96.dp))
+
+        // Album Art
         AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) {
           GlideImage(
             model = it,
@@ -146,121 +150,38 @@ fun NowPlaying(
             transition = CrossFade
           )
         }
-        Spacer(modifier = Modifier.size(48.dp))
-        Text(
-          text = playerState.mediaMetadata.displayTitle.toString(),
-          modifier = Modifier.width(384.dp),
-          textAlign = TextAlign.Left,
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.size(4.dp))
-        Text(
-          text = playerState.mediaMetadata.artist.toString(),
-          modifier = Modifier.width(384.dp),
-          textAlign = TextAlign.Left,
-          style = MaterialTheme.typography.titleMedium
-        )
-        Spacer(modifier = Modifier.size(48.dp))
-        LinearProgressIndicator(
-          progress = { progressAnimation },
-          modifier = Modifier
-            .width(384.dp)
-            .clip(RoundedCornerShape(16.dp))
-        )
-        Spacer(modifier = Modifier.size(8.dp))
-        Row(modifier = Modifier.width(384.dp)) {
-          val duration =
-            playerState.mediaMetadata.durationMs!!.toDuration(DurationUnit.MILLISECONDS)
 
-          val position = currentPosition.toDuration(DurationUnit.MILLISECONDS)
+        Spacer(modifier = Modifier.size(48.dp))
 
-          val durationString =
-            duration.toComponents { minutes, seconds, _ ->
-              String.format(
-                Locale.getDefault(),
-                "%02d:%02d",
-                minutes,
-                seconds
-              )
-            }
-          val positionString =
-            position.toComponents { minutes, seconds, _ ->
-              String.format(
-                Locale.getDefault(),
-                "%02d:%02d",
-                minutes,
-                seconds
-              )
-            }
-          Text(
-            positionString,
-            style = MaterialTheme.typography.labelMedium
-          )
-          Spacer(modifier = Modifier.weight(1f))
-          Text(
-            durationString,
-            style = MaterialTheme.typography.labelMedium
-          )
-        }
+        SongAndArtist(playerState)
+
+        Spacer(modifier = Modifier.size(48.dp))
+
+        ProgressBar(
+          progressAnimation = progressAnimation,
+          playerState = playerState,
+          currentPosition = currentPosition
+        )
+
         Spacer(modifier = Modifier.size(32.dp))
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.width(256.dp)
-        ) {
-          IconButton(onClick = {
-            scope.launch {
-              sheetState.hide()
-              stop()
-            }
-          }) {
-            Icon(
-              imageVector = Icons.Rounded.Stop,
-              contentDescription = "Stop",
-              modifier = Modifier.size(48.dp)
-            )
-          }
-          Spacer(modifier = Modifier.weight(1f))
-          AnimatedContent(targetState = playerState.isPlaying) { targetState ->
-            if (targetState) {
-              Icon(
-                imageVector = Icons.Rounded.PauseCircle,
-                contentDescription = "Pause",
-                modifier = Modifier
-                  .size(72.dp)
-                  .clip(CircleShape)
-                  .clickable {
-                    pause()
-                  }
-              )
-            } else {
-              Icon(
-                imageVector = Icons.Rounded.PlayCircle,
-                contentDescription = "Play",
-                modifier = Modifier
-                  .size(72.dp)
-                  .clip(CircleShape)
-                  .clickable {
-                    play()
-                  }
-              )
-            }
-          }
-          Spacer(modifier = Modifier.weight(1f))
-          IconButton(onClick = {
-          }) {
-            Icon(
-              imageVector = Icons.Rounded.Share,
-              contentDescription = "Share",
-              modifier = Modifier.size(32.dp)
-            )
-          }
-        }
+
+        // Media Controls + Share
+        MediaControls(
+          sheetState = sheetState,
+          stop = stop,
+          pause = pause,
+          play = play,
+          playerState = playerState
+        )
 
         Spacer(modifier = Modifier.size(48.dp))
+
+        // Favorite + Share Buttons
         Row(modifier = Modifier.width(384.dp)) {
-          IconButton(onClick = {
-          }) {
+          IconButton(
+            enabled = false,
+            onClick = {
+            }) {
             Icon(
               imageVector = Icons.Rounded.StarBorder,
               contentDescription = "Favorite",
@@ -268,9 +189,11 @@ fun NowPlaying(
             )
           }
           Spacer(modifier = Modifier.weight(1f))
-          IconButton(onClick = {
+          IconButton(
+            enabled = false,
+            onClick = {
 
-          }) {
+            }) {
             Icon(
               imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
               contentDescription = "Queue",
@@ -311,4 +234,150 @@ fun getRoundedCornerRadius(): Dp {
     return with(density) { radiusPx.toDp() }
   }
   return 0.dp
+}
+
+@Composable
+private fun SongAndArtist(playerState: PlayerState) {
+  Column {
+    Text(
+      text = playerState.mediaMetadata.displayTitle.toString(),
+      modifier = Modifier.width(384.dp),
+      textAlign = TextAlign.Left,
+      style = MaterialTheme.typography.titleLarge,
+      fontWeight = FontWeight.Bold
+    )
+
+    Spacer(modifier = Modifier.size(4.dp))
+
+    //Artist Name
+    Text(
+      text = playerState.mediaMetadata.artist.toString(),
+      modifier = Modifier.width(384.dp),
+      textAlign = TextAlign.Left,
+      style = MaterialTheme.typography.titleMedium
+    )
+  }
+}
+
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+private fun ProgressBar(progressAnimation: Float, playerState: PlayerState, currentPosition: Long) {
+  Column {
+    LinearProgressIndicator(
+      progress = { progressAnimation },
+      modifier = Modifier
+        .width(384.dp)
+        .clip(RoundedCornerShape(16.dp))
+    )
+
+    Spacer(modifier = Modifier.size(8.dp))
+
+    // Progress Timestamps
+    Row(modifier = Modifier.width(384.dp)) {
+      val duration =
+        playerState.mediaMetadata.durationMs!!.toDuration(DurationUnit.MILLISECONDS)
+
+      val position = currentPosition.toDuration(DurationUnit.MILLISECONDS)
+
+      val durationString =
+        duration.toComponents { minutes, seconds, _ ->
+          String.format(
+            Locale.getDefault(),
+            "%02d:%02d",
+            minutes,
+            seconds
+          )
+        }
+      val positionString =
+        position.toComponents { minutes, seconds, _ ->
+          String.format(
+            Locale.getDefault(),
+            "%02d:%02d",
+            minutes,
+            seconds
+          )
+        }
+      Text(
+        positionString,
+        style = MaterialTheme.typography.labelMedium
+      )
+      Spacer(modifier = Modifier.weight(1f))
+      Text(
+        durationString,
+        style = MaterialTheme.typography.labelMedium
+      )
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MediaControls(
+  sheetState: SheetState, stop: () -> Unit, pause: () -> Unit, play: () -> Unit,
+  playerState: PlayerState
+) {
+  val scope = rememberCoroutineScope()
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.width(256.dp)
+  ) {
+
+    // Stop Button
+    IconButton(onClick = {
+      scope.launch {
+        sheetState.hide()
+        stop()
+      }
+    }) {
+      Icon(
+        imageVector = Icons.Rounded.Stop,
+        contentDescription = "Stop",
+        modifier = Modifier.size(48.dp)
+      )
+    }
+
+    Spacer(modifier = Modifier.weight(1f))
+
+    // Play/Pause Button
+    AnimatedContent(targetState = playerState.isPlaying) { targetState ->
+      if (targetState) {
+        Icon(
+          imageVector = Icons.Rounded.PauseCircle,
+          contentDescription = "Pause",
+          modifier = Modifier
+            .size(72.dp)
+            .clip(CircleShape)
+            .clickable {
+              pause()
+            }
+        )
+      } else {
+        Icon(
+          imageVector = Icons.Rounded.PlayCircle,
+          contentDescription = "Play",
+          modifier = Modifier
+            .size(72.dp)
+            .clip(CircleShape)
+            .clickable {
+              play()
+            }
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.weight(1f))
+
+    //Share Button
+    IconButton(
+      enabled = false,
+      onClick = {
+      }) {
+      Icon(
+        imageVector = Icons.Rounded.Share,
+        contentDescription = "Share",
+        modifier = Modifier.size(32.dp)
+      )
+    }
+  }
 }
