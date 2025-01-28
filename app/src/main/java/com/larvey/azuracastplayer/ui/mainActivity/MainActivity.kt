@@ -26,10 +26,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
@@ -77,6 +77,8 @@ class MainActivity : ComponentActivity() {
         var showNowPlaying by remember { mutableStateOf(false) }
 
         val mediaController by rememberManagedMediaController()
+
+        rememberCoroutineScope()
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
@@ -216,6 +218,11 @@ class MainActivity : ComponentActivity() {
               },
               play = {
                 mediaController?.play()
+              },
+              stop = {
+                showNowPlaying = false
+                mediaController?.stop()
+                mediaController?.clearMediaItems()
               }
             )
           }

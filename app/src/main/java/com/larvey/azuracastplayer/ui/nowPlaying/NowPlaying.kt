@@ -6,46 +6,45 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.PauseCircle
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.SideEffect
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -58,6 +57,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -73,8 +73,11 @@ fun NowPlaying(
   playerState: PlayerState?,
   pause: () -> Unit,
   play: () -> Unit,
+  stop: () -> Unit,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
+
+  val scope = rememberCoroutineScope()
 
   if (playerState?.currentMediaItem == null) hideNowPlaying()
 
@@ -118,11 +121,19 @@ fun NowPlaying(
         hideNowPlaying()
       },
       dragHandle = {},
-      contentWindowInsets = { WindowInsets(0,0,0,0) }
+      contentWindowInsets = {
+        WindowInsets(
+          0,
+          0,
+          0,
+          0
+        )
+      }
     ) {
       Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
       ) {
         Spacer(modifier = Modifier.size(96.dp))
         AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) {
@@ -135,11 +146,11 @@ fun NowPlaying(
             transition = CrossFade
           )
         }
-        Spacer(modifier = Modifier.size(32.dp))
+        Spacer(modifier = Modifier.size(48.dp))
         Text(
           text = playerState.mediaMetadata.displayTitle.toString(),
           modifier = Modifier.width(384.dp),
-          textAlign = TextAlign.Center,
+          textAlign = TextAlign.Left,
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold
         )
@@ -147,10 +158,17 @@ fun NowPlaying(
         Text(
           text = playerState.mediaMetadata.artist.toString(),
           modifier = Modifier.width(384.dp),
-          textAlign = TextAlign.Center,
+          textAlign = TextAlign.Left,
           style = MaterialTheme.typography.titleMedium
         )
-        Spacer(modifier = Modifier.size(32.dp))
+        Spacer(modifier = Modifier.size(48.dp))
+        LinearProgressIndicator(
+          progress = { progressAnimation },
+          modifier = Modifier
+            .width(384.dp)
+            .clip(RoundedCornerShape(16.dp))
+        )
+        Spacer(modifier = Modifier.size(8.dp))
         Row(modifier = Modifier.width(384.dp)) {
           val duration =
             playerState.mediaMetadata.durationMs!!.toDuration(DurationUnit.MILLISECONDS)
@@ -175,45 +193,97 @@ fun NowPlaying(
                 seconds
               )
             }
-
-          Text(positionString)
+          Text(
+            positionString,
+            style = MaterialTheme.typography.labelMedium
+          )
           Spacer(modifier = Modifier.weight(1f))
-          Text(durationString)
+          Text(
+            durationString,
+            style = MaterialTheme.typography.labelMedium
+          )
         }
-        LinearProgressIndicator(
-          progress = { progressAnimation },
-          modifier = Modifier
-            .width(384.dp)
-            .clip(RoundedCornerShape(16.dp))
-        )
         Spacer(modifier = Modifier.size(32.dp))
-        AnimatedContent(targetState = playerState.isPlaying) { targetState ->
-          if (targetState) {
-            IconButton(onClick = {
-              pause()
-            }) {
-              Icon(
-                imageVector = Icons.Rounded.Pause,
-                contentDescription = "Pause",
-                modifier = Modifier.size(64.dp)
-              )
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.width(256.dp)
+        ) {
+          IconButton(onClick = {
+            scope.launch {
+              sheetState.hide()
+              stop()
             }
-          } else {
-            IconButton(onClick = {
-              play()
-            }) {
+          }) {
+            Icon(
+              imageVector = Icons.Rounded.Stop,
+              contentDescription = "Stop",
+              modifier = Modifier.size(48.dp)
+            )
+          }
+          Spacer(modifier = Modifier.weight(1f))
+          AnimatedContent(targetState = playerState.isPlaying) { targetState ->
+            if (targetState) {
               Icon(
-                imageVector = Icons.Rounded.PlayArrow,
+                imageVector = Icons.Rounded.PauseCircle,
+                contentDescription = "Pause",
+                modifier = Modifier
+                  .size(72.dp)
+                  .clip(CircleShape)
+                  .clickable {
+                    pause()
+                  }
+              )
+            } else {
+              Icon(
+                imageVector = Icons.Rounded.PlayCircle,
                 contentDescription = "Play",
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier
+                  .size(72.dp)
+                  .clip(CircleShape)
+                  .clickable {
+                    play()
+                  }
               )
             }
           }
+          Spacer(modifier = Modifier.weight(1f))
+          IconButton(onClick = {
+          }) {
+            Icon(
+              imageVector = Icons.Rounded.Share,
+              contentDescription = "Share",
+              modifier = Modifier.size(32.dp)
+            )
+          }
         }
+
+        Spacer(modifier = Modifier.size(48.dp))
+        Row(modifier = Modifier.width(384.dp)) {
+          IconButton(onClick = {
+          }) {
+            Icon(
+              imageVector = Icons.Rounded.StarBorder,
+              contentDescription = "Favorite",
+              modifier = Modifier.size(48.dp)
+            )
+          }
+          Spacer(modifier = Modifier.weight(1f))
+          IconButton(onClick = {
+
+          }) {
+            Icon(
+              imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+              contentDescription = "Queue",
+              modifier = Modifier.size(48.dp)
+            )
+          }
+        }
+        Spacer(modifier = Modifier.size(32.dp))
       }
     }
   }
 }
+
 
 @androidx.annotation.OptIn(UnstableApi::class)
 suspend fun updateTime(
