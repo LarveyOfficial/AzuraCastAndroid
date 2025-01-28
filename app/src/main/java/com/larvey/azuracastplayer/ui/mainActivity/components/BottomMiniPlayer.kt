@@ -48,7 +48,7 @@ fun MiniPlayer(
   ) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.padding(start = 8.dp)
+      modifier = Modifier.padding(start = 16.dp)
     ) {
       AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
         GlideImage(
@@ -80,6 +80,7 @@ fun MiniPlayer(
       }
       AnimatedContent(
         targetState = playerState?.isPlaying,
+        modifier = Modifier.padding(end = 15.dp)
       ) { targetState ->
         if (targetState == true) {
           IconButton(onClick = {
