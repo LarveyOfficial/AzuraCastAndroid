@@ -8,13 +8,18 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +36,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -44,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +63,7 @@ import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,6 +83,7 @@ fun NowPlaying(
   pause: () -> Unit,
   play: () -> Unit,
   stop: () -> Unit,
+  currentMount: Mount?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
 
@@ -132,38 +141,47 @@ fun NowPlaying(
       }
     ) {
       Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+          .fillMaxSize()
+          .windowInsetsPadding(WindowInsets.statusBars),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom
+        verticalArrangement = Arrangement.Bottom,
       ) {
 
-        Spacer(modifier = Modifier.size(96.dp))
+        Spacer(Modifier.weight(0.75f))
+
 
         // Album Art
         AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) {
-          GlideImage(
-            model = it,
-            contentDescription = "${playerState.mediaMetadata.albumTitle}",
+          Box(
             modifier = Modifier
-              .size(384.dp)
+              .fillMaxWidth()
+              .padding(horizontal = 16.dp)
               .clip(RoundedCornerShape(16.dp)),
-            transition = CrossFade
-          )
+          ) {
+            GlideImage(
+              model = it,
+              contentDescription = "${playerState.mediaMetadata.albumTitle}",
+              transition = CrossFade,
+              contentScale = ContentScale.FillWidth
+            )
+          }
         }
 
-        Spacer(modifier = Modifier.size(48.dp))
+        Spacer(Modifier.weight(0.25f))
 
         SongAndArtist(playerState)
 
-        Spacer(modifier = Modifier.size(48.dp))
+        Spacer(Modifier.weight(0.25f))
 
         ProgressBar(
           progressAnimation = progressAnimation,
           playerState = playerState,
-          currentPosition = currentPosition
+          currentPosition = currentPosition,
+          currentMount = currentMount
         )
 
-        Spacer(modifier = Modifier.size(32.dp))
+        Spacer(Modifier.weight(0.15f))
 
         // Media Controls + Share
         MediaControls(
@@ -174,10 +192,15 @@ fun NowPlaying(
           playerState = playerState
         )
 
-        Spacer(modifier = Modifier.size(48.dp))
+        Spacer(Modifier.weight(0.25f))
+
 
         // Favorite + Share Buttons
-        Row(modifier = Modifier.width(384.dp)) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+        ) {
           IconButton(
             enabled = false,
             onClick = {
@@ -241,7 +264,9 @@ private fun SongAndArtist(playerState: PlayerState) {
   Column {
     Text(
       text = playerState.mediaMetadata.displayTitle.toString(),
-      modifier = Modifier.width(384.dp),
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp),
       textAlign = TextAlign.Left,
       style = MaterialTheme.typography.titleLarge,
       fontWeight = FontWeight.Bold
@@ -252,7 +277,9 @@ private fun SongAndArtist(playerState: PlayerState) {
     //Artist Name
     Text(
       text = playerState.mediaMetadata.artist.toString(),
-      modifier = Modifier.width(384.dp),
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp),
       textAlign = TextAlign.Left,
       style = MaterialTheme.typography.titleMedium
     )
@@ -262,19 +289,27 @@ private fun SongAndArtist(playerState: PlayerState) {
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-private fun ProgressBar(progressAnimation: Float, playerState: PlayerState, currentPosition: Long) {
+private fun ProgressBar(
+  progressAnimation: Float, playerState: PlayerState, currentPosition: Long,
+  currentMount: Mount?
+) {
   Column {
     LinearProgressIndicator(
       progress = { progressAnimation },
       modifier = Modifier
-        .width(384.dp)
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp)
         .clip(RoundedCornerShape(16.dp))
     )
 
     Spacer(modifier = Modifier.size(8.dp))
 
     // Progress Timestamps
-    Row(modifier = Modifier.width(384.dp)) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp)
+    ) {
       val duration =
         playerState.mediaMetadata.durationMs!!.toDuration(DurationUnit.MILLISECONDS)
 
@@ -303,6 +338,18 @@ private fun ProgressBar(progressAnimation: Float, playerState: PlayerState, curr
         style = MaterialTheme.typography.labelMedium
       )
       Spacer(modifier = Modifier.weight(1f))
+      SuggestionChip(
+        onClick = {},
+        label = {
+          Text(
+            "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
+            style = MaterialTheme.typography.labelSmall
+          )
+        },
+        modifier = Modifier
+          .heightIn(max = 24.dp)
+      )
+      Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
         style = MaterialTheme.typography.labelMedium
@@ -320,7 +367,9 @@ private fun MediaControls(
   val scope = rememberCoroutineScope()
   Row(
     verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier.width(256.dp)
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(horizontal = 64.dp)
   ) {
 
     // Stop Button

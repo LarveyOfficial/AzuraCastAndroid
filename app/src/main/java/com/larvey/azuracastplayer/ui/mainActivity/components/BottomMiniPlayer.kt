@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
@@ -49,7 +48,7 @@ fun MiniPlayer(
   ) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.padding(start = 16.dp)
+      modifier = Modifier.padding(start = 8.dp)
     ) {
       AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
         GlideImage(
@@ -63,12 +62,11 @@ fun MiniPlayer(
         )
       }
       Spacer(modifier = Modifier.size(8.dp))
-      Column {
+      Column(modifier = Modifier.weight(1f)) {
         Text(
           text = playerState?.mediaMetadata?.displayTitle.toString(),
           maxLines = 1,
           modifier = Modifier
-            .widthIn(max = 256.dp)
             .basicMarquee(iterations = Int.MAX_VALUE),
           fontWeight = FontWeight.Bold
         )
@@ -76,15 +74,12 @@ fun MiniPlayer(
           text = playerState?.mediaMetadata?.artist.toString(),
           maxLines = 1,
           modifier = Modifier
-            .widthIn(max = 256.dp)
             .basicMarquee(iterations = Int.MAX_VALUE),
           style = MaterialTheme.typography.labelLarge
         )
       }
-      Spacer(modifier = Modifier.weight(1f))
       AnimatedContent(
         targetState = playerState?.isPlaying,
-        modifier = Modifier.padding(end = 15.dp)
       ) { targetState ->
         if (targetState == true) {
           IconButton(onClick = {
@@ -93,7 +88,7 @@ fun MiniPlayer(
             Icon(
               imageVector = Icons.Rounded.Pause,
               contentDescription = "Pause",
-              modifier = Modifier.size(64.dp)
+              modifier = Modifier.size(48.dp)
             )
           }
         } else {
@@ -103,7 +98,7 @@ fun MiniPlayer(
             Icon(
               imageVector = Icons.Rounded.PlayArrow,
               contentDescription = "Play",
-              modifier = Modifier.size(64.dp)
+              modifier = Modifier.size(48.dp)
             )
           }
         }

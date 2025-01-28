@@ -223,7 +223,8 @@ class MainActivity : ComponentActivity() {
                 showNowPlaying = false
                 mediaController?.stop()
                 mediaController?.clearMediaItems()
-              }
+              },
+              currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId }
             )
           }
         }
