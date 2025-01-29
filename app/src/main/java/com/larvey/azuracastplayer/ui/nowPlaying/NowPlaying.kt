@@ -230,6 +230,7 @@ fun NowPlaying(
           0
         )
       },
+      sheetGesturesEnabled = !showQueue
     ) {
       Box(
         modifier = Modifier
