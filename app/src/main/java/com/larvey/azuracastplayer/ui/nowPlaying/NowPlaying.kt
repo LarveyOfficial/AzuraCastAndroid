@@ -11,7 +11,6 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -34,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +45,7 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -316,10 +318,9 @@ fun NowPlaying(
                   )
                   Spacer(Modifier.weight(0.25f))
 
-                  NowPlayingSongAndArtist(
-                    playerState = playerState,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@AnimatedContent,
+                  SongAndArtist(
+                    songName = playerState.mediaMetadata.title.toString(),
+                    artistName = playerState.mediaMetadata.artist.toString(),
                     small = false
                   )
 
@@ -364,13 +365,13 @@ fun NowPlaying(
                       animatedVisibilityScope = this@AnimatedContent,
                       imageSize = 0.12f
                     )
-                    NowPlayingSongAndArtist(
-                      playerState = playerState,
-                      sharedTransitionScope = this@SharedTransitionLayout,
-                      animatedVisibilityScope = this@AnimatedContent,
+                    SongAndArtist(
+                      songName = playerState.mediaMetadata.title.toString(),
+                      artistName = playerState.mediaMetadata.artist.toString(),
                       small = true
                     )
                   }
+                  Spacer(Modifier.size(4.dp))
                   HorizontalDivider(
                     modifier = Modifier
                       .padding(
@@ -379,25 +380,86 @@ fun NowPlaying(
                       )
                       .clip(RoundedCornerShape(16.dp))
                   )
-                  if (playingNext != null) {
-                    Text(
-                      "Up Next",
-                      modifier = Modifier.padding(start = 16.dp),
-                      style = MaterialTheme.typography.labelSmall
-                    )
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.Center,
-                      modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                    ) {
-                      OtherAlbumArt(playingNext.song.art)
-                      OtherSongAndArtist(
-                        songName = playingNext.song.text,
-                        artistName = playingNext.song.artist
+                  Column {
+                    if (!songHistory.isNullOrEmpty()) {
+                      Text(
+                        "Song History",
+                        modifier = Modifier.padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
                       )
+                      LazyColumn (modifier = Modifier.fillMaxHeight(0.6f)) {
+                        itemsIndexed(songHistory) { _, item ->
+                          Row (
+                            modifier = Modifier
+                              .padding(horizontal = 16.dp)
+                              .padding(bottom = 8.dp)
+                              .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                          ) {
+                            OtherAlbumArt(item.song.art)
+                            SongAndArtist(
+                              songName = item.song.title,
+                              artistName = item.song.artist,
+                              small = true
+                            )
+                          }
+                        }
+                      }
+                    }
+                    if (playingNext != null) {
+                      HorizontalDivider(
+                        modifier = Modifier
+                          .padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                          )
+                          .clip(RoundedCornerShape(16.dp))
+                      )
+                      Text(
+                        "Up Next",
+                        modifier = Modifier.padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                      )
+                      Row (
+                        modifier = Modifier
+                          .padding(horizontal = 16.dp)
+                          .padding(bottom = 8.dp)
+                          .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                      ){
+                        OtherAlbumArt(playingNext.song.art)
+                        SongAndArtist(
+                          songName = playingNext.song.title,
+                          artistName = playingNext.song.artist,
+                          small = true
+                        )
+                      }
                     }
                   }
+
+//                  if (playingNext != null) {
+//                    Text(
+//                      "Up Next",
+//                      modifier = Modifier.padding(start = 16.dp),
+//                      style = MaterialTheme.typography.labelSmall
+//                    )
+//
+//                    Row(
+//                      verticalAlignment = Alignment.CenterVertically,
+//                      horizontalArrangement = Arrangement.Center,
+//                      modifier = Modifier
+//                        .padding(horizontal = 16.dp)
+//                    ) {
+//                      OtherAlbumArt(playingNext.song.art)
+//                      SongAndArtist(
+//                        songName = playingNext.song.title,
+//                        artistName = playingNext.song.artist,
+//                        small = true
+//                      )
+//                    }
+//                  }
                 }
               }
             }
@@ -479,7 +541,7 @@ fun OtherAlbumArt(
       model = url,
       modifier = Modifier
         .padding(horizontal = 16.dp)
-        .fillMaxHeight(0.14f)
+        .fillMaxWidth(0.27f)
         .aspectRatio(1f)
         .clip(RoundedCornerShape(16.dp)),
       contentDescription = "Album Art",
@@ -489,35 +551,15 @@ fun OtherAlbumArt(
   }
 }
 
-@OptIn(
-  ExperimentalSharedTransitionApi::class,
-)
 @Composable
-private fun NowPlayingSongAndArtist(
-  playerState: PlayerState,
-  sharedTransitionScope: SharedTransitionScope,
-  animatedVisibilityScope: AnimatedVisibilityScope,
+private fun SongAndArtist(
+  songName: String,
+  artistName: String,
   small: Boolean
 ) {
-  with(sharedTransitionScope) {
-    val animatedPadding by animateDpAsState(
-      if (small) {
-        4.dp
-      } else {
-        16.dp
-      },
-      label = "text padding"
-    )
-    Column(
-      modifier = Modifier
-        .sharedElement(
-          rememberSharedContentState(key = "song and artist"),
-          animatedVisibilityScope = animatedVisibilityScope
-        )
-        .padding(animatedPadding)
-    ) {
+    Column (modifier = Modifier.padding(if(small) 4.dp else 16.dp)) {
       Text(
-        text = playerState.mediaMetadata.displayTitle.toString(),
+        text = songName,
         modifier = Modifier
           .fillMaxWidth()
           .basicMarquee(iterations = Int.MAX_VALUE)
@@ -540,7 +582,7 @@ private fun NowPlayingSongAndArtist(
 
       //Artist Name
       Text(
-        text = playerState.mediaMetadata.artist.toString(),
+        text = artistName,
         modifier = Modifier
           .fillMaxWidth()
           .basicMarquee(iterations = Int.MAX_VALUE)
@@ -558,48 +600,7 @@ private fun NowPlayingSongAndArtist(
         color = Color.White
       )
     }
-  }
 }
-
-@Composable
-private fun OtherSongAndArtist(
-  songName: String,
-  artistName: String
-) {
-  Column(
-    modifier = Modifier
-      .padding(4.dp)
-  ) {
-    Text(
-      text = songName,
-      modifier = Modifier
-        .fillMaxWidth()
-        .basicMarquee(iterations = Int.MAX_VALUE)
-        .animateContentSize(),
-      textAlign = TextAlign.Left,
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
-      maxLines = 1,
-      color = Color.White
-    )
-
-    Spacer(modifier = Modifier.size(4.dp))
-
-    //Artist Name
-    Text(
-      text = artistName,
-      modifier = Modifier
-        .fillMaxWidth()
-        .basicMarquee(iterations = Int.MAX_VALUE)
-        .animateContentSize(),
-      textAlign = TextAlign.Left,
-      maxLines = 1,
-      style = MaterialTheme.typography.titleSmall,
-      color = Color.White
-    )
-  }
-}
-
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
