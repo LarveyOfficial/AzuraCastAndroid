@@ -64,7 +64,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge(
       navigationBarStyle = SystemBarStyle.light(
-        Color.TRANSPARENT, Color.TRANSPARENT
+        Color.TRANSPARENT,
+        Color.TRANSPARENT
       )
     )
 
@@ -91,7 +92,8 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(key1 = mainActivityViewModel?.savedRadioList) {
           while (mainActivityViewModel?.savedRadioList != null && mainActivityViewModel?.savedRadioList != emptyList<SavedStation>()) {
             Log.d(
-              "DEBUG", "Waiting 30 seconds to fetch data"
+              "DEBUG",
+              "Waiting 30 seconds to fetch data"
             )
             delay(30000)
             mainActivityViewModel?.updateRadioList()
@@ -118,46 +120,56 @@ class MainActivity : ComponentActivity() {
           }
         }
 
-
-
-        Scaffold(topBar = {
-          TopAppBar(colors = topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.onBackground,
-          ), title = { Text("Radio List") })
-        }, floatingActionButton = {
-          FloatingActionButton(onClick = {
-            showAddDialog = true
-          }) {
-            Icon(
-              Icons.Rounded.Add, contentDescription = "Add"
-            )
-          }
-        }, bottomBar = {
-          AnimatedVisibility(
-            visible = playerState?.currentMediaItem?.mediaId != null,
-            enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
-            exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
-          ) {
-            BottomAppBar(
-              containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ) {
-              MiniPlayer(playerState = playerState, showNowPlaying = {
-                showNowPlaying = true
-              }, pause = {
-                mediaController?.pause()
-              }, play = {
-                mediaController?.play()
-              })
+        Scaffold(
+          topBar = {
+            TopAppBar(colors = topAppBarColors(
+              containerColor = MaterialTheme.colorScheme.background,
+              titleContentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+              title = { Text("Radio List") })
+          },
+          floatingActionButton = {
+            FloatingActionButton(onClick = {
+              showAddDialog = true
+            }) {
+              Icon(
+                Icons.Rounded.Add,
+                contentDescription = "Add"
+              )
             }
-          }
-        }) { innerPadding ->
+          },
+          bottomBar = {
+            AnimatedVisibility(
+              visible = playerState?.currentMediaItem?.mediaId != null,
+              enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
+              exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
+            ) {
+              BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+              ) {
+                MiniPlayer(
+                  playerState = playerState,
+                  showNowPlaying = {
+                    showNowPlaying = true
+                  },
+                  pause = {
+                    mediaController?.pause()
+                  },
+                  play = {
+                    mediaController?.play()
+                  })
+              }
+            }
+          }) { innerPadding ->
 
           MyRadios(savedRadioList = mainActivityViewModel?.savedRadioList,
             innerPadding = innerPadding,
             setPlaybackSource = { url, uri, shortCode ->
               mainActivityViewModel?.setPlaybackSource(
-                url, uri, shortCode, mediaController
+                url,
+                uri,
+                shortCode,
+                mediaController
               )
 
             },
@@ -181,9 +193,10 @@ class MainActivity : ComponentActivity() {
           }
 
           showNowPlaying -> {
-            NowPlaying(hideNowPlaying = {
-              showNowPlaying = false
-            },
+            NowPlaying(
+              hideNowPlaying = {
+                showNowPlaying = false
+              },
               playerState = playerState,
               pause = {
                 mediaController?.pause()
@@ -196,7 +209,10 @@ class MainActivity : ComponentActivity() {
                 mediaController?.stop()
                 mediaController?.clearMediaItems()
               },
-              currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId })
+              currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
+              songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
+              playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext
+            )
           }
         }
       }

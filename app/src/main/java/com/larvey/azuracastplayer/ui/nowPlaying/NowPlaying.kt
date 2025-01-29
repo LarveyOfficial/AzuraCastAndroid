@@ -4,13 +4,20 @@ import android.os.Build
 import android.util.Log
 import android.view.RoundedCorner
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +45,7 @@ import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -45,6 +53,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -69,6 +78,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -81,6 +91,8 @@ import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.classes.data.Mount
+import com.larvey.azuracastplayer.classes.data.PlayingNext
+import com.larvey.azuracastplayer.classes.data.SongHistory
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.mainActivity.components.meshGradient
 import kotlinx.coroutines.Dispatchers
@@ -91,10 +103,10 @@ import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(
   ExperimentalMaterial3Api::class,
-  ExperimentalGlideComposeApi::class
+  ExperimentalGlideComposeApi::class,
+  ExperimentalSharedTransitionApi::class
 )
 @Composable
 fun NowPlaying(
@@ -104,6 +116,8 @@ fun NowPlaying(
   play: () -> Unit,
   stop: () -> Unit,
   currentMount: Mount?,
+  songHistory: List<SongHistory>?,
+  playingNext: PlayingNext?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
 
@@ -173,7 +187,10 @@ fun NowPlaying(
 
     LaunchedEffect(playerState.mediaMetadata.artworkUri) {
       this.async(Dispatchers.IO) {
-        Log.d("DEBUG", "Fetching image")
+        Log.d(
+          "DEBUG",
+          "Fetching image"
+        )
         Glide.with(appContext).asBitmap().load(
           playerState.mediaMetadata.artworkUri.toString()
         ).submit().get().let { bitmap ->
@@ -195,7 +212,8 @@ fun NowPlaying(
     }
 
 
-    ModalBottomSheet(modifier = Modifier.fillMaxSize(),
+    ModalBottomSheet(
+      modifier = Modifier.fillMaxSize(),
       sheetState = sheetState,
       shape = RoundedCornerShape(getRoundedCornerRadius()),
       onDismissRequest = {
@@ -210,8 +228,8 @@ fun NowPlaying(
           0
         )
       },
-      ) {
-      Column(
+    ) {
+      Box(
         modifier = Modifier
           .fillMaxSize()
           .meshGradient(
@@ -219,144 +237,176 @@ fun NowPlaying(
             resolutionY = 5,
             points = listOf(
               // @formatter:off
-                listOf(
-                  Offset(0f, 0f) to colorList[0], // No move
-                  Offset(animateA, 0f) to colorList[1], // Only x moves
-                  Offset(1f, 0f) to colorList[2], // No move
-                ), listOf(
-                  Offset(0f, animateB) to colorList[3], // Only y moves
-                  Offset(animateB, 1f - animateA) to colorList[4],
-                  Offset(1f, 1f - animateA) to colorList[5], // Only y moves
-                ), listOf(
-                  Offset(0f, 1f) to colorList[6], // No move
-                  Offset(1f - animateB, 1f) to colorList[7], //Only x moves
-                  Offset(1f, 1f) to colorList[8], // No move
-                )
-                // @formatter:on
+              listOf(
+                Offset(0f, 0f) to colorList[0], // No move
+                Offset(animateA, 0f) to colorList[1], // Only x moves
+                Offset(1f, 0f) to colorList[2], // No move
+              ), listOf(
+                Offset(0f, animateB) to colorList[3], // Only y moves
+                Offset(animateB, 1f - animateA) to colorList[4],
+                Offset(1f, 1f - animateA) to colorList[5], // Only y moves
+              ), listOf(
+                Offset(0f, 1f) to colorList[6], // No move
+                Offset(1f - animateB, 1f) to colorList[7], //Only x moves
+                Offset(1f, 1f) to colorList[8], // No move
+              )
+              // @formatter:on
             )
           )
-          .windowInsetsPadding(WindowInsets.systemBars),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom,
       ) {
-
-        Spacer(Modifier.weight(0.75f))
-
-
-        AnimatedContent(showQueue) { targetState ->
-          if (!targetState) {
-            AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
-              Box(
-                modifier = Modifier
-                  .padding(horizontal = 16.dp)
-                  .fillMaxHeight(0.45f)
-                  .aspectRatio(1f)
-                  .clip(RoundedCornerShape(16.dp)),
+        Scaffold(
+          modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars),
+          containerColor = Color.Transparent,
+          bottomBar = {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+            ) {
+              IconButton(
+                enabled = false,
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors(
+                  contentColor = Color.White,
+                  disabledContentColor = Color.Gray
+                )
               ) {
-                GlideImage(
-                  model = url,
-                  contentDescription = "${playerState.mediaMetadata.albumTitle}",
-                  transition = CrossFade,
-                  contentScale = ContentScale.FillWidth,
+                Icon(
+                  imageVector = Icons.Rounded.StarBorder,
+                  contentDescription = "Favorite",
+                  modifier = Modifier.size(48.dp),
+                )
+              }
+              Spacer(modifier = Modifier.weight(1f))
+              IconButton(
+                enabled = true,
+                onClick = {
+                  showQueue = !showQueue
+                },
+                colors = IconButtonDefaults.iconButtonColors(
+                  contentColor = Color.White,
+                  disabledContentColor = Color.Gray
+                )
+              ) {
+                Icon(
+                  imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                  contentDescription = "Queue",
+                  modifier = Modifier.size(48.dp)
                 )
               }
             }
-          } else {
-            AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
-              Row {
-                Box(
+          }) { innerPadding ->
+          SharedTransitionLayout {
+            AnimatedContent(showQueue) { targetState ->
+              if (!targetState) {
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.Bottom,
                   modifier = Modifier
-                    .size(64.dp)
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(16.dp))
+                    .padding(innerPadding)
                 ) {
-                  GlideImage(
-                    model = url,
-                    contentDescription = "${playerState.mediaMetadata.albumTitle}",
-                    transition = CrossFade,
-                    contentScale = ContentScale.FillWidth,
+                  Spacer(Modifier.weight(0.75f))
+                  NowPlayingAlbumArt(
+                    playerState = playerState,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@AnimatedContent,
+                    imageSize = 0.45f
                   )
+                  Spacer(Modifier.weight(0.25f))
+
+                  NowPlayingSongAndArtist(
+                    playerState = playerState,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@AnimatedContent,
+                    small = false
+                  )
+
+                  Spacer(Modifier.weight(0.25f))
+
+                  ProgressBar(
+                    progressAnimation = progressAnimation,
+                    playerState = playerState,
+                    currentPosition = currentPosition,
+                    currentMount = currentMount,
+                    palette = palette
+                  )
+
+                  Spacer(Modifier.weight(0.15f))
+
+                  // Media Controls + Share
+                  MediaControls(
+                    sheetState = sheetState,
+                    stop = stop,
+                    pause = pause,
+                    play = play,
+                    playerState = playerState
+                  )
+
+                  Spacer(Modifier.weight(0.25f))
+                }
+              } else {
+                Column(Modifier.padding(innerPadding)) {
+                  Spacer(Modifier.padding(top = 16.dp))
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                      .padding(horizontal = 16.dp)
+                      .clickable(onClick = {
+                        showQueue = false
+                      })
+                  ) {
+                    NowPlayingAlbumArt(
+                      playerState = playerState,
+                      sharedTransitionScope = this@SharedTransitionLayout,
+                      animatedVisibilityScope = this@AnimatedContent,
+                      imageSize = 0.12f
+                    )
+                    NowPlayingSongAndArtist(
+                      playerState = playerState,
+                      sharedTransitionScope = this@SharedTransitionLayout,
+                      animatedVisibilityScope = this@AnimatedContent,
+                      small = true
+                    )
+                  }
+                  HorizontalDivider(
+                    modifier = Modifier
+                      .padding(
+                        horizontal = 8.dp,
+                        vertical = 4.dp
+                      )
+                      .clip(RoundedCornerShape(16.dp))
+                  )
+                  if (playingNext != null) {
+                    Text(
+                      "Up Next",
+                      modifier = Modifier.padding(start = 16.dp),
+                      style = MaterialTheme.typography.labelSmall
+                    )
+                    Row(
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.Center,
+                      modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                    ) {
+                      OtherAlbumArt(playingNext.song.art)
+                      OtherSongAndArtist(
+                        songName = playingNext.song.text,
+                        artistName = playingNext.song.artist
+                      )
+                    }
+                  }
                 }
               }
-
             }
           }
         }
-        // Album Art
-
-
-        Spacer(Modifier.weight(0.25f))
-
-        SongAndArtist(playerState)
-
-        Spacer(Modifier.weight(0.25f))
-
-        ProgressBar(
-          progressAnimation = progressAnimation,
-          playerState = playerState,
-          currentPosition = currentPosition,
-          currentMount = currentMount,
-          palette = palette
-        )
-
-        Spacer(Modifier.weight(0.15f))
-
-        // Media Controls + Share
-        MediaControls(
-          sheetState = sheetState,
-          stop = stop,
-          pause = pause,
-          play = play,
-          playerState = playerState
-        )
-
-        Spacer(Modifier.weight(0.25f))
-
-
-        // Favorite + Share Buttons
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-        ) {
-          IconButton(
-            enabled = false,
-            onClick = {},
-            colors = IconButtonDefaults.iconButtonColors(
-              contentColor = Color.White,
-              disabledContentColor = Color.Gray
-            )
-          ) {
-            Icon(
-              imageVector = Icons.Rounded.StarBorder,
-              contentDescription = "Favorite",
-              modifier = Modifier.size(48.dp),
-            )
-          }
-          Spacer(modifier = Modifier.weight(1f))
-          IconButton(
-            enabled = true,
-            onClick = {
-              showQueue = !showQueue
-            },
-            colors = IconButtonDefaults.iconButtonColors(
-              contentColor = Color.White,
-              disabledContentColor = Color.Gray
-            )
-          ) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-              contentDescription = "Queue",
-              modifier = Modifier.size(48.dp)
-            )
-          }
-        }
-        Spacer(modifier = Modifier.size(16.dp))
       }
     }
   }
 }
-
 
 @androidx.annotation.OptIn(UnstableApi::class)
 suspend fun updateTime(
@@ -386,17 +436,150 @@ fun getRoundedCornerRadius(): Dp {
   return 0.dp
 }
 
+
+@OptIn(
+  ExperimentalSharedTransitionApi::class,
+  ExperimentalGlideComposeApi::class
+)
 @Composable
-private fun SongAndArtist(playerState: PlayerState) {
-  Column {
+fun NowPlayingAlbumArt(
+  playerState: PlayerState,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedVisibilityScope,
+  imageSize: Float
+) {
+  AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
+    with(sharedTransitionScope) {
+      GlideImage(
+        model = url,
+        modifier = Modifier
+          .padding(horizontal = 16.dp)
+          .fillMaxHeight(imageSize)
+          .aspectRatio(1f)
+          .sharedElement(
+            rememberSharedContentState(key = "album art"),
+            animatedVisibilityScope = animatedVisibilityScope
+          )
+          .clip(RoundedCornerShape(16.dp)),
+        contentDescription = "${playerState.mediaMetadata.albumTitle}",
+        transition = CrossFade,
+        contentScale = ContentScale.FillBounds
+      )
+    }
+  }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun OtherAlbumArt(
+  artURL: String
+) {
+  AnimatedContent(artURL) { url ->
+    GlideImage(
+      model = url,
+      modifier = Modifier
+        .padding(horizontal = 16.dp)
+        .fillMaxHeight(0.14f)
+        .aspectRatio(1f)
+        .clip(RoundedCornerShape(16.dp)),
+      contentDescription = "Album Art",
+      transition = CrossFade,
+      contentScale = ContentScale.FillBounds
+    )
+  }
+}
+
+@OptIn(
+  ExperimentalSharedTransitionApi::class,
+)
+@Composable
+private fun NowPlayingSongAndArtist(
+  playerState: PlayerState,
+  sharedTransitionScope: SharedTransitionScope,
+  animatedVisibilityScope: AnimatedVisibilityScope,
+  small: Boolean
+) {
+  with(sharedTransitionScope) {
+    val animatedPadding by animateDpAsState(
+      if (small) {
+        4.dp
+      } else {
+        16.dp
+      },
+      label = "text padding"
+    )
+    Column(
+      modifier = Modifier
+        .sharedElement(
+          rememberSharedContentState(key = "song and artist"),
+          animatedVisibilityScope = animatedVisibilityScope
+        )
+        .padding(animatedPadding)
+    ) {
+      Text(
+        text = playerState.mediaMetadata.displayTitle.toString(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .basicMarquee(iterations = Int.MAX_VALUE)
+          .animateContentSize(),
+        textAlign = TextAlign.Left,
+        style = lerp(
+          MaterialTheme.typography.titleMedium,
+          MaterialTheme.typography.titleLarge,
+          animateFloatAsState(
+            if (small) 0f else 1f,
+            label = "Song Name"
+          ).value
+        ),
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        color = Color.White
+      )
+
+      Spacer(modifier = Modifier.size(4.dp))
+
+      //Artist Name
+      Text(
+        text = playerState.mediaMetadata.artist.toString(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .basicMarquee(iterations = Int.MAX_VALUE)
+          .animateContentSize(),
+        textAlign = TextAlign.Left,
+        maxLines = 1,
+        style = lerp(
+          MaterialTheme.typography.titleSmall,
+          MaterialTheme.typography.titleMedium,
+          animateFloatAsState(
+            if (small) 0f else 1f,
+            label = "Artist Name"
+          ).value
+        ),
+        color = Color.White
+      )
+    }
+  }
+}
+
+@Composable
+private fun OtherSongAndArtist(
+  songName: String,
+  artistName: String
+) {
+  Column(
+    modifier = Modifier
+      .padding(4.dp)
+  ) {
     Text(
-      text = playerState.mediaMetadata.displayTitle.toString(),
+      text = songName,
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 16.dp),
+        .basicMarquee(iterations = Int.MAX_VALUE)
+        .animateContentSize(),
       textAlign = TextAlign.Left,
-      style = MaterialTheme.typography.titleLarge,
+      style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold,
+      maxLines = 1,
       color = Color.White
     )
 
@@ -404,12 +587,14 @@ private fun SongAndArtist(playerState: PlayerState) {
 
     //Artist Name
     Text(
-      text = playerState.mediaMetadata.artist.toString(),
+      text = artistName,
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 16.dp),
+        .basicMarquee(iterations = Int.MAX_VALUE)
+        .animateContentSize(),
       textAlign = TextAlign.Left,
-      style = MaterialTheme.typography.titleMedium,
+      maxLines = 1,
+      style = MaterialTheme.typography.titleSmall,
       color = Color.White
     )
   }
