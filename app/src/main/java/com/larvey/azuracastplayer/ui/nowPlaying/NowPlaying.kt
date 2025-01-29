@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.nowPlaying
 
 import android.os.Build
+import android.util.Log
 import android.view.RoundedCorner
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -128,6 +129,8 @@ fun NowPlaying(
 
     var palette by remember { mutableStateOf<Palette?>(null) }
 
+    var showQueue by remember { mutableStateOf(false) }
+
 
     val animateA by transitionA.animateFloat(
       initialValue = 0.3f,
@@ -168,6 +171,29 @@ fun NowPlaying(
       )
     }
 
+    LaunchedEffect(playerState.mediaMetadata.artworkUri) {
+      this.async(Dispatchers.IO) {
+        Log.d("DEBUG", "Fetching image")
+        Glide.with(appContext).asBitmap().load(
+          playerState.mediaMetadata.artworkUri.toString()
+        ).submit().get().let { bitmap ->
+          palette = Palette.from(bitmap).maximumColorCount(24).generate()
+          val paletteColors = listOf(
+            Color(
+              palette?.darkVibrantSwatch?.rgb ?: defaultColor.toArgb()
+            ),
+            Color(
+              palette?.darkMutedSwatch?.rgb ?: defaultColor.toArgb()
+            ),
+            Color(
+              palette?.vibrantSwatch?.rgb ?: defaultColor.toArgb()
+            )
+          )
+          colorList = List(9) { paletteColors.random() }
+        }
+      }.await()
+    }
+
 
     ModalBottomSheet(modifier = Modifier.fillMaxSize(),
       sheetState = sheetState,
@@ -183,13 +209,13 @@ fun NowPlaying(
           0,
           0
         )
-      }) {
-
+      },
+      ) {
       Column(
         modifier = Modifier
           .fillMaxSize()
           .meshGradient(
-            resolutionX = 3,
+            resolutionX = 5,
             resolutionY = 5,
             points = listOf(
               // @formatter:off
@@ -216,43 +242,48 @@ fun NowPlaying(
 
         Spacer(Modifier.weight(0.75f))
 
-        // Album Art
-        AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
-          LaunchedEffect(url) {
-            this.async(Dispatchers.Default) {
-              Glide.with(appContext).asBitmap().load(url).submit().get().let { bitmap ->
-                palette = Palette.from(bitmap).maximumColorCount(24).generate()
-                val paletteColors = listOf(
-                  Color(
-                    palette?.darkVibrantSwatch?.rgb ?: defaultColor.toArgb()
-                  ),
-                  Color(
-                    palette?.darkMutedSwatch?.rgb ?: defaultColor.toArgb()
-                  ),
-                  Color(
-                    palette?.vibrantSwatch?.rgb ?: defaultColor.toArgb()
-                  )
-                )
-                colorList = List(9) { paletteColors.random() }
-              }
-            }.await()
-          }
 
-          Box(
-            modifier = Modifier
-              .padding(horizontal = 16.dp)
-              .fillMaxHeight(0.45f)
-              .aspectRatio(1f)
-              .clip(RoundedCornerShape(16.dp)),
-          ) {
-            GlideImage(
-              model = url,
-              contentDescription = "${playerState.mediaMetadata.albumTitle}",
-              transition = CrossFade,
-              contentScale = ContentScale.FillWidth,
-            )
+        AnimatedContent(showQueue) { targetState ->
+          if (!targetState) {
+            AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
+              Box(
+                modifier = Modifier
+                  .padding(horizontal = 16.dp)
+                  .fillMaxHeight(0.45f)
+                  .aspectRatio(1f)
+                  .clip(RoundedCornerShape(16.dp)),
+              ) {
+                GlideImage(
+                  model = url,
+                  contentDescription = "${playerState.mediaMetadata.albumTitle}",
+                  transition = CrossFade,
+                  contentScale = ContentScale.FillWidth,
+                )
+              }
+            }
+          } else {
+            AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
+              Row {
+                Box(
+                  modifier = Modifier
+                    .size(64.dp)
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(16.dp))
+                ) {
+                  GlideImage(
+                    model = url,
+                    contentDescription = "${playerState.mediaMetadata.albumTitle}",
+                    transition = CrossFade,
+                    contentScale = ContentScale.FillWidth,
+                  )
+                }
+              }
+
+            }
           }
         }
+        // Album Art
+
 
         Spacer(Modifier.weight(0.25f))
 
@@ -304,8 +335,10 @@ fun NowPlaying(
           }
           Spacer(modifier = Modifier.weight(1f))
           IconButton(
-            enabled = false,
-            onClick = {},
+            enabled = true,
+            onClick = {
+              showQueue = !showQueue
+            },
             colors = IconButtonDefaults.iconButtonColors(
               contentColor = Color.White,
               disabledContentColor = Color.Gray
