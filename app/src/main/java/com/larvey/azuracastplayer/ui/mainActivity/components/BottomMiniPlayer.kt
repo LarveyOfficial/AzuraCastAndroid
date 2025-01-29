@@ -32,10 +32,7 @@ import com.larvey.azuracastplayer.state.PlayerState
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MiniPlayer(
-  playerState: PlayerState?,
-  showNowPlaying: () -> Unit,
-  pause: () -> Unit,
-  play: () -> Unit
+  playerState: PlayerState?, showNowPlaying: () -> Unit, pause: () -> Unit, play: () -> Unit
 ) {
   Surface(
     onClick = {
@@ -47,8 +44,7 @@ fun MiniPlayer(
     color = MaterialTheme.colorScheme.surfaceContainer
   ) {
     Row(
-      verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.padding(start = 16.dp)
+      verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)
     ) {
       AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
         GlideImage(
@@ -66,21 +62,18 @@ fun MiniPlayer(
         Text(
           text = playerState?.mediaMetadata?.displayTitle.toString(),
           maxLines = 1,
-          modifier = Modifier
-            .basicMarquee(iterations = Int.MAX_VALUE),
+          modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
           fontWeight = FontWeight.Bold
         )
         Text(
           text = playerState?.mediaMetadata?.artist.toString(),
           maxLines = 1,
-          modifier = Modifier
-            .basicMarquee(iterations = Int.MAX_VALUE),
+          modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
           style = MaterialTheme.typography.labelLarge
         )
       }
       AnimatedContent(
-        targetState = playerState?.isPlaying,
-        modifier = Modifier.padding(end = 15.dp)
+        targetState = playerState?.isPlaying, modifier = Modifier.padding(end = 15.dp)
       ) { targetState ->
         if (targetState == true) {
           IconButton(onClick = {

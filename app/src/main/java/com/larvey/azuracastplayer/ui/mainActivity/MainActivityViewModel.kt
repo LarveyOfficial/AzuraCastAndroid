@@ -29,12 +29,10 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     if (fetchData.value) {
       for (item in savedRadioList) {
         Log.d(
-          "DEBUG",
-          "Fetching Data for ${item.name}"
+          "DEBUG", "Fetching Data for ${item.name}"
         )
         nowPlayingData.getStationInformation(
-          item.url,
-          item.shortcode
+          item.url, item.shortcode
         )
       }
 
@@ -46,10 +44,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   ) {
     val uri = Uri.parse(uri)
     nowPlayingData.setPlaybackSource(
-      uri = uri,
-      url = url,
-      shortCode = shortCode,
-      mediaPlayer = mediaController
+      uri = uri, url = url, shortCode = shortCode, mediaPlayer = mediaController
     )
   }
 
@@ -71,10 +66,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     viewModelScope.launch {
       for (item in stations) {
         savedStationsDB.saveStation(
-          item.name,
-          item.shortcode,
-          item.url,
-          item.defaultMount
+          item.name, item.shortcode, item.url, item.defaultMount
         )
       }
       getStationList()

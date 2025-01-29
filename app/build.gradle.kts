@@ -13,8 +13,8 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 29
     targetSdk = 35
-    versionCode = 5
-    versionName = "alpha-1.3b"
+    versionCode = 6
+    versionName = "alpha-1.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -70,6 +70,8 @@ dependencies {
   implementation("androidx.compose.material3:material3:1.4.0-alpha06")
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
+  implementation(libs.androidx.palette)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.material.icons.extended)

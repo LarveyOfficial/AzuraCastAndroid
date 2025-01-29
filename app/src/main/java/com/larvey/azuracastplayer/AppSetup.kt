@@ -35,8 +35,7 @@ class AppSetup : Application() {
       savedStations = stations
       for (item in stations) {
         nowPlayingData.getStationInformation(
-          url = item.url,
-          shortCode = item.shortcode
+          url = item.url, shortCode = item.shortcode
         )
       }
     }
