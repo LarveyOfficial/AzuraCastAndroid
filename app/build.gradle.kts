@@ -53,6 +53,8 @@ dependencies {
 
   val room_version = "2.6.1"
 
+  implementation(libs.androidx.navigation.compose)
+
   implementation(libs.navigation.compose)
 
   implementation("androidx.room:room-runtime:$room_version")
@@ -72,6 +74,8 @@ dependencies {
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
   implementation(libs.androidx.palette)
+
+  implementation(libs.androidx.activity)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.material.icons.extended)

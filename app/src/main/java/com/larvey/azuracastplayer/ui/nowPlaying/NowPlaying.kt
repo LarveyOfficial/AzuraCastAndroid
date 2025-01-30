@@ -3,6 +3,7 @@ package com.larvey.azuracastplayer.ui.nowPlaying
 import android.os.Build
 import android.util.Log
 import android.view.RoundedCorner
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -35,17 +36,17 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.PauseCircle
 import androidx.compose.material.icons.rounded.PlayCircle
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -129,8 +130,6 @@ fun NowPlaying(
 
     val appContext = LocalContext.current.applicationContext
 
-    rememberCoroutineScope()
-
     var currentProgress by remember { mutableFloatStateOf(0f) }
     var currentPosition by remember { mutableLongStateOf(0) }
 
@@ -140,6 +139,8 @@ fun NowPlaying(
     val transitionB = rememberInfiniteTransition(label = "Y")
 
     val defaultColor = BottomSheetDefaults.ContainerColor
+
+    val scope = rememberCoroutineScope()
 
     var colorList by remember { mutableStateOf(List(9) { defaultColor }) }
 
@@ -213,11 +214,12 @@ fun NowPlaying(
       }.await()
     }
 
+    val scrollState = rememberLazyListState()
 
     ModalBottomSheet(
       modifier = Modifier.fillMaxSize(),
       sheetState = sheetState,
-      shape = RoundedCornerShape(getRoundedCornerRadius()),
+      shape = RoundedCornerShape(getRoundedCornerRadius() - 12.dp),
       onDismissRequest = {
         hideNowPlaying()
       },
@@ -230,8 +232,22 @@ fun NowPlaying(
           0
         )
       },
-      sheetGesturesEnabled = !showQueue
+      sheetGesturesEnabled = !scrollState.canScrollBackward
     ) {
+      BackHandler(
+        enabled = true
+      ) {
+        if (showQueue) {
+          showQueue = false
+        } else {
+          scope.launch {
+            sheetState.hide()
+            hideNowPlaying()
+          }
+
+        }
+      }
+
       Box(
         modifier = Modifier
           .fillMaxSize()
@@ -263,43 +279,67 @@ fun NowPlaying(
             .windowInsetsPadding(WindowInsets.systemBars),
           containerColor = Color.Transparent,
           bottomBar = {
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+            Column(
+              horizontalAlignment = Alignment.CenterHorizontally,
+              verticalArrangement = Arrangement.Bottom,
+              modifier = Modifier.fillMaxHeight(0.27f)
             ) {
-              IconButton(
-                enabled = false,
-                onClick = {},
-                colors = IconButtonDefaults.iconButtonColors(
-                  contentColor = Color.White,
-                  disabledContentColor = Color.Gray
-                )
+              ProgressBar(
+                progressAnimation = progressAnimation,
+                playerState = playerState,
+                currentPosition = currentPosition,
+                currentMount = currentMount,
+                palette = palette
+              )
+              Spacer(Modifier.weight(0.05f))
+              // Media Controls + Share
+              MediaControls(
+                sheetState = sheetState,
+                stop = stop,
+                pause = pause,
+                play = play,
+                playerState = playerState
+              )
+              Spacer(Modifier.weight(0.1f))
+              Row(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(horizontal = 16.dp)
               ) {
-                Icon(
-                  imageVector = Icons.Rounded.StarBorder,
-                  contentDescription = "Favorite",
-                  modifier = Modifier.size(48.dp),
-                )
-              }
-              Spacer(modifier = Modifier.weight(1f))
-              IconButton(
-                enabled = true,
-                onClick = {
-                  showQueue = !showQueue
-                },
-                colors = IconButtonDefaults.iconButtonColors(
-                  contentColor = Color.White,
-                  disabledContentColor = Color.Gray
-                )
-              ) {
-                Icon(
-                  imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                  contentDescription = "Queue",
-                  modifier = Modifier.size(48.dp)
-                )
+                IconButton(
+                  enabled = false,
+                  onClick = {},
+                  colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = Color.White,
+                    disabledContentColor = Color.Gray
+                  )
+                ) {
+                  Icon(
+                    imageVector = Icons.Rounded.StarBorder,
+                    contentDescription = "Favorite",
+                    modifier = Modifier.size(48.dp),
+                  )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                  enabled = true,
+                  onClick = {
+                    showQueue = !showQueue
+                  },
+                  colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = Color.White,
+                    disabledContentColor = Color.Gray
+                  )
+                ) {
+                  Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                    contentDescription = "Queue",
+                    modifier = Modifier.size(48.dp)
+                  )
+                }
               }
             }
+
           }) { innerPadding ->
           SharedTransitionLayout {
             AnimatedContent(showQueue) { targetState ->
@@ -315,38 +355,15 @@ fun NowPlaying(
                     playerState = playerState,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@AnimatedContent,
-                    imageSize = 0.45f
+                    imageSize = 0.65f
                   )
-                  Spacer(Modifier.weight(0.25f))
-
+                  Spacer(Modifier.weight(0.1f))
                   SongAndArtist(
                     songName = playerState.mediaMetadata.title.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
                     small = false
                   )
-
-                  Spacer(Modifier.weight(0.25f))
-
-                  ProgressBar(
-                    progressAnimation = progressAnimation,
-                    playerState = playerState,
-                    currentPosition = currentPosition,
-                    currentMount = currentMount,
-                    palette = palette
-                  )
-
-                  Spacer(Modifier.weight(0.15f))
-
-                  // Media Controls + Share
-                  MediaControls(
-                    sheetState = sheetState,
-                    stop = stop,
-                    pause = pause,
-                    play = play,
-                    playerState = playerState
-                  )
-
-                  Spacer(Modifier.weight(0.25f))
+                  Spacer(Modifier.weight(0.1f))
                 }
               } else {
                 Column(Modifier.padding(innerPadding)) {
@@ -379,19 +396,27 @@ fun NowPlaying(
                         horizontal = 8.dp,
                         vertical = 4.dp
                       )
+                      .padding(top = 4.dp)
                       .clip(RoundedCornerShape(16.dp))
                   )
-                  Column {
+                  Column(modifier = Modifier.padding(start = 6.dp)) {
                     if (!songHistory.isNullOrEmpty()) {
                       Text(
                         "Song History",
-                        modifier = Modifier.padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+                        modifier = Modifier.padding(
+                          start = 20.dp,
+                          top = 4.dp,
+                          bottom = 4.dp
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White
                       )
-                      LazyColumn (modifier = Modifier.fillMaxHeight(0.6f)) {
+                      LazyColumn(
+                        modifier = Modifier.fillMaxHeight(0.723f),
+                        state = scrollState
+                      ) {
                         itemsIndexed(songHistory) { _, item ->
-                          Row (
+                          Row(
                             modifier = Modifier
                               .padding(horizontal = 16.dp)
                               .padding(bottom = 8.dp)
@@ -419,17 +444,21 @@ fun NowPlaying(
                       )
                       Text(
                         "Up Next",
-                        modifier = Modifier.padding(start = 10.dp, top = 4.dp, bottom = 4.dp),
+                        modifier = Modifier.padding(
+                          start = 20.dp,
+                          top = 4.dp,
+                          bottom = 4.dp
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White
                       )
-                      Row (
+                      Row(
                         modifier = Modifier
                           .padding(horizontal = 16.dp)
                           .padding(bottom = 8.dp)
                           .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
-                      ){
+                      ) {
                         OtherAlbumArt(playingNext.song.art)
                         SongAndArtist(
                           songName = playingNext.song.title,
@@ -439,28 +468,6 @@ fun NowPlaying(
                       }
                     }
                   }
-
-//                  if (playingNext != null) {
-//                    Text(
-//                      "Up Next",
-//                      modifier = Modifier.padding(start = 16.dp),
-//                      style = MaterialTheme.typography.labelSmall
-//                    )
-//
-//                    Row(
-//                      verticalAlignment = Alignment.CenterVertically,
-//                      horizontalArrangement = Arrangement.Center,
-//                      modifier = Modifier
-//                        .padding(horizontal = 16.dp)
-//                    ) {
-//                      OtherAlbumArt(playingNext.song.art)
-//                      SongAndArtist(
-//                        songName = playingNext.song.title,
-//                        artistName = playingNext.song.artist,
-//                        small = true
-//                      )
-//                    }
-//                  }
                 }
               }
             }
@@ -542,7 +549,7 @@ fun OtherAlbumArt(
       model = url,
       modifier = Modifier
         .padding(horizontal = 16.dp)
-        .fillMaxWidth(0.27f)
+        .fillMaxWidth(0.18f)
         .aspectRatio(1f)
         .clip(RoundedCornerShape(16.dp)),
       contentDescription = "Album Art",
@@ -558,49 +565,49 @@ private fun SongAndArtist(
   artistName: String,
   small: Boolean
 ) {
-    Column (modifier = Modifier.padding(if(small) 4.dp else 16.dp)) {
-      Text(
-        text = songName,
-        modifier = Modifier
-          .fillMaxWidth()
-          .basicMarquee(iterations = Int.MAX_VALUE)
-          .animateContentSize(),
-        textAlign = TextAlign.Left,
-        style = lerp(
-          MaterialTheme.typography.titleMedium,
-          MaterialTheme.typography.titleLarge,
-          animateFloatAsState(
-            if (small) 0f else 1f,
-            label = "Song Name"
-          ).value
-        ),
-        fontWeight = FontWeight.Bold,
-        maxLines = 1,
-        color = Color.White
-      )
+  Column(modifier = Modifier.padding(if (small) 4.dp else 16.dp)) {
+    Text(
+      text = songName,
+      modifier = Modifier
+        .fillMaxWidth()
+        .basicMarquee(iterations = Int.MAX_VALUE)
+        .animateContentSize(),
+      textAlign = TextAlign.Left,
+      style = lerp(
+        MaterialTheme.typography.titleMedium,
+        MaterialTheme.typography.titleLarge,
+        animateFloatAsState(
+          if (small) 0f else 1f,
+          label = "Song Name"
+        ).value
+      ),
+      fontWeight = FontWeight.Bold,
+      maxLines = 1,
+      color = Color.White
+    )
 
-      Spacer(modifier = Modifier.size(4.dp))
+    Spacer(modifier = Modifier.size(4.dp))
 
-      //Artist Name
-      Text(
-        text = artistName,
-        modifier = Modifier
-          .fillMaxWidth()
-          .basicMarquee(iterations = Int.MAX_VALUE)
-          .animateContentSize(),
-        textAlign = TextAlign.Left,
-        maxLines = 1,
-        style = lerp(
-          MaterialTheme.typography.titleSmall,
-          MaterialTheme.typography.titleMedium,
-          animateFloatAsState(
-            if (small) 0f else 1f,
-            label = "Artist Name"
-          ).value
-        ),
-        color = Color.White
-      )
-    }
+    //Artist Name
+    Text(
+      text = artistName,
+      modifier = Modifier
+        .fillMaxWidth()
+        .basicMarquee(iterations = Int.MAX_VALUE)
+        .animateContentSize(),
+      textAlign = TextAlign.Left,
+      maxLines = 1,
+      style = lerp(
+        MaterialTheme.typography.titleSmall,
+        MaterialTheme.typography.titleMedium,
+        animateFloatAsState(
+          if (small) 0f else 1f,
+          label = "Artist Name"
+        ).value
+      ),
+      color = Color.White
+    )
+  }
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -764,7 +771,7 @@ private fun MediaControls(
       ),
       onClick = {}) {
       Icon(
-        imageVector = Icons.Rounded.Share,
+        imageVector = Icons.Rounded.NightsStay,
         contentDescription = "Share",
         modifier = Modifier.size(32.dp),
       )
