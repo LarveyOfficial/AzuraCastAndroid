@@ -219,7 +219,7 @@ fun NowPlaying(
     ModalBottomSheet(
       modifier = Modifier.fillMaxSize(),
       sheetState = sheetState,
-      shape = RoundedCornerShape(getRoundedCornerRadius() - 12.dp),
+      shape = RoundedCornerShape(if (getRoundedCornerRadius() > 0.dp) 24.dp else 0.dp),
       onDismissRequest = {
         hideNowPlaying()
       },
