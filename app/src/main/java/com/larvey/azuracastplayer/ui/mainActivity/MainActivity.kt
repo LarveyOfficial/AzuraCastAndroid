@@ -11,11 +11,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -75,6 +78,7 @@ class MainActivity : ComponentActivity() {
 
         var showAddDialog by remember { mutableStateOf(false) }
         var showNowPlaying by remember { mutableStateOf(false) }
+        var radioListMode = remember { mutableStateOf(false) } // false = list, true = grid
 
         val mediaController by rememberManagedMediaController()
 
@@ -126,7 +130,20 @@ class MainActivity : ComponentActivity() {
               containerColor = MaterialTheme.colorScheme.background,
               titleContentColor = MaterialTheme.colorScheme.onBackground,
             ),
-              title = { Text("Radio List") })
+              title = { Text("Radio List") },
+              actions = {
+                IconButton(
+                  onClick = {
+                    radioListMode.value = !radioListMode.value
+                  }
+                ) {
+                  Icon(
+                    imageVector = if (radioListMode.value) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                    contentDescription = "Add"
+                  )
+                }
+              }
+            )
           },
           floatingActionButton = {
             FloatingActionButton(onClick = {
@@ -162,7 +179,8 @@ class MainActivity : ComponentActivity() {
             }
           }) { innerPadding ->
 
-          MyRadios(savedRadioList = mainActivityViewModel?.savedRadioList,
+          MyRadios(
+            savedRadioList = mainActivityViewModel?.savedRadioList,
             innerPadding = innerPadding,
             setPlaybackSource = { url, uri, shortCode ->
               mainActivityViewModel?.setPlaybackSource(
@@ -179,7 +197,9 @@ class MainActivity : ComponentActivity() {
             },
             editRadio = { newStation ->
               mainActivityViewModel?.editStation(newStation)
-            })
+            },
+            radioListMode = radioListMode
+          )
         }
         when {
           showAddDialog -> {
