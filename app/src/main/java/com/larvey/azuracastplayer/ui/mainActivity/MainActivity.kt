@@ -37,7 +37,7 @@ import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationDialog
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
-import com.larvey.azuracastplayer.ui.nowPlaying.NowPlaying
+import com.larvey.azuracastplayer.ui.nowplaying.NowPlaying
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import kotlinx.coroutines.delay
 
