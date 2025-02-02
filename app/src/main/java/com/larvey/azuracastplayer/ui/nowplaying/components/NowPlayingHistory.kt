@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -56,13 +56,12 @@ fun NowPlayingHistory(
         .clickable(onClick = {
           showQueue.value = false
         })
+        .height(93.5.dp)
     ) {
       NowPlayingAlbumArt(
         playerState = playerState,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
-        imageWidth = 0.18f,
-        imageHeight = 0f
       )
       SongAndArtist(
         songName = playerState.mediaMetadata.title.toString(),
@@ -70,7 +69,6 @@ fun NowPlayingHistory(
         small = true
       )
     }
-    Spacer(Modifier.size(4.dp))
     HorizontalDivider(
       modifier = Modifier
         .padding(
@@ -99,7 +97,8 @@ fun NowPlayingHistory(
           modifier = Modifier
             .padding(horizontal = 16.dp)
             .padding(bottom = 8.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(67.5.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
           OtherAlbumArt(playingNext.song.art)
@@ -130,7 +129,8 @@ fun NowPlayingHistory(
               modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 8.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .height(67.5.dp),
               verticalAlignment = Alignment.CenterVertically
             ) {
               OtherAlbumArt(item.song.art)

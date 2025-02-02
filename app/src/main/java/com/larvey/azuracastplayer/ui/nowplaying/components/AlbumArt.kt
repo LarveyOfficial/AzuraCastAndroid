@@ -5,8 +5,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -28,17 +26,13 @@ fun NowPlayingAlbumArt(
   playerState: PlayerState,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedVisibilityScope,
-  imageHeight: Float,
-  imageWidth: Float
 ) {
   AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
     with(sharedTransitionScope) {
       GlideImage(
         model = url,
         modifier = Modifier
-          .padding(horizontal = 16.dp)
-          .fillMaxHeight(imageHeight)
-          .fillMaxWidth(imageWidth)
+          .padding(12.dp)
           .aspectRatio(1f)
           .sharedElement(
             rememberSharedContentState(key = "album art"),
@@ -62,8 +56,7 @@ fun OtherAlbumArt(
     GlideImage(
       model = url,
       modifier = Modifier
-        .padding(horizontal = 16.dp)
-        .fillMaxWidth(0.18f)
+        .padding(horizontal = 12.dp)
         .aspectRatio(1f)
         .clip(RoundedCornerShape(16.dp)),
       contentDescription = "Album Art",

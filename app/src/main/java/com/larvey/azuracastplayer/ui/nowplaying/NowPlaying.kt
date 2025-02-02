@@ -233,8 +233,6 @@ fun NowPlaying(
                     playerState = playerState,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@AnimatedContent,
-                    imageHeight = 0.65f,
-                    imageWidth = 0f
                   )
                   Spacer(Modifier.weight(0.1f))
                   SongAndArtist(
