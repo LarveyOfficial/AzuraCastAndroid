@@ -80,7 +80,6 @@ fun NowPlaying(
 
     val appContext = LocalContext.current.applicationContext
 
-
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val transitionA = rememberInfiniteTransition(label = "X")
@@ -116,8 +115,6 @@ fun NowPlaying(
       ),
       label = "Y"
     )
-
-
 
     LaunchedEffect(playerState.mediaMetadata.artworkUri) {
       this.async(Dispatchers.IO) {
