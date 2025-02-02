@@ -355,7 +355,8 @@ fun NowPlaying(
                     playerState = playerState,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@AnimatedContent,
-                    imageSize = 0.65f
+                    imageHeight = 0.65f,
+                    imageWidth = 0f
                   )
                   Spacer(Modifier.weight(0.1f))
                   SongAndArtist(
@@ -372,7 +373,7 @@ fun NowPlaying(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
-                      .padding(horizontal = 16.dp)
+                      .padding(horizontal = 22.dp)
                       .clickable(onClick = {
                         showQueue = false
                       })
@@ -381,7 +382,8 @@ fun NowPlaying(
                       playerState = playerState,
                       sharedTransitionScope = this@SharedTransitionLayout,
                       animatedVisibilityScope = this@AnimatedContent,
-                      imageSize = 0.12f
+                      imageWidth = 0.18f,
+                      imageHeight = 0f
                     )
                     SongAndArtist(
                       songName = playerState.mediaMetadata.title.toString(),
@@ -399,49 +401,11 @@ fun NowPlaying(
                       .padding(top = 4.dp)
                       .clip(RoundedCornerShape(16.dp))
                   )
-                  Column(modifier = Modifier.padding(start = 6.dp)) {
-                    if (!songHistory.isNullOrEmpty()) {
-                      Text(
-                        "Song History",
-                        modifier = Modifier.padding(
-                          start = 20.dp,
-                          top = 4.dp,
-                          bottom = 4.dp
-                        ),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White
-                      )
-                      LazyColumn(
-                        modifier = Modifier.fillMaxHeight(0.723f),
-                        state = scrollState
-                      ) {
-                        itemsIndexed(songHistory) { _, item ->
-                          Row(
-                            modifier = Modifier
-                              .padding(horizontal = 16.dp)
-                              .padding(bottom = 8.dp)
-                              .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                          ) {
-                            OtherAlbumArt(item.song.art)
-                            SongAndArtist(
-                              songName = item.song.title,
-                              artistName = item.song.artist,
-                              small = true
-                            )
-                          }
-                        }
-                      }
-                    }
+                  Column(
+                    modifier = Modifier
+                      .padding(start = 6.dp)
+                  ) {
                     if (playingNext != null) {
-                      HorizontalDivider(
-                        modifier = Modifier
-                          .padding(
-                            horizontal = 8.dp,
-                            vertical = 4.dp
-                          )
-                          .clip(RoundedCornerShape(16.dp))
-                      )
                       Text(
                         "Up Next",
                         modifier = Modifier.padding(
@@ -465,6 +429,39 @@ fun NowPlaying(
                           artistName = playingNext.song.artist,
                           small = true
                         )
+                      }
+                    }
+                    if (!songHistory.isNullOrEmpty()) {
+                      Text(
+                        "Song History",
+                        modifier = Modifier.padding(
+                          start = 20.dp,
+                          top = 4.dp,
+                          bottom = 4.dp
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                      )
+                      LazyColumn(
+                        state = scrollState,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                      ) {
+                        itemsIndexed(songHistory) { _, item ->
+                          Row(
+                            modifier = Modifier
+                              .padding(horizontal = 16.dp)
+                              .padding(bottom = 8.dp)
+                              .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                          ) {
+                            OtherAlbumArt(item.song.art)
+                            SongAndArtist(
+                              songName = item.song.title,
+                              artistName = item.song.artist,
+                              small = true
+                            )
+                          }
+                        }
                       }
                     }
                   }
@@ -516,7 +513,8 @@ fun NowPlayingAlbumArt(
   playerState: PlayerState,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedVisibilityScope,
-  imageSize: Float
+  imageHeight: Float,
+  imageWidth: Float
 ) {
   AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
     with(sharedTransitionScope) {
@@ -524,7 +522,8 @@ fun NowPlayingAlbumArt(
         model = url,
         modifier = Modifier
           .padding(horizontal = 16.dp)
-          .fillMaxHeight(imageSize)
+          .fillMaxHeight(imageHeight)
+          .fillMaxWidth(imageWidth)
           .aspectRatio(1f)
           .sharedElement(
             rememberSharedContentState(key = "album art"),
