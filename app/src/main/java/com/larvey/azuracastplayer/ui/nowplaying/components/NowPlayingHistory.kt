@@ -76,7 +76,8 @@ fun NowPlayingHistory(
           vertical = 4.dp
         )
         .padding(top = 4.dp)
-        .clip(RoundedCornerShape(16.dp))
+        .clip(RoundedCornerShape(16.dp)),
+      color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
     )
     Column(
       modifier = Modifier
@@ -91,7 +92,7 @@ fun NowPlayingHistory(
             bottom = 4.dp
           ),
           style = MaterialTheme.typography.labelMedium,
-          color = Color.White
+          color = MaterialTheme.colorScheme.onSurface
         )
         Row(
           modifier = Modifier
@@ -118,7 +119,7 @@ fun NowPlayingHistory(
             bottom = 4.dp
           ),
           style = MaterialTheme.typography.labelMedium,
-          color = Color.White
+          color = MaterialTheme.colorScheme.onSurface
         )
         LazyColumn(
           state = scrollState,

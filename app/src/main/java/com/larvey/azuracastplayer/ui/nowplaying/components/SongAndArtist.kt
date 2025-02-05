@@ -41,8 +41,7 @@ fun SongAndArtist(
         ).value
       ),
       fontWeight = FontWeight.Bold,
-      maxLines = 1,
-      color = Color.White
+      maxLines = 1
     )
 
     Spacer(modifier = Modifier.size(4.dp))
@@ -63,8 +62,7 @@ fun SongAndArtist(
           if (small) 0f else 1f,
           label = "Artist Name"
         ).value
-      ),
-      color = Color.White
+      )
     )
   }
 }

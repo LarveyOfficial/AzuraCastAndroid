@@ -128,10 +128,10 @@ fun NowPlaying(
           palette = Palette.from(bitmap).maximumColorCount(24).generate()
           val paletteColors = listOf(
             Color(
-              palette?.darkVibrantSwatch?.rgb ?: defaultColor.toArgb()
+              palette?.dominantSwatch?.rgb ?: defaultColor.toArgb()
             ),
             Color(
-              palette?.darkMutedSwatch?.rgb ?: defaultColor.toArgb()
+              palette?.mutedSwatch?.rgb ?: defaultColor.toArgb()
             ),
             Color(
               palette?.vibrantSwatch?.rgb ?: defaultColor.toArgb()

@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.nowplaying.components
 
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -27,7 +29,8 @@ import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@androidx.annotation.OptIn(UnstableApi::class)
+
+@OptIn(UnstableApi::class)
 @Composable
 fun ProgressBar(
   progressAnimation: Float,
@@ -84,8 +87,7 @@ fun ProgressBar(
       }
       Text(
         positionString,
-        style = MaterialTheme.typography.labelMedium,
-        color = Color.White
+        style = MaterialTheme.typography.labelMedium
       )
       Spacer(modifier = Modifier.weight(1f))
       SuggestionChip(
@@ -94,7 +96,7 @@ fun ProgressBar(
           Text(
             "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
           )
         },
         modifier = Modifier.heightIn(max = 24.dp)
@@ -102,8 +104,7 @@ fun ProgressBar(
       Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
-        style = MaterialTheme.typography.labelMedium,
-        color = Color.White
+        style = MaterialTheme.typography.labelMedium
       )
     }
   }

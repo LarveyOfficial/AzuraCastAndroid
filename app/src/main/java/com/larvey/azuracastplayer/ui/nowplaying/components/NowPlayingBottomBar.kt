@@ -104,11 +104,7 @@ fun NowPlayingBottomBar(
     ) {
       IconButton(
         enabled = false,
-        onClick = {},
-        colors = IconButtonDefaults.iconButtonColors(
-          contentColor = Color.White,
-          disabledContentColor = Color.Gray
-        )
+        onClick = {}
       ) {
         Icon(
           imageVector = Icons.Rounded.StarBorder,
@@ -121,11 +117,7 @@ fun NowPlayingBottomBar(
         enabled = true,
         onClick = {
           showQueue.value = !showQueue.value
-        },
-        colors = IconButtonDefaults.iconButtonColors(
-          contentColor = Color.White,
-          disabledContentColor = Color.Gray
-        )
+        }
       ) {
         Icon(
           imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
