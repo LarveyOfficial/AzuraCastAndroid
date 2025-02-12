@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -37,10 +39,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
+import androidx.palette.graphics.Target
 import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
@@ -56,6 +60,15 @@ import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+
+
+fun isBackgroundLight(colorList: List<Color>): Boolean {
+  var addedLuminance = 0f;
+  for (color in colorList) {
+    addedLuminance += color.luminance()
+  }
+  return (addedLuminance / colorList.size.toFloat()) > 0.5f;
+}
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -93,8 +106,7 @@ fun NowPlaying(
 
     var palette by remember { mutableStateOf<Palette?>(null) }
 
-    var showQueue = remember { mutableStateOf(false) }
-
+    val showQueue = remember { mutableStateOf(false) }
 
     val animateA by transitionA.animateFloat(
       initialValue = 0.3f,
@@ -125,7 +137,7 @@ fun NowPlaying(
         Glide.with(appContext).asBitmap().load(
           playerState.mediaMetadata.artworkUri.toString()
         ).submit().get().let { bitmap ->
-          palette = Palette.from(bitmap).maximumColorCount(24).generate()
+          palette = Palette.from(bitmap).generate()
           val paletteColors = listOf(
             Color(
               palette?.dominantSwatch?.rgb ?: defaultColor.toArgb()
@@ -215,7 +227,8 @@ fun NowPlaying(
               play = play,
               playerState = playerState,
               currentMount = currentMount,
-              palette = palette
+              palette = palette,
+              isBackgroundDark = isBackgroundLight(colorList)
             )
           }
         ) { innerPadding ->
@@ -238,7 +251,8 @@ fun NowPlaying(
                   SongAndArtist(
                     songName = playerState.mediaMetadata.title.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
-                    small = false
+                    small = false,
+                    isBackgroundDark = isBackgroundLight(colorList)
                   )
                   Spacer(Modifier.weight(0.1f))
                 }

@@ -22,7 +22,8 @@ import androidx.compose.ui.unit.dp
 fun SongAndArtist(
   songName: String,
   artistName: String,
-  small: Boolean
+  small: Boolean,
+  isBackgroundDark: Boolean
 ) {
   Column(modifier = Modifier.padding(if (small) 4.dp else 16.dp)) {
     Text(

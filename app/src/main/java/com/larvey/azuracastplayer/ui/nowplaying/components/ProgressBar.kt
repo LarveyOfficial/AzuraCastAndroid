@@ -37,7 +37,8 @@ fun ProgressBar(
   playerState: PlayerState,
   currentPosition: Long,
   currentMount: Mount?,
-  palette: Palette?
+  palette: Palette?,
+  isBackgroundDark: Boolean
 ) {
   Column {
     LinearProgressIndicator(

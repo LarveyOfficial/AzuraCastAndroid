@@ -43,7 +43,7 @@ data class Station(
   @SerializedName("hls_is_default")
   val hlsIsDefault: Boolean,
   @SerializedName("hls_url")
-  val hlsUrl: Any?,
+  val hlsUrl: String?,
   @SerializedName("hls_listeners")
   val hlsListeners: Long,
 )

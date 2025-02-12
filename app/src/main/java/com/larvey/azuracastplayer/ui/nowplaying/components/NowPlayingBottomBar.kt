@@ -50,6 +50,7 @@ fun NowPlayingBottomBar(
   playerState: PlayerState,
   currentMount: Mount?,
   palette: Palette?,
+  isBackgroundDark: Boolean,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -85,7 +86,8 @@ fun NowPlayingBottomBar(
       playerState = playerState,
       currentPosition = currentPosition,
       currentMount = currentMount,
-      palette = palette
+      palette = palette,
+      isBackgroundDark = isBackgroundDark
     )
     Spacer(Modifier.weight(0.05f))
     // Media Controls + Share
@@ -94,7 +96,8 @@ fun NowPlayingBottomBar(
       stop = stop,
       pause = pause,
       play = play,
-      playerState = playerState
+      playerState = playerState,
+      isBackgroundDark = isBackgroundDark
     )
     Spacer(Modifier.weight(0.1f))
     Row(

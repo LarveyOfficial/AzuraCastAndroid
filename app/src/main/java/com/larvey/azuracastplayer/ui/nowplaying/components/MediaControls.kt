@@ -36,7 +36,8 @@ fun MediaControls(
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,
-  playerState: PlayerState
+  playerState: PlayerState,
+  isBackgroundDark: Boolean
 ) {
   val scope = rememberCoroutineScope()
   Row(
