@@ -59,12 +59,24 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 
-fun isBackgroundLight(colorList: List<Color>): Boolean {
+fun calculateIfLight(colorList: List<Color>): Boolean {
   var addedLuminance = 0f
+  var brightCount = 0
   for (color in colorList) {
+    Log.d(
+      "LUMINANCE",
+      "Color: ${color.luminance()}"
+    )
+    if (color.luminance() > 0.5f) {
+      brightCount++
+    }
     addedLuminance += color.luminance()
   }
-  return (addedLuminance / colorList.size.toFloat()) > 0.5f
+  Log.d(
+    "LUMINANCE",
+    "Luminance: ${(addedLuminance / colorList.size.toFloat())}"
+  )
+  return (brightCount >= colorList.size.toFloat() / 2f) || (addedLuminance / colorList.size.toFloat()) > 0.5f
 }
 
 @OptIn(
@@ -115,6 +127,8 @@ fun NowPlaying(
       label = "X"
     )
 
+    var isBackgroundLight by remember { mutableStateOf(false) }
+
     val animateB by transitionB.animateFloat(
       initialValue = 0.4f,
       targetValue = 0.7f,
@@ -146,7 +160,19 @@ fun NowPlaying(
               palette?.vibrantSwatch?.rgb ?: defaultColor.toArgb()
             )
           )
-          colorList = List(9) { paletteColors.random() }
+          var listOColors = mutableListOf<Color>()
+          listOColors.add(
+            paletteColors.random()
+          )
+          for (i in (1..9)) {
+            listOColors.add(
+              paletteColors.filterNot { it == listOColors[i - 1] }.random()
+            )
+          }
+
+          colorList = listOColors
+
+          isBackgroundLight = calculateIfLight(listOColors.slice(3..8))
         }
       }.await()
     }
@@ -188,8 +214,8 @@ fun NowPlaying(
         modifier = Modifier
           .fillMaxSize()
           .meshGradient(
-            resolutionX = 5,
-            resolutionY = 5,
+            resolutionX = 16,
+            resolutionY = 16,
             points = listOf(
               // @formatter:off
               listOf(
@@ -225,7 +251,7 @@ fun NowPlaying(
               playerState = playerState,
               currentMount = currentMount,
               palette = palette,
-              isBackgroundLight = isBackgroundLight(colorList)
+              isBackgroundLight = isBackgroundLight
             )
           }
         ) { innerPadding ->
@@ -249,7 +275,7 @@ fun NowPlaying(
                     songName = playerState.mediaMetadata.title.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
                     small = false,
-                    isBackgroundLight = isBackgroundLight(colorList)
+                    isBackgroundLight = isBackgroundLight
                   )
                   Spacer(Modifier.weight(0.1f))
                 }
@@ -263,7 +289,7 @@ fun NowPlaying(
                   showQueue = showQueue,
                   sharedTransitionScope = this@SharedTransitionLayout,
                   animatedVisibilityScope = this@AnimatedContent,
-                  isBackgroundLight = isBackgroundLight(colorList)
+                  isBackgroundLight = isBackgroundLight
                 )
               }
             }
