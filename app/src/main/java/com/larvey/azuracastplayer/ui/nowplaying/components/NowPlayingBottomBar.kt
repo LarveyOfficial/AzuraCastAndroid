@@ -17,7 +17,6 @@ import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,7 +48,7 @@ fun NowPlayingBottomBar(
   playerState: PlayerState,
   currentMount: Mount?,
   palette: Palette?,
-  isBackgroundDark: Boolean,
+  isBackgroundLight: Boolean,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -87,7 +85,7 @@ fun NowPlayingBottomBar(
       currentPosition = currentPosition,
       currentMount = currentMount,
       palette = palette,
-      isBackgroundDark = isBackgroundDark
+      isBackgroundLight = isBackgroundLight
     )
     Spacer(Modifier.weight(0.05f))
     // Media Controls + Share
@@ -97,7 +95,7 @@ fun NowPlayingBottomBar(
       pause = pause,
       play = play,
       playerState = playerState,
-      isBackgroundDark = isBackgroundDark
+      isBackgroundLight = isBackgroundLight
     )
     Spacer(Modifier.weight(0.1f))
     Row(

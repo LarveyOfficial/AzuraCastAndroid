@@ -25,7 +25,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.classes.data.PlayingNext
 import com.larvey.azuracastplayer.classes.data.SongHistory
@@ -44,7 +43,8 @@ fun NowPlayingHistory(
   scrollState: LazyListState,
   showQueue: MutableState<Boolean>,
   sharedTransitionScope: SharedTransitionScope,
-  animatedVisibilityScope: AnimatedVisibilityScope
+  animatedVisibilityScope: AnimatedVisibilityScope,
+  isBackgroundLight: Boolean
 ) {
   Column(Modifier.padding(innerPadding)) {
     Spacer(Modifier.padding(top = 16.dp))
@@ -66,7 +66,8 @@ fun NowPlayingHistory(
       SongAndArtist(
         songName = playerState.mediaMetadata.title.toString(),
         artistName = playerState.mediaMetadata.artist.toString(),
-        small = true
+        small = true,
+        isBackgroundLight = isBackgroundLight
       )
     }
     HorizontalDivider(
@@ -106,7 +107,8 @@ fun NowPlayingHistory(
           SongAndArtist(
             songName = playingNext.song.title,
             artistName = playingNext.song.artist,
-            small = true
+            small = true,
+            isBackgroundLight = isBackgroundLight
           )
         }
       }
@@ -138,7 +140,8 @@ fun NowPlayingHistory(
               SongAndArtist(
                 songName = item.song.title,
                 artistName = item.song.artist,
-                small = true
+                small = true,
+                isBackgroundLight = isBackgroundLight
               )
             }
           }

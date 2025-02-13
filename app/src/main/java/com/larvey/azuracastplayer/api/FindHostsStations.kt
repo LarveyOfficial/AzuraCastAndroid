@@ -51,6 +51,10 @@ fun findHostsStations(stationData: MutableMap<String, List<StationJSON>>, url: S
         "DEBUG",
         "Fuck"
       )
+      Log.d(
+        "DEBUG",
+        t.toString()
+      )
       return
     }
   })
