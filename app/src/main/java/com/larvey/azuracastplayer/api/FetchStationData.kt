@@ -59,6 +59,10 @@ fun fetchStationData(
     ) {
       Log.d(
         "DEBUG",
+        t.toString()
+      )
+      Log.d(
+        "DEBUG",
         "Fuck"
       )
       return

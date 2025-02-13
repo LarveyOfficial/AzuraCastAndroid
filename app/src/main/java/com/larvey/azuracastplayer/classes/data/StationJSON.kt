@@ -81,14 +81,14 @@ data class NowPlaying(
   val shId: Long,
   @SerializedName("played_at")
   val playedAt: Long,
-  val duration: Long,
+  val duration: Number,
   val playlist: String,
   val streamer: String,
   @SerializedName("is_request")
   val isRequest: Boolean,
   val song: Song,
-  val elapsed: Long,
-  val remaining: Long,
+  val elapsed: Number,
+  val remaining: Number,
 )
 
 data class Song(
@@ -110,7 +110,7 @@ data class PlayingNext(
   val cuedAt: Long,
   @SerializedName("played_at")
   val playedAt: Long,
-  val duration: Long,
+  val duration: Number,
   val playlist: String,
   @SerializedName("is_request")
   val isRequest: Boolean,
@@ -122,7 +122,7 @@ data class SongHistory(
   val shId: Long,
   @SerializedName("played_at")
   val playedAt: Long,
-  val duration: Long,
+  val duration: Number,
   val playlist: String,
   val streamer: String,
   @SerializedName("is_request")

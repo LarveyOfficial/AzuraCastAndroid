@@ -66,7 +66,8 @@ fun NowPlayingHistory(
       SongAndArtist(
         songName = playerState.mediaMetadata.title.toString(),
         artistName = playerState.mediaMetadata.artist.toString(),
-        small = true
+        small = true,
+        isBackgroundDark = false
       )
     }
     HorizontalDivider(
@@ -106,7 +107,8 @@ fun NowPlayingHistory(
           SongAndArtist(
             songName = playingNext.song.title,
             artistName = playingNext.song.artist,
-            small = true
+            small = true,
+            isBackgroundDark = false
           )
         }
       }
@@ -138,7 +140,8 @@ fun NowPlayingHistory(
               SongAndArtist(
                 songName = item.song.title,
                 artistName = item.song.artist,
-                small = true
+                small = true,
+                isBackgroundDark = false
               )
             }
           }

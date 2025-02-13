@@ -75,7 +75,7 @@ fun refreshMetadata(
           .setDescription(data.nowPlaying.song.album) // Android Auto for some reason uses Description as the Album name
           .setGenre(data.nowPlaying.song.genre)
           .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
-          .setDurationMs(data.nowPlaying.duration * 1000) // Gaming
+          .setDurationMs(data.nowPlaying.duration.toLong() * 1000) // Gaming
           .build()
 
         val newMedia = MediaItem.Builder()
