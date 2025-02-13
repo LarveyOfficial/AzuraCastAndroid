@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -38,7 +37,7 @@ fun ProgressBar(
   currentPosition: Long,
   currentMount: Mount?,
   palette: Palette?,
-  isBackgroundDark: Boolean
+  isBackgroundLight: Boolean
 ) {
   Column {
     LinearProgressIndicator(
@@ -88,7 +87,8 @@ fun ProgressBar(
       }
       Text(
         positionString,
-        style = MaterialTheme.typography.labelMedium
+        style = MaterialTheme.typography.labelMedium,
+        color = if (isBackgroundLight) Color.Black else Color.White
       )
       Spacer(modifier = Modifier.weight(1f))
       SuggestionChip(
@@ -97,7 +97,7 @@ fun ProgressBar(
           Text(
             "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface
+            color = if (isBackgroundLight) Color.Black else Color.White
           )
         },
         modifier = Modifier.heightIn(max = 24.dp)
@@ -105,7 +105,8 @@ fun ProgressBar(
       Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
-        style = MaterialTheme.typography.labelMedium
+        style = MaterialTheme.typography.labelMedium,
+        color = if (isBackgroundLight) Color.Black else Color.White
       )
     }
   }

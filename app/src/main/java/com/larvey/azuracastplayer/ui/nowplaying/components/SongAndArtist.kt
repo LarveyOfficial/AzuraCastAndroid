@@ -23,7 +23,7 @@ fun SongAndArtist(
   songName: String,
   artistName: String,
   small: Boolean,
-  isBackgroundDark: Boolean
+  isBackgroundLight: Boolean
 ) {
   Column(modifier = Modifier.padding(if (small) 4.dp else 16.dp)) {
     Text(
@@ -41,6 +41,7 @@ fun SongAndArtist(
           label = "Song Name"
         ).value
       ),
+      color = if (isBackgroundLight) Color.Black else Color.White,
       fontWeight = FontWeight.Bold,
       maxLines = 1
     )
@@ -63,7 +64,8 @@ fun SongAndArtist(
           if (small) 0f else 1f,
           label = "Artist Name"
         ).value
-      )
+      ),
+      color = if (isBackgroundLight) Color.Black else Color.White
     )
   }
 }

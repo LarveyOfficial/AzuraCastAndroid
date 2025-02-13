@@ -16,8 +16,6 @@ import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -37,7 +35,7 @@ fun MediaControls(
   pause: () -> Unit,
   play: () -> Unit,
   playerState: PlayerState,
-  isBackgroundDark: Boolean
+  isBackgroundLight: Boolean
 ) {
   val scope = rememberCoroutineScope()
   Row(
@@ -59,7 +57,8 @@ fun MediaControls(
       Icon(
         imageVector = Icons.Rounded.Stop,
         contentDescription = "Stop",
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(48.dp),
+        tint = if (isBackgroundLight) Color.Black else Color.White
       )
     }
 
@@ -76,7 +75,8 @@ fun MediaControls(
             .clip(CircleShape)
             .clickable {
               pause()
-            }
+            },
+          tint = if (isBackgroundLight) Color.Black else Color.White
         )
       } else {
         Icon(
@@ -87,7 +87,8 @@ fun MediaControls(
             .clip(CircleShape)
             .clickable {
               play()
-            }
+            },
+          tint = if (isBackgroundLight) Color.Black else Color.White
         )
       }
     }
@@ -102,6 +103,7 @@ fun MediaControls(
         imageVector = Icons.Rounded.NightsStay,
         contentDescription = "Share",
         modifier = Modifier.size(32.dp),
+        tint = if (isBackgroundLight) Color.Black else Color.White
       )
     }
   }

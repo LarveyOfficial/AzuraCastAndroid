@@ -44,7 +44,8 @@ fun NowPlayingHistory(
   scrollState: LazyListState,
   showQueue: MutableState<Boolean>,
   sharedTransitionScope: SharedTransitionScope,
-  animatedVisibilityScope: AnimatedVisibilityScope
+  animatedVisibilityScope: AnimatedVisibilityScope,
+  isBackgroundLight: Boolean
 ) {
   Column(Modifier.padding(innerPadding)) {
     Spacer(Modifier.padding(top = 16.dp))
@@ -67,7 +68,7 @@ fun NowPlayingHistory(
         songName = playerState.mediaMetadata.title.toString(),
         artistName = playerState.mediaMetadata.artist.toString(),
         small = true,
-        isBackgroundDark = false
+        isBackgroundLight = isBackgroundLight
       )
     }
     HorizontalDivider(
@@ -93,7 +94,7 @@ fun NowPlayingHistory(
             bottom = 4.dp
           ),
           style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurface
+          color = if (isBackgroundLight) Color.Black else Color.White
         )
         Row(
           modifier = Modifier
@@ -108,7 +109,7 @@ fun NowPlayingHistory(
             songName = playingNext.song.title,
             artistName = playingNext.song.artist,
             small = true,
-            isBackgroundDark = false
+            isBackgroundLight = isBackgroundLight
           )
         }
       }
@@ -121,7 +122,7 @@ fun NowPlayingHistory(
             bottom = 4.dp
           ),
           style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurface
+          color = if (isBackgroundLight) Color.Black else Color.White
         )
         LazyColumn(
           state = scrollState,
@@ -141,7 +142,7 @@ fun NowPlayingHistory(
                 songName = item.song.title,
                 artistName = item.song.artist,
                 small = true,
-                isBackgroundDark = false
+                isBackgroundLight = isBackgroundLight
               )
             }
           }
