@@ -61,10 +61,6 @@ fun fetchStationData(
         "DEBUG",
         "Fuck"
       )
-      Log.d(
-        "DEBUG",
-        t.toString()
-      )
       return
     }
   })

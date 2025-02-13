@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
+import androidx.palette.graphics.Target
 import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
@@ -60,11 +63,11 @@ import kotlinx.coroutines.launch
 
 
 fun isBackgroundLight(colorList: List<Color>): Boolean {
-  var addedLuminance = 0f
+  var addedLuminance = 0f;
   for (color in colorList) {
     addedLuminance += color.luminance()
   }
-  return (addedLuminance / colorList.size.toFloat()) > 0.5f
+  return (addedLuminance / colorList.size.toFloat()) > 0.5f;
 }
 
 @OptIn(
@@ -225,7 +228,7 @@ fun NowPlaying(
               playerState = playerState,
               currentMount = currentMount,
               palette = palette,
-              isBackgroundLight = isBackgroundLight(colorList)
+              isBackgroundDark = isBackgroundLight(colorList)
             )
           }
         ) { innerPadding ->
@@ -249,7 +252,7 @@ fun NowPlaying(
                     songName = playerState.mediaMetadata.title.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
                     small = false,
-                    isBackgroundLight = isBackgroundLight(colorList)
+                    isBackgroundDark = isBackgroundLight(colorList)
                   )
                   Spacer(Modifier.weight(0.1f))
                 }
@@ -262,8 +265,7 @@ fun NowPlaying(
                   scrollState = scrollState,
                   showQueue = showQueue,
                   sharedTransitionScope = this@SharedTransitionLayout,
-                  animatedVisibilityScope = this@AnimatedContent,
-                  isBackgroundLight = isBackgroundLight(colorList)
+                  animatedVisibilityScope = this@AnimatedContent
                 )
               }
             }
