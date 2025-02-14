@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.launch
@@ -55,7 +56,8 @@ fun MediaControls(
       Icon(
         imageVector = Icons.Rounded.Stop,
         contentDescription = "Stop",
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(48.dp),
+        tint = Color.White
       )
     }
 
@@ -72,7 +74,8 @@ fun MediaControls(
             .clip(CircleShape)
             .clickable {
               pause()
-            }
+            },
+          tint = Color.White
         )
       } else {
         Icon(
@@ -97,7 +100,8 @@ fun MediaControls(
       Icon(
         imageVector = Icons.Rounded.NightsStay,
         contentDescription = "Share",
-        modifier = Modifier.size(32.dp)
+        modifier = Modifier.size(32.dp),
+        tint = Color.White
       )
     }
   }

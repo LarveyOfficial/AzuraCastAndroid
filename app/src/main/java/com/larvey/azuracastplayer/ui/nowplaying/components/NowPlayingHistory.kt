@@ -25,6 +25,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.classes.data.PlayingNext
 import com.larvey.azuracastplayer.classes.data.SongHistory
@@ -63,7 +64,7 @@ fun NowPlayingHistory(
         animatedVisibilityScope = animatedVisibilityScope,
       )
       SongAndArtist(
-        songName = playerState.mediaMetadata.title.toString(),
+        songName = playerState.mediaMetadata.displayTitle.toString(),
         artistName = playerState.mediaMetadata.artist.toString(),
         small = true
       )
@@ -90,7 +91,8 @@ fun NowPlayingHistory(
             top = 4.dp,
             bottom = 4.dp
           ),
-          style = MaterialTheme.typography.labelMedium
+          style = MaterialTheme.typography.labelMedium,
+          color = Color.White
         )
         Row(
           modifier = Modifier
@@ -116,7 +118,8 @@ fun NowPlayingHistory(
             top = 4.dp,
             bottom = 4.dp
           ),
-          style = MaterialTheme.typography.labelMedium
+          style = MaterialTheme.typography.labelMedium,
+          color = Color.White
         )
         LazyColumn(
           state = scrollState,

@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -107,7 +108,8 @@ fun NowPlayingBottomBar(
         Icon(
           imageVector = Icons.Rounded.StarBorder,
           contentDescription = "Favorite",
-          modifier = Modifier.size(48.dp)
+          modifier = Modifier.size(48.dp),
+          tint = Color.White
         )
       }
       Spacer(modifier = Modifier.weight(1f))
@@ -120,7 +122,8 @@ fun NowPlayingBottomBar(
         Icon(
           imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
           contentDescription = "Queue",
-          modifier = Modifier.size(48.dp)
+          modifier = Modifier.size(48.dp),
+          tint = Color.White
         )
       }
     }

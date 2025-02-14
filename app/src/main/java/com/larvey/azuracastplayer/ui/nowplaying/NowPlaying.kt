@@ -269,7 +269,7 @@ fun NowPlaying(
                   )
                   Spacer(Modifier.weight(0.1f))
                   SongAndArtist(
-                    songName = playerState.mediaMetadata.title.toString(),
+                    songName = playerState.mediaMetadata.displayTitle.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
                     small = false
                   )

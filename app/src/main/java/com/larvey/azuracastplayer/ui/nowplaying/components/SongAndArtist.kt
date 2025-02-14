@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +41,8 @@ fun SongAndArtist(
         ).value
       ),
       fontWeight = FontWeight.Bold,
-      maxLines = 1
+      maxLines = 1,
+      color = Color.White
     )
 
     Spacer(modifier = Modifier.size(4.dp))
@@ -61,7 +63,8 @@ fun SongAndArtist(
           if (small) 0f else 1f,
           label = "Artist Name"
         ).value
-      )
+      ),
+      color = Color.White
     )
   }
 }

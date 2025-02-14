@@ -87,7 +87,8 @@ fun ProgressBar(
       }
       Text(
         positionString,
-        style = MaterialTheme.typography.labelMedium
+        style = MaterialTheme.typography.labelMedium,
+        color = Color.White
       )
       Spacer(modifier = Modifier.weight(1f))
       SuggestionChip(
@@ -108,7 +109,8 @@ fun ProgressBar(
       Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
-        style = MaterialTheme.typography.labelMedium
+        style = MaterialTheme.typography.labelMedium,
+        color = Color.White
       )
     }
   }
