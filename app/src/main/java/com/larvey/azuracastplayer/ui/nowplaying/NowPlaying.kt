@@ -47,6 +47,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.PlayingNext
 import com.larvey.azuracastplayer.classes.data.SongHistory
+import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.mainActivity.components.meshGradient
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
@@ -73,7 +74,8 @@ fun NowPlaying(
   stop: () -> Unit,
   currentMount: Mount?,
   songHistory: List<SongHistory>?,
-  playingNext: PlayingNext?
+  playingNext: PlayingNext?,
+  nowPlayingData: NowPlayingData?
 ) {
 
   if (playerState?.currentMediaItem == null) hideNowPlaying()
@@ -248,7 +250,8 @@ fun NowPlaying(
               play = play,
               playerState = playerState,
               currentMount = currentMount,
-              palette = palette
+              palette = palette,
+              nowPlayingData = nowPlayingData
             )
           }
         ) { innerPadding ->

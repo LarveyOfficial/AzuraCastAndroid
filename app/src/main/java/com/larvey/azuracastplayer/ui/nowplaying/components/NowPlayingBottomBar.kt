@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
+import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
 
@@ -49,6 +50,7 @@ fun NowPlayingBottomBar(
   playerState: PlayerState,
   currentMount: Mount?,
   palette: Palette?,
+  nowPlayingData: NowPlayingData?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -70,7 +72,8 @@ fun NowPlayingBottomBar(
         currentProgress = progress
         currentPosition = position
       },
-      playerState = playerState
+      playerState = playerState,
+      nowPlayingData = nowPlayingData
     )
   }
 
@@ -132,13 +135,23 @@ fun NowPlayingBottomBar(
 
 @androidx.annotation.OptIn(UnstableApi::class)
 suspend fun updateTime(
-  isVisible: Boolean, updateProgress: (Float, Long) -> Unit, playerState: PlayerState?
+  isVisible: Boolean,
+  updateProgress: (Float, Long) -> Unit,
+  playerState: PlayerState?,
+  nowPlayingData: NowPlayingData?
 ) {
   while (isVisible) {
     if (playerState?.isPlaying == true) {
-      updateProgress(
-        playerState.player.currentPosition.toFloat() / playerState.player.mediaMetadata.durationMs!!.toFloat(),
+      var currentPosition: Number = 0f
+      currentPosition = if (playerState.player.currentMediaItem?.mediaId?.endsWith(".m3u8") == true) {
+        ((System.currentTimeMillis() / 1000).minus(nowPlayingData?.staticData?.value?.nowPlaying?.playedAt!!) * 1000) - playerState.player.currentPosition
+      } else {
         playerState.player.currentPosition
+      }
+
+      updateProgress(
+        currentPosition.toFloat() / playerState.player.mediaMetadata.durationMs!!.toFloat(),
+        currentPosition.toLong()
       )
     }
     delay(1000)

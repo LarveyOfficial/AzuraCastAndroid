@@ -39,10 +39,11 @@ fun EditStation(
 ) {
   var stationFieldRename by remember { mutableStateOf(station.name) }
   var expandedDropdown by remember { mutableStateOf(false) }
-  val mounts = stationData?.station?.mounts?.map { it.name }!!
-  var setMount by remember { mutableStateOf(stationData.station.mounts.find { it.url == station.defaultMount }!!.url) }
+  var mounts = stationData?.station?.mounts?.map { it.name }!!
+  val hls = stationData.station.hlsEnabled
+  var setMount by remember { mutableStateOf(station.defaultMount) }
   val textFieldState =
-    rememberTextFieldState(mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
+    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS" else mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
 
   Dialog(onDismissRequest = { hideDialog() }) {
     Card(
@@ -110,6 +111,22 @@ fun EditStation(
                   contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
               }
+            }
+            if (hls) {
+              DropdownMenuItem(
+                text = {
+                  Text(
+                    "HLS",
+                    style = MaterialTheme.typography.bodyLarge
+                  )
+                },
+                onClick = {
+                  textFieldState.setTextAndPlaceCursorAtEnd("HLS")
+                  setMount = stationData.station.hlsUrl!!
+                  expandedDropdown = false
+                },
+                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+              )
             }
           }
         }

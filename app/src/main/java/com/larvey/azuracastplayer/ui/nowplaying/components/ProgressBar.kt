@@ -107,11 +107,20 @@ fun ProgressBar(
       SuggestionChip(
         onClick = {},
         label = {
-          Text(
-            "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White
-          )
+          if (playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
+            Text(
+              "HLS",
+              style = MaterialTheme.typography.labelSmall,
+              color = Color.White
+            )
+          } else {
+            Text(
+              "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
+              style = MaterialTheme.typography.labelSmall,
+              color = Color.White
+            )
+          }
+
         },
         border = BorderStroke(
           width = 1.dp,

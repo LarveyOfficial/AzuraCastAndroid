@@ -52,7 +52,8 @@ class MusicPlayerService() : MediaLibraryService() {
 
     val player = object : ForwardingPlayer(
       ExoPlayer.Builder(this).setAudioAttributes(
-        AudioAttributes.DEFAULT, true
+        AudioAttributes.DEFAULT,
+        true
       ).build()
     ) {
       override fun play() {
@@ -82,7 +83,9 @@ class MusicPlayerService() : MediaLibraryService() {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
         if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
           nowPlaying.setMediaMetadata(
-            nowPlaying.nowPlayingURL.value, nowPlaying.nowPlayingShortCode.value, player
+            nowPlaying.nowPlayingURL.value,
+            nowPlaying.nowPlayingShortCode.value,
+            player
           )
         }
       }
@@ -94,10 +97,12 @@ class MusicPlayerService() : MediaLibraryService() {
 
 
     mediaSession = MediaLibrarySession.Builder(
-      this, player, MyCallback()
+      this,
+      player,
+      MyCallback()
     ).also { builder ->
-        getSingleTopActivity()?.let { builder.setSessionActivity(it) }
-      }
+      getSingleTopActivity()?.let { builder.setSessionActivity(it) }
+    }
 
       .build()
     setMediaNotificationProvider(mediaNotificationProvider)
@@ -108,7 +113,8 @@ class MusicPlayerService() : MediaLibraryService() {
           .setDisplayName("Stop")
           .setSessionCommand(
             SessionCommand(
-              "STOP_RADIO", Bundle.EMPTY
+              "STOP_RADIO",
+              Bundle.EMPTY
             )
           )
           .build()
@@ -123,12 +129,14 @@ class MusicPlayerService() : MediaLibraryService() {
       session: MediaSession, controller: MediaSession.ControllerInfo
     ): ConnectionResult {
       val connectionResult = super.onConnect(
-        session, controller
+        session,
+        controller
       )
       val availableSessionCommands = connectionResult.availableSessionCommands.buildUpon()
       availableSessionCommands.add(
         SessionCommand(
-          "STOP_RADIO", Bundle.EMPTY
+          "STOP_RADIO",
+          Bundle.EMPTY
         )
       )
 
@@ -136,7 +144,12 @@ class MusicPlayerService() : MediaLibraryService() {
         availableSessionCommands.build(),
         Player.Commands.Builder()
           .addAllCommands()
-          .remove(Player.COMMAND_GET_TIMELINE)
+          //          .remove(Player.COMMAND_GET_TIMELINE)
+          .remove(Player.COMMAND_SEEK_BACK)
+          .remove(Player.COMMAND_SEEK_FORWARD)
+          .remove(Player.COMMAND_SEEK_TO_NEXT)
+          .remove(Player.COMMAND_SEEK_TO_PREVIOUS)
+          .remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
           .build()
       )
 
@@ -147,12 +160,14 @@ class MusicPlayerService() : MediaLibraryService() {
       controller: MediaSession.ControllerInfo
     ) {
       session.setCustomLayout(
-        controller, listOf(
+        controller,
+        listOf(
           CommandButton.Builder(CommandButton.ICON_STOP)
             .setDisplayName("Stop")
             .setSessionCommand(
               SessionCommand(
-                "STOP_RADIO", Bundle.EMPTY
+                "STOP_RADIO",
+                Bundle.EMPTY
               )
             )
             .build()
@@ -210,13 +225,14 @@ class MusicPlayerService() : MediaLibraryService() {
       return Futures.immediateFuture(
         LibraryResult.ofItem(
           MediaItem.Builder().setMediaId("/").setMediaMetadata(
-              MediaMetadata.Builder()
-                .setIsBrowsable(false)
-                .setIsPlayable(false)
-                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                .setTitle("AzuraCast Player")
-                .build()
-            ).build(), params
+            MediaMetadata.Builder()
+              .setIsBrowsable(false)
+              .setIsPlayable(false)
+              .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+              .setTitle("AzuraCast Player")
+              .build()
+          ).build(),
+          params
         )
       )
     }
@@ -245,7 +261,8 @@ class MusicPlayerService() : MediaLibraryService() {
                 .setMediaId("Stations")
                 .setMediaMetadata(metaData)
                 .build()
-            ), params
+            ),
+            params
           )
         )
       }
@@ -273,7 +290,8 @@ class MusicPlayerService() : MediaLibraryService() {
 
       return Futures.immediateFuture(
         LibraryResult.ofItemList(
-          stations, params
+          stations,
+          params
         )
       )
     }
@@ -297,7 +315,8 @@ class MusicPlayerService() : MediaLibraryService() {
       mediaSession = null
     }
     Log.d(
-      "DEBUG-MEDIA", "Good-Bye! \uD83D\uDC4B\uD83C\uDFFB"
+      "DEBUG-MEDIA",
+      "Good-Bye! \uD83D\uDC4B\uD83C\uDFFB"
     )
     super.onDestroy()
     nowPlaying.nowPlayingShortCode.value = ""
@@ -308,9 +327,13 @@ class MusicPlayerService() : MediaLibraryService() {
 
   private fun getSingleTopActivity(): PendingIntent? {
     return PendingIntent.getActivity(
-      applicationContext, 0, Intent(
-        applicationContext, MainActivity::class.java
-      ), PendingIntent.FLAG_IMMUTABLE
+      applicationContext,
+      0,
+      Intent(
+        applicationContext,
+        MainActivity::class.java
+      ),
+      PendingIntent.FLAG_IMMUTABLE
     )
   }
 

@@ -83,10 +83,6 @@ class MainActivity : ComponentActivity() {
         var showNowPlaying by remember { mutableStateOf(false) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
-        Log.d(
-          "DEBUG",
-          radioListMode.toString()
-        )
         val mediaController by rememberManagedMediaController()
 
         rememberCoroutineScope()
@@ -244,7 +240,8 @@ class MainActivity : ComponentActivity() {
               },
               currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
               songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
-              playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext
+              playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
+              nowPlayingData = mainActivityViewModel?.nowPlayingData
             )
           }
         }
