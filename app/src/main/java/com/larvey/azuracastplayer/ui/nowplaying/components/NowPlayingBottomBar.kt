@@ -28,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -49,7 +48,6 @@ fun NowPlayingBottomBar(
   playerState: PlayerState,
   currentMount: Mount?,
   palette: Palette?,
-  isBackgroundLight: Boolean,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -85,8 +83,7 @@ fun NowPlayingBottomBar(
       playerState = playerState,
       currentPosition = currentPosition,
       currentMount = currentMount,
-      palette = palette,
-      isBackgroundLight = isBackgroundLight
+      palette = palette
     )
     Spacer(Modifier.weight(0.05f))
     // Media Controls + Share
@@ -95,8 +92,7 @@ fun NowPlayingBottomBar(
       stop = stop,
       pause = pause,
       play = play,
-      playerState = playerState,
-      isBackgroundLight = isBackgroundLight
+      playerState = playerState
     )
     Spacer(Modifier.weight(0.1f))
     Row(
@@ -111,8 +107,7 @@ fun NowPlayingBottomBar(
         Icon(
           imageVector = Icons.Rounded.StarBorder,
           contentDescription = "Favorite",
-          modifier = Modifier.size(48.dp),
-          tint = if (isBackgroundLight) Color.Black else Color.White
+          modifier = Modifier.size(48.dp)
         )
       }
       Spacer(modifier = Modifier.weight(1f))
@@ -125,8 +120,7 @@ fun NowPlayingBottomBar(
         Icon(
           imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
           contentDescription = "Queue",
-          modifier = Modifier.size(48.dp),
-          tint = if (isBackgroundLight) Color.Black else Color.White
+          modifier = Modifier.size(48.dp)
         )
       }
     }

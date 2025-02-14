@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.ui.nowplaying
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -37,10 +36,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils.HSLToColor
+import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -54,30 +54,10 @@ import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
+import com.larvey.azuracastplayer.utils.weightedRandomColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-
-
-fun calculateIfLight(colorList: List<Color>): Boolean {
-  var addedLuminance = 0f
-  var brightCount = 0
-  for (color in colorList) {
-    Log.d(
-      "LUMINANCE",
-      "Color: ${color.luminance()}"
-    )
-    if (color.luminance() > 0.5f) {
-      brightCount++
-    }
-    addedLuminance += color.luminance()
-  }
-  Log.d(
-    "LUMINANCE",
-    "Luminance: ${(addedLuminance / colorList.size.toFloat())}"
-  )
-  return (brightCount >= colorList.size.toFloat() / 2f) || (addedLuminance / colorList.size.toFloat()) > 0.5f
-}
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -127,8 +107,6 @@ fun NowPlaying(
       label = "X"
     )
 
-    var isBackgroundLight by remember { mutableStateOf(false) }
-
     val animateB by transitionB.animateFloat(
       initialValue = 0.4f,
       targetValue = 0.7f,
@@ -141,38 +119,58 @@ fun NowPlaying(
 
     LaunchedEffect(playerState.mediaMetadata.artworkUri) {
       this.async(Dispatchers.IO) {
-        Log.d(
-          "DEBUG",
-          "Fetching image"
-        )
         Glide.with(appContext).asBitmap().load(
           playerState.mediaMetadata.artworkUri.toString()
         ).submit().get().let { bitmap ->
-          palette = Palette.from(bitmap).generate()
-          val paletteColors = listOf(
-            Color(
-              palette?.dominantSwatch?.rgb ?: defaultColor.toArgb()
-            ),
-            Color(
-              palette?.mutedSwatch?.rgb ?: defaultColor.toArgb()
-            ),
-            Color(
-              palette?.vibrantSwatch?.rgb ?: defaultColor.toArgb()
-            )
+          palette = Palette.from(bitmap).maximumColorCount(24).generate()
+
+          var defaultHSL = floatArrayOf(
+            0f,
+            0f,
+            0f
           )
-          var listOColors = mutableListOf<Color>()
-          listOColors.add(
-            paletteColors.random()
+
+          colorToHSL(
+            defaultColor.toArgb(),
+            defaultHSL
           )
-          for (i in (1..9)) {
-            listOColors.add(
-              paletteColors.filterNot { it == listOColors[i - 1] }.random()
-            )
+          val maxLuminance = 0.45f
+
+          var vibrantSwatch = palette?.vibrantSwatch?.hsl
+            ?: defaultHSL
+
+          var mutedSwatch = palette?.mutedSwatch?.hsl ?: defaultHSL
+
+          var lightMutedSwatch = palette?.lightMutedSwatch?.hsl
+            ?: defaultHSL
+
+          if (vibrantSwatch[2] > maxLuminance) {
+            vibrantSwatch[2] = maxLuminance
           }
 
-          colorList = listOColors
+          if (mutedSwatch[2] > maxLuminance) {
+            mutedSwatch[2] = maxLuminance
+          }
 
-          isBackgroundLight = calculateIfLight(listOColors.slice(3..8))
+          if (lightMutedSwatch[2] > maxLuminance) {
+            lightMutedSwatch[2] = maxLuminance
+          }
+          val paletteColors = listOf(
+            Color(
+              HSLToColor(vibrantSwatch)
+            ),
+            Color(
+              HSLToColor(mutedSwatch)
+            ),
+            Color(
+              HSLToColor(lightMutedSwatch)
+            )
+          )
+
+          colorList = weightedRandomColors(
+            paletteColors,
+            9
+          )
         }
       }.await()
     }
@@ -250,8 +248,7 @@ fun NowPlaying(
               play = play,
               playerState = playerState,
               currentMount = currentMount,
-              palette = palette,
-              isBackgroundLight = isBackgroundLight
+              palette = palette
             )
           }
         ) { innerPadding ->
@@ -274,8 +271,7 @@ fun NowPlaying(
                   SongAndArtist(
                     songName = playerState.mediaMetadata.title.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
-                    small = false,
-                    isBackgroundLight = isBackgroundLight
+                    small = false
                   )
                   Spacer(Modifier.weight(0.1f))
                 }
@@ -288,8 +284,7 @@ fun NowPlaying(
                   scrollState = scrollState,
                   showQueue = showQueue,
                   sharedTransitionScope = this@SharedTransitionLayout,
-                  animatedVisibilityScope = this@AnimatedContent,
-                  isBackgroundLight = isBackgroundLight
+                  animatedVisibilityScope = this@AnimatedContent
                 )
               }
             }

@@ -25,7 +25,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.classes.data.PlayingNext
 import com.larvey.azuracastplayer.classes.data.SongHistory
@@ -44,8 +43,7 @@ fun NowPlayingHistory(
   scrollState: LazyListState,
   showQueue: MutableState<Boolean>,
   sharedTransitionScope: SharedTransitionScope,
-  animatedVisibilityScope: AnimatedVisibilityScope,
-  isBackgroundLight: Boolean
+  animatedVisibilityScope: AnimatedVisibilityScope
 ) {
   Column(Modifier.padding(innerPadding)) {
     Spacer(Modifier.padding(top = 16.dp))
@@ -67,8 +65,7 @@ fun NowPlayingHistory(
       SongAndArtist(
         songName = playerState.mediaMetadata.title.toString(),
         artistName = playerState.mediaMetadata.artist.toString(),
-        small = true,
-        isBackgroundLight = isBackgroundLight
+        small = true
       )
     }
     HorizontalDivider(
@@ -93,8 +90,7 @@ fun NowPlayingHistory(
             top = 4.dp,
             bottom = 4.dp
           ),
-          style = MaterialTheme.typography.labelMedium,
-          color = if (isBackgroundLight) Color.Black else Color.White
+          style = MaterialTheme.typography.labelMedium
         )
         Row(
           modifier = Modifier
@@ -108,8 +104,7 @@ fun NowPlayingHistory(
           SongAndArtist(
             songName = playingNext.song.title,
             artistName = playingNext.song.artist,
-            small = true,
-            isBackgroundLight = isBackgroundLight
+            small = true
           )
         }
       }
@@ -121,8 +116,7 @@ fun NowPlayingHistory(
             top = 4.dp,
             bottom = 4.dp
           ),
-          style = MaterialTheme.typography.labelMedium,
-          color = if (isBackgroundLight) Color.Black else Color.White
+          style = MaterialTheme.typography.labelMedium
         )
         LazyColumn(
           state = scrollState,
@@ -141,8 +135,7 @@ fun NowPlayingHistory(
               SongAndArtist(
                 songName = item.song.title,
                 artistName = item.song.artist,
-                small = true,
-                isBackgroundLight = isBackgroundLight
+                small = true
               )
             }
           }

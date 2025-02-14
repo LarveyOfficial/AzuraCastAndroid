@@ -22,7 +22,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.launch
@@ -34,8 +33,7 @@ fun MediaControls(
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,
-  playerState: PlayerState,
-  isBackgroundLight: Boolean
+  playerState: PlayerState
 ) {
   val scope = rememberCoroutineScope()
   Row(
@@ -57,8 +55,7 @@ fun MediaControls(
       Icon(
         imageVector = Icons.Rounded.Stop,
         contentDescription = "Stop",
-        modifier = Modifier.size(48.dp),
-        tint = if (isBackgroundLight) Color.Black else Color.White
+        modifier = Modifier.size(48.dp)
       )
     }
 
@@ -75,8 +72,7 @@ fun MediaControls(
             .clip(CircleShape)
             .clickable {
               pause()
-            },
-          tint = if (isBackgroundLight) Color.Black else Color.White
+            }
         )
       } else {
         Icon(
@@ -87,8 +83,7 @@ fun MediaControls(
             .clip(CircleShape)
             .clickable {
               play()
-            },
-          tint = if (isBackgroundLight) Color.Black else Color.White
+            }
         )
       }
     }
@@ -102,8 +97,7 @@ fun MediaControls(
       Icon(
         imageVector = Icons.Rounded.NightsStay,
         contentDescription = "Share",
-        modifier = Modifier.size(32.dp),
-        tint = if (isBackgroundLight) Color.Black else Color.White
+        modifier = Modifier.size(32.dp)
       )
     }
   }

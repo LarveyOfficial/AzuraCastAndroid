@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.annotation.OptIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,8 +37,7 @@ fun ProgressBar(
   playerState: PlayerState,
   currentPosition: Long,
   currentMount: Mount?,
-  palette: Palette?,
-  isBackgroundLight: Boolean
+  palette: Palette?
 ) {
   Column {
     LinearProgressIndicator(
@@ -87,8 +87,7 @@ fun ProgressBar(
       }
       Text(
         positionString,
-        style = MaterialTheme.typography.labelMedium,
-        color = if (isBackgroundLight) Color.Black else Color.White
+        style = MaterialTheme.typography.labelMedium
       )
       Spacer(modifier = Modifier.weight(1f))
       SuggestionChip(
@@ -97,16 +96,19 @@ fun ProgressBar(
           Text(
             "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
             style = MaterialTheme.typography.labelSmall,
-            color = if (isBackgroundLight) Color.Black else Color.White
+            color = Color.White
           )
         },
+        border = BorderStroke(
+          width = 1.dp,
+          color = Color.White
+        ),
         modifier = Modifier.heightIn(max = 24.dp)
       )
       Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
-        style = MaterialTheme.typography.labelMedium,
-        color = if (isBackgroundLight) Color.Black else Color.White
+        style = MaterialTheme.typography.labelMedium
       )
     }
   }

@@ -12,7 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextAlign
@@ -22,8 +21,7 @@ import androidx.compose.ui.unit.dp
 fun SongAndArtist(
   songName: String,
   artistName: String,
-  small: Boolean,
-  isBackgroundLight: Boolean
+  small: Boolean
 ) {
   Column(modifier = Modifier.padding(if (small) 4.dp else 16.dp)) {
     Text(
@@ -41,7 +39,6 @@ fun SongAndArtist(
           label = "Song Name"
         ).value
       ),
-      color = if (isBackgroundLight) Color.Black else Color.White,
       fontWeight = FontWeight.Bold,
       maxLines = 1
     )
@@ -64,8 +61,7 @@ fun SongAndArtist(
           if (small) 0f else 1f,
           label = "Artist Name"
         ).value
-      ),
-      color = if (isBackgroundLight) Color.Black else Color.White
+      )
     )
   }
 }
