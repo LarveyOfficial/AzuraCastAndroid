@@ -14,8 +14,10 @@ import androidx.compose.material.icons.rounded.PauseCircle
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -27,7 +29,10 @@ import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun MediaControls(
   sheetState: SheetState,
@@ -64,29 +69,38 @@ fun MediaControls(
     Spacer(modifier = Modifier.weight(1f))
 
     // Play/Pause Button
-    AnimatedContent(targetState = playerState.isPlaying) { targetState ->
-      if (targetState) {
-        Icon(
-          imageVector = Icons.Rounded.PauseCircle,
-          contentDescription = "Pause",
-          modifier = Modifier
-            .size(72.dp)
-            .clip(CircleShape)
-            .clickable {
-              pause()
-            },
-          tint = Color.White
-        )
+    AnimatedContent(targetState = playerState.playbackState) { loading ->
+      if (loading != 2) {
+        AnimatedContent(targetState = playerState.isPlaying) { targetState ->
+          if (targetState) {
+            Icon(
+              imageVector = Icons.Rounded.PauseCircle,
+              contentDescription = "Pause",
+              modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .clickable {
+                  pause()
+                },
+              tint = Color.White
+            )
+          } else {
+            Icon(
+              imageVector = Icons.Rounded.PlayCircle,
+              contentDescription = "Play",
+              modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .clickable {
+                  play()
+                }
+            )
+          }
+        }
       } else {
-        Icon(
-          imageVector = Icons.Rounded.PlayCircle,
-          contentDescription = "Play",
-          modifier = Modifier
-            .size(72.dp)
-            .clip(CircleShape)
-            .clickable {
-              play()
-            }
+        LoadingIndicator(
+          modifier = Modifier.size(72.dp),
+          color = Color.White
         )
       }
     }
