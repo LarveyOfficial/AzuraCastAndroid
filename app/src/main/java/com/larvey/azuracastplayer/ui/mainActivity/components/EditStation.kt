@@ -43,7 +43,7 @@ fun EditStation(
   val hls = stationData.station.hlsEnabled
   var setMount by remember { mutableStateOf(station.defaultMount) }
   val textFieldState =
-    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS" else mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
+    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS (experimental)" else mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
 
   Dialog(onDismissRequest = { hideDialog() }) {
     Card(
@@ -116,12 +116,12 @@ fun EditStation(
               DropdownMenuItem(
                 text = {
                   Text(
-                    "HLS",
+                    "HLS (experimental)",
                     style = MaterialTheme.typography.bodyLarge
                   )
                 },
                 onClick = {
-                  textFieldState.setTextAndPlaceCursorAtEnd("HLS")
+                  textFieldState.setTextAndPlaceCursorAtEnd("HLS (experimental)")
                   setMount = stationData.station.hlsUrl!!
                   expandedDropdown = false
                 },

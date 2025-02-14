@@ -20,8 +20,8 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -89,7 +89,7 @@ fun NowPlaying(
     val transitionA = rememberInfiniteTransition(label = "X")
     val transitionB = rememberInfiniteTransition(label = "Y")
 
-    val defaultColor = BottomSheetDefaults.ContainerColor
+    val defaultColor = MaterialTheme.colorScheme.outline
 
     val scope = rememberCoroutineScope()
 
@@ -139,9 +139,10 @@ fun NowPlaying(
           val maxLuminance = 0.45f
 
           var vibrantSwatch = palette?.vibrantSwatch?.hsl
-            ?: defaultHSL
+            ?: palette?.dominantSwatch?.hsl ?: defaultHSL
 
-          var mutedSwatch = palette?.mutedSwatch?.hsl ?: defaultHSL
+          var mutedSwatch = palette?.mutedSwatch?.hsl ?: palette?.dominantSwatch?.hsl
+          ?: defaultHSL
 
           var lightMutedSwatch = palette?.lightMutedSwatch?.hsl
             ?: defaultHSL

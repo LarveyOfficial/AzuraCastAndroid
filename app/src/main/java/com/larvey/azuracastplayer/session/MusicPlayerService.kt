@@ -11,6 +11,7 @@ import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -71,9 +72,9 @@ class MusicPlayerService() : MediaLibraryService() {
       override fun getCurrentPosition(): Long {
         if (nowPlaying.staticData.value?.nowPlaying?.playedAt != null) {
           if ((System.currentTimeMillis() / 1000) < nowPlaying.staticData.value?.nowPlaying?.playedAt!!) {
-            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) // System Time sync issue. Trying to prevent negative time elapsed
+            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic) super.currentPosition else 0 // System Time sync issue. Trying to prevent negative time elapsed
           }
-          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000)
+          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic) super.currentPosition else 0
         }
         return super.currentPosition
       }
@@ -87,6 +88,25 @@ class MusicPlayerService() : MediaLibraryService() {
             nowPlaying.nowPlayingShortCode.value,
             player
           )
+        }
+      }
+
+      override fun onPlayerError(error: PlaybackException) {
+        Log.d(
+          "DEBUG",
+          "Player Error ${error.errorCode}"
+        )
+        if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
+          Log.d(
+            "DEBUG",
+            "BEHIND LIVE WINDOW"
+          )
+          player.seekToDefaultPosition()
+          player.prepare()
+        }
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
+          player.seekToDefaultPosition()
+          player.prepare()
         }
       }
     })

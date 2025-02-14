@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,7 +62,7 @@ fun ProgressBar(
       drawStopIndicator = {},
       trackColor = Color(
         palette?.lightVibrantSwatch?.bodyTextColor
-          ?: ProgressIndicatorDefaults.linearTrackColor.toArgb()
+          ?: Color.DarkGray.toArgb()
       ),
       color = Color(
         HSLToColor(brightDominant)
@@ -78,7 +77,8 @@ fun ProgressBar(
         .fillMaxWidth()
         .padding(horizontal = 16.dp)
     ) {
-      val duration = playerState.mediaMetadata.durationMs!!.toDuration(DurationUnit.MILLISECONDS)
+      val duration = playerState.mediaMetadata.durationMs?.toDuration(DurationUnit.MILLISECONDS)
+        ?: 0.toDuration(DurationUnit.MILLISECONDS)
 
       val position = currentPosition.toDuration(DurationUnit.MILLISECONDS)
 

@@ -93,7 +93,8 @@ fun MediaControls(
                 .clip(CircleShape)
                 .clickable {
                   play()
-                }
+                },
+              tint = Color.White
             )
           }
         }

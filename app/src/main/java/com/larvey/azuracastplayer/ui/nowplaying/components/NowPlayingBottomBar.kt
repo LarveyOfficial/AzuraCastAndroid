@@ -1,6 +1,6 @@
 package com.larvey.azuracastplayer.ui.nowplaying.components
 
-import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -61,7 +61,7 @@ fun NowPlayingBottomBar(
     targetValue = currentProgress,
     animationSpec = tween(
       durationMillis = 1000,
-      easing = FastOutLinearInEasing
+      easing = LinearEasing
     )
   )
 
@@ -143,14 +143,15 @@ suspend fun updateTime(
   while (isVisible) {
     if (playerState?.isPlaying == true) {
       var currentPosition: Number = 0f
-      currentPosition = if (playerState.player.currentMediaItem?.mediaId?.endsWith(".m3u8") == true) {
+      currentPosition = if (playerState.player.isCurrentMediaItemDynamic) {
         ((System.currentTimeMillis() / 1000).minus(nowPlayingData?.staticData?.value?.nowPlaying?.playedAt!!) * 1000) - playerState.player.currentPosition
       } else {
         playerState.player.currentPosition
       }
 
       updateProgress(
-        currentPosition.toFloat() / playerState.player.mediaMetadata.durationMs!!.toFloat(),
+        currentPosition.toFloat() / (playerState.player.mediaMetadata.durationMs
+          ?: 1).toFloat(),
         currentPosition.toLong()
       )
     }
