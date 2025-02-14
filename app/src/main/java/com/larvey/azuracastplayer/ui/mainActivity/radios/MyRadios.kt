@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -36,11 +35,11 @@ fun MyRadios(
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
   deleteRadio: (SavedStation) -> Unit,
   editRadio: (SavedStation) -> Unit,
-  radioListMode: MutableState<Boolean>
+  radioListMode: Boolean
 ) {
   if (savedRadioList?.isNotEmpty() == true) {
     Column(modifier = Modifier.padding(innerPadding)) {
-      AnimatedContent(radioListMode.value) { targetState ->
+      AnimatedContent(radioListMode) { targetState ->
         if (!targetState) {
           LazyColumn(
             modifier = Modifier

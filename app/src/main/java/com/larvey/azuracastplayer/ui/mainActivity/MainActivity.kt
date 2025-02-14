@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
@@ -78,8 +81,12 @@ class MainActivity : ComponentActivity() {
 
         var showAddDialog by remember { mutableStateOf(false) }
         var showNowPlaying by remember { mutableStateOf(false) }
-        var radioListMode = remember { mutableStateOf(false) } // false = list, true = grid
-
+        val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
+        val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
+        Log.d(
+          "DEBUG",
+          radioListMode.toString()
+        )
         val mediaController by rememberManagedMediaController()
 
         rememberCoroutineScope()
@@ -132,15 +139,17 @@ class MainActivity : ComponentActivity() {
             ),
               title = { Text("Radio List") },
               actions = {
-                IconButton(
-                  onClick = {
-                    radioListMode.value = !radioListMode.value
+                AnimatedVisibility(radioListMode != null) {
+                  IconButton(
+                    onClick = {
+                      settingsModel.toggleGridView()
+                    }
+                  ) {
+                    Icon(
+                      imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                      contentDescription = "Add"
+                    )
                   }
-                ) {
-                  Icon(
-                    imageVector = if (radioListMode.value) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                    contentDescription = "Add"
-                  )
                 }
               }
             )
@@ -178,28 +187,32 @@ class MainActivity : ComponentActivity() {
               }
             }
           }) { innerPadding ->
+          AnimatedVisibility(
+            radioListMode != null,
+            enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 })
+          ) {
+            MyRadios(
+              savedRadioList = mainActivityViewModel?.savedRadioList,
+              innerPadding = innerPadding,
+              setPlaybackSource = { url, uri, shortCode ->
+                mainActivityViewModel?.setPlaybackSource(
+                  url,
+                  uri,
+                  shortCode,
+                  mediaController
+                )
 
-          MyRadios(
-            savedRadioList = mainActivityViewModel?.savedRadioList,
-            innerPadding = innerPadding,
-            setPlaybackSource = { url, uri, shortCode ->
-              mainActivityViewModel?.setPlaybackSource(
-                url,
-                uri,
-                shortCode,
-                mediaController
-              )
-
-            },
-            staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
-            deleteRadio = { station ->
-              mainActivityViewModel?.deleteStation(station)
-            },
-            editRadio = { newStation ->
-              mainActivityViewModel?.editStation(newStation)
-            },
-            radioListMode = radioListMode
-          )
+              },
+              staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
+              deleteRadio = { station ->
+                mainActivityViewModel?.deleteStation(station)
+              },
+              editRadio = { newStation ->
+                mainActivityViewModel?.editStation(newStation)
+              },
+              radioListMode = radioListMode!!
+            )
+          }
         }
         when {
           showAddDialog -> {
