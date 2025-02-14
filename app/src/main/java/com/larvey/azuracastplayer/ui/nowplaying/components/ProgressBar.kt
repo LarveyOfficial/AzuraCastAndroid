@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils.HSLToColor
+import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
@@ -40,6 +42,18 @@ fun ProgressBar(
   palette: Palette?
 ) {
   Column {
+    var brightDominant = floatArrayOf(
+      0f,
+      0f,
+      0f
+    )
+    colorToHSL(
+      palette?.dominantSwatch?.rgb ?: Color.White.toArgb(),
+      brightDominant
+    )
+    if (brightDominant[2] <= 0.7f) {
+      brightDominant[2] = 0.7f
+    }
     LinearProgressIndicator(
       progress = { progressAnimation },
       modifier = Modifier
@@ -52,8 +66,7 @@ fun ProgressBar(
           ?: ProgressIndicatorDefaults.linearTrackColor.toArgb()
       ),
       color = Color(
-        palette?.lightVibrantSwatch?.rgb
-          ?: ProgressIndicatorDefaults.linearColor.toArgb()
+        HSLToColor(brightDominant)
       )
     )
 
