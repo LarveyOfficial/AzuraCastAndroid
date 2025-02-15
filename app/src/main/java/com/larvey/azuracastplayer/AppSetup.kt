@@ -48,7 +48,7 @@ class AppSetup : Application() {
         """
         )
         database.execSQL(
-          """
+          """ 
             CREATE TABLE savedstation (
                 name TEXT NOT NULL,
                 url TEXT NOT NULL,
@@ -57,11 +57,6 @@ class AppSetup : Application() {
                 position INTEGER NOT NULL,
                 PRIMARY KEY (shortcode, url)
             );
-        """
-        )
-        database.execSQL(
-          """
-            CREATE UNIQUE INDEX index_savedstation_position ON savedstation (position);
         """
         )
         database.execSQL(

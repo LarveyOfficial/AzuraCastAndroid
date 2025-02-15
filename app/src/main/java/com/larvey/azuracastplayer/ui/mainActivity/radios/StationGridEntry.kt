@@ -124,7 +124,7 @@ fun StationGridEntry(
           Modifier
             .size(174.dp)
             .clip(RoundedCornerShape(8.dp))
-            .draggableHandle(
+            .longPressDraggableHandle(
               onDragStarted = {
                 Log.d(
                   "DEBUG",

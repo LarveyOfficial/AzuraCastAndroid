@@ -98,7 +98,7 @@ fun StationListEntry(
         containerColor = MaterialTheme.colorScheme.surfaceContainer
       ),
       modifier = with(scope) {
-        Modifier.draggableHandle(
+        Modifier.longPressDraggableHandle(
           onDragStarted = {
             Log.d(
               "DEBUG",

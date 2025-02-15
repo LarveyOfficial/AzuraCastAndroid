@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -100,6 +101,12 @@ fun MyRadios(
         HapticFeedbackConstantsCompat.SEGMENT_FREQUENT_TICK
       )
 
+    }
+
+    BackHandler(editingList.value) {
+      editingList.value = false
+      confirmEdit.value = false
+      list = savedRadioList
     }
 
     val reorderableLazyGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
