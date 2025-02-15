@@ -150,7 +150,7 @@ suspend fun updateTime(
       }
 
       updateProgress(
-        currentPosition.toFloat() / (playerState.player.mediaMetadata.durationMs
+        currentPosition.toFloat() / (if (playerState.player.mediaMetadata.durationMs == 0L) 1 else playerState.player.mediaMetadata.durationMs
           ?: 1).toFloat(),
         currentPosition.toLong()
       )
