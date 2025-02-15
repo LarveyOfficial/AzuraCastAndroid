@@ -48,6 +48,7 @@ data class AddableStation(
 fun AddStationDialog(
   hideDialog: () -> Unit,
   addData: (stations: List<SavedStation>) -> Unit,
+  currentStationCount: Int,
 ) {
   val radioSearchViewModel: RadioSearchViewModel = viewModel()
 
@@ -224,13 +225,14 @@ fun AddStationDialog(
             } else {
               TextButton(onClick = {
                 var listOfStations = mutableListOf<SavedStation>()
-                for (item in checkedStations) {
+                for ((index, item) in checkedStations.withIndex()) {
                   listOfStations.add(
                     SavedStation(
                       item.name,
                       formatedURL.lowercase(),
                       item.shortcode,
-                      item.defaultMount
+                      item.defaultMount,
+                      currentStationCount + index
                     )
                   )
                 }

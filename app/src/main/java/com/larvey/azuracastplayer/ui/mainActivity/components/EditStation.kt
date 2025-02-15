@@ -147,7 +147,8 @@ fun EditStation(
                 name = stationFieldRename,
                 url = station.url,
                 shortcode = station.shortcode,
-                defaultMount = setMount
+                defaultMount = setMount,
+                position = station.position
               )
               editStation(
                 newStation

@@ -20,6 +20,7 @@ media3Exoplayer = "1.5.1"
 navigationCompose = "2.8.5"
 navigationComposeVersion = "2.8.6"
 palette = "1.0.0"
+reorderable = "2.4.3"
 retrofit = "2.9.0"
 roomRuntime = "2.6.1"
 
@@ -57,6 +58,7 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 
 [plugins]

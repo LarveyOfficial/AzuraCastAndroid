@@ -7,12 +7,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,6 +87,11 @@ class MainActivity : ComponentActivity() {
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
         val mediaController by rememberManagedMediaController()
 
+        val editingList = remember { mutableStateOf(false) }
+        val confirmEdit = remember { mutableStateOf(false) }
+        editingList
+        confirmEdit
+
         rememberCoroutineScope()
 
         var playerState: PlayerState? by remember {
@@ -94,7 +101,6 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
           mainActivityViewModel?.getStationList(false)
         }
-
 
         LaunchedEffect(key1 = mainActivityViewModel?.savedRadioList) {
           while (mainActivityViewModel?.savedRadioList != null && mainActivityViewModel?.savedRadioList != emptyList<SavedStation>()) {
@@ -136,15 +142,29 @@ class MainActivity : ComponentActivity() {
               title = { Text("Radio List") },
               actions = {
                 AnimatedVisibility(radioListMode != null) {
-                  IconButton(
-                    onClick = {
-                      settingsModel.toggleGridView()
+                  AnimatedContent(editingList.value) { targetState ->
+                    if (targetState) {
+                      IconButton(
+                        onClick = {
+                          confirmEdit.value = true
+                        }) {
+                        Icon(
+                          imageVector = Icons.Rounded.CheckCircle,
+                          contentDescription = "Confirm Order"
+                        )
+                      }
+                    } else {
+                      IconButton(
+                        onClick = {
+                          settingsModel.toggleGridView()
+                        }
+                      ) {
+                        Icon(
+                          imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                          contentDescription = "Add"
+                        )
+                      }
                     }
-                  ) {
-                    Icon(
-                      imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                      contentDescription = "Add"
-                    )
                   }
                 }
               }
@@ -206,7 +226,12 @@ class MainActivity : ComponentActivity() {
               editRadio = { newStation ->
                 mainActivityViewModel?.editStation(newStation)
               },
-              radioListMode = radioListMode!!
+              radioListMode = radioListMode!!,
+              editingList = editingList,
+              confirmEdit = confirmEdit,
+              editAllStations = { stations ->
+                mainActivityViewModel?.editAllStations(stations)
+              }
             )
           }
         }
@@ -218,7 +243,9 @@ class MainActivity : ComponentActivity() {
                 mainActivityViewModel?.addStation(
                   stations
                 )
-              })
+              },
+              currentStationCount = mainActivityViewModel?.savedRadioList?.size ?: 0
+            )
           }
 
           showNowPlaying -> {

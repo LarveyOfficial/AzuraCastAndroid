@@ -6,7 +6,7 @@ import com.larvey.azuracastplayer.classes.data.SavedStation
 
 @Database(
   entities = [SavedStation::class],
-  version = 1
+  version = 2
 )
 abstract class SavedStationsDatabase : RoomDatabase() {
   abstract val dao: SavedStationDao

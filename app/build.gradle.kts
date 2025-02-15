@@ -73,6 +73,8 @@ dependencies {
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
+  implementation(libs.reorderable)
+
   implementation(libs.androidx.media3.exoplayer.hls)
 
   implementation(libs.androidx.palette)

@@ -14,7 +14,7 @@ interface SavedStationDao {
   @Upsert
   suspend fun insertStation(savedStation: SavedStation)
 
-  @Query("SELECT * FROM savedstation")
+  @Query("SELECT * FROM savedstation ORDER BY position")
   fun getAllEntries(): List<SavedStation>
 
   @Delete

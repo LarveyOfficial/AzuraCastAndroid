@@ -1,26 +1,43 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.HapticFeedbackConstantsCompat
+import androidx.core.view.ViewCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -35,44 +52,154 @@ fun MyRadios(
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
   deleteRadio: (SavedStation) -> Unit,
   editRadio: (SavedStation) -> Unit,
-  radioListMode: Boolean
+  radioListMode: Boolean,
+  editingList: MutableState<Boolean>,
+  confirmEdit: MutableState<Boolean>,
+  editAllStations: (List<SavedStation>) -> Unit
 ) {
   if (savedRadioList?.isNotEmpty() == true) {
+
+    val view = LocalView.current
+
+    var list by remember { mutableStateOf(savedRadioList) }
+
+    LaunchedEffect(savedRadioList.size) {
+      Log.d(
+        "DEBUG",
+        "Updating List"
+      )
+      list = savedRadioList
+    }
+
+    val lazyListState = rememberLazyListState()
+
+    val lazyGridState = rememberLazyGridState()
+
+    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+      list = list.toMutableList().apply {
+        add(
+          to.index,
+          removeAt(from.index)
+        )
+      }
+
+      list = list.toMutableList().apply {
+        for ((index, item) in this.withIndex()) {
+          this[index] = SavedStation(
+            item.name,
+            item.url,
+            item.shortcode,
+            item.defaultMount,
+            index
+          )
+        }
+      }
+
+      ViewCompat.performHapticFeedback(
+        view,
+        HapticFeedbackConstantsCompat.SEGMENT_FREQUENT_TICK
+      )
+
+    }
+
+    val reorderableLazyGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
+      list = list.toMutableList().apply {
+        add(
+          to.index,
+          removeAt(from.index)
+        )
+      }
+
+      list = list.toMutableList().apply {
+        for ((index, item) in this.withIndex()) {
+          this[index] = SavedStation(
+            item.name,
+            item.url,
+            item.shortcode,
+            item.defaultMount,
+            index
+          )
+        }
+      }
+
+      ViewCompat.performHapticFeedback(
+        view,
+        HapticFeedbackConstantsCompat.SEGMENT_FREQUENT_TICK
+      )
+    }
+
+    when (editingList.value && confirmEdit.value) {
+      true -> {
+        editingList.value = false
+        confirmEdit.value = false
+        editAllStations(list)
+      }
+
+      false -> {}
+    }
+
     Column(modifier = Modifier.padding(innerPadding)) {
       AnimatedContent(radioListMode) { targetState ->
         if (!targetState) {
           LazyColumn(
             modifier = Modifier
               .fillMaxSize()
-              .padding(all = 16.dp)
+              .padding(all = 16.dp),
+            state = lazyListState
           ) {
-            itemsIndexed(savedRadioList) { _, item ->
-              StationListEntry(
-                station = item,
-                setPlaybackSource = setPlaybackSource,
-                staticDataMap = staticDataMap,
-                deleteRadio = deleteRadio,
-                editRadio = editRadio
-              )
+            items(
+              list,
+              key = { it.shortcode }) { item ->
+              ReorderableItem(
+                reorderableLazyListState,
+                key = item.shortcode
+              ) {
+                StationListEntry(
+                  scope = this,
+                  interactionSource = remember { MutableInteractionSource() },
+                  station = item,
+                  setPlaybackSource = setPlaybackSource,
+                  staticDataMap = staticDataMap,
+                  deleteRadio = deleteRadio,
+                  editRadio = editRadio,
+                  editingList = editingList
+                )
+
+              }
               Spacer(Modifier.height(8.dp))
             }
-
+            item {
+              Spacer(modifier = Modifier.size(64.dp))
+            }
           }
         } else {
           LazyVerticalGrid(
             modifier = Modifier
               .fillMaxSize()
               .padding(horizontal = 16.dp),
-            columns = GridCells.Adaptive(minSize = 164.dp)
+            columns = GridCells.Adaptive(minSize = 164.dp),
+            state = lazyGridState
           ) {
-            itemsIndexed(savedRadioList) { _, item ->
-              StationGridEntry(
-                station = item,
-                setPlaybackSource = setPlaybackSource,
-                staticDataMap = staticDataMap,
-                deleteRadio = deleteRadio,
-                editRadio = editRadio
-              )
+            items(
+              list,
+              key = { it.shortcode }) { item ->
+              ReorderableItem(
+                reorderableLazyGridState,
+                key = item.shortcode
+              ) {
+                StationGridEntry(
+                  scope = this,
+                  station = item,
+                  setPlaybackSource = setPlaybackSource,
+                  staticDataMap = staticDataMap,
+                  deleteRadio = deleteRadio,
+                  editRadio = editRadio,
+                  editingList = editingList
+                )
+              }
+            }
+            item {
+              Spacer(modifier = Modifier.size(64.dp))
             }
           }
         }

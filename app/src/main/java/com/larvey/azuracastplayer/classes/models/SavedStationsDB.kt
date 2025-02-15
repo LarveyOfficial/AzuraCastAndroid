@@ -6,16 +6,13 @@ import kotlinx.coroutines.coroutineScope
 
 class SavedStationsDB(private val dao: SavedStationDao) {
 
-  suspend fun saveStation(name: String, shortcode: String, url: String, defaultMount: String) =
+  suspend fun saveStation(
+    newStation: SavedStation,
+  ) {
     coroutineScope {
-      val newEntry = SavedStation(
-        name = name,
-        shortcode = shortcode,
-        url = url,
-        defaultMount = defaultMount
-      )
-      dao.insertStation(newEntry)
+      dao.insertStation(newStation)
     }
+  }
 
   fun getAllEntries(): List<SavedStation> {
     return dao.getAllEntries()
