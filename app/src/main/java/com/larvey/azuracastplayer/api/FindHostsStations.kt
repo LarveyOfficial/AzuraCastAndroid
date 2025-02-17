@@ -33,13 +33,10 @@ fun findHostsStations(stationData: MutableMap<String, List<StationJSON>>, url: S
       response: Response<List<StationJSON>?>
     ) {
       if (response.isSuccessful) {
-        val nowPlayingData: List<StationJSON> = response.body()!!
+        val nowPlayingData: List<StationJSON> = response.body() ?: return
         if (nowPlayingData.isEmpty()) return
 
-        stationData.put(
-          url,
-          nowPlayingData
-        )
+        stationData[url] = nowPlayingData
       }
     }
 

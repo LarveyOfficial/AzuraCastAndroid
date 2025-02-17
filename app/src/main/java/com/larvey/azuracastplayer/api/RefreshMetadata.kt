@@ -54,8 +54,7 @@ fun refreshMetadata(
       response: Response<StationJSON?>
     ) {
       if (response.isSuccessful) {
-        val data = response.body()
-        if (data == null) return
+        val data = response.body() ?: return
 
         staticData.value = staticDataMap.put(
           Pair(
@@ -93,7 +92,7 @@ fun refreshMetadata(
           updatedMediaItems[0]
         )
 
-        if (reset == true) {
+        if (reset) {
           mediaPlayer?.prepare()
           mediaPlayer?.play()
         }

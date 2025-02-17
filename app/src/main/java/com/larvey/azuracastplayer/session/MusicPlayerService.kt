@@ -96,15 +96,15 @@ class MusicPlayerService() : MediaLibraryService() {
           "DEBUG",
           "Player Error ${error.errorCode}"
         )
-        if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
-          Log.d(
-            "DEBUG",
-            "BEHIND LIVE WINDOW"
-          )
-          player.seekToDefaultPosition()
-          player.prepare()
-        }
-        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
+
+        val badConnections = listOf(
+          PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+          PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+          PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW,
+          PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+        )
+        if (error.errorCode in badConnections) {
+          Log.d("DEBUG", "Connection issue, going to keep trying to play")
           player.seekToDefaultPosition()
           player.prepare()
         }
