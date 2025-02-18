@@ -38,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
@@ -83,8 +82,6 @@ fun NowPlaying(
   if (playerState?.currentMediaItem == null) hideNowPlaying()
 
   if (playerState?.currentMediaItem != null) {
-
-    LocalContext.current.applicationContext
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 

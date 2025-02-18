@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,6 +24,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
@@ -68,6 +69,8 @@ fun MyRadios(
   if (savedRadioList?.isNotEmpty() == true) {
 
     val view = LocalView.current
+
+    val myRadiosViewModel: MyRadiosViewModel = viewModel()
 
     var list by remember { mutableStateOf(savedRadioList) }
 
@@ -156,11 +159,22 @@ fun MyRadios(
       animationSpec = tween(durationMillis = 100)
     )
 
-    Column(
-      modifier = Modifier.padding(
-        top = innerPadding.calculateTopPadding(),
-        bottom = 0.dp
-      )
+    var isRefreshing = remember { mutableStateOf(false) }
+
+    PullToRefreshBox(
+      onRefresh = {
+        isRefreshing.value = true
+        myRadiosViewModel.refreshList(
+          savedRadioList,
+          isRefreshing
+        )
+      },
+      isRefreshing = isRefreshing.value,
+      modifier = Modifier
+        .padding(
+          top = innerPadding.calculateTopPadding(),
+          bottom = 0.dp
+        )
     ) {
       AnimatedContent(radioListMode) { targetState ->
         if (!targetState) {
@@ -196,6 +210,7 @@ fun MyRadios(
             }
           }
         } else {
+
           LazyVerticalGrid(
             modifier = Modifier
               .fillMaxSize()
