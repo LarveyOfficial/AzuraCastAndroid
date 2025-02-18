@@ -60,6 +60,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
+
 @OptIn(
   ExperimentalMaterial3Api::class,
   ExperimentalGlideComposeApi::class,
@@ -124,7 +125,7 @@ fun NowPlaying(
         Glide.with(appContext).asBitmap().load(
           playerState.mediaMetadata.artworkUri.toString()
         ).submit().get().let { bitmap ->
-          palette = Palette.from(bitmap).maximumColorCount(24).generate()
+          palette = Palette.from(bitmap).maximumColorCount(32).generate()
 
           var defaultHSL = floatArrayOf(
             0f,
@@ -158,6 +159,19 @@ fun NowPlaying(
           if (lightMutedSwatch[2] > maxLuminance) {
             lightMutedSwatch[2] = maxLuminance
           }
+
+          var lightVibrantSwatch = palette?.lightVibrantSwatch?.hsl
+            ?: defaultHSL
+
+          var darkVibrantSwatch = palette?.darkVibrantSwatch?.hsl ?: defaultHSL
+
+          if (darkVibrantSwatch[2] > maxLuminance) {
+            darkVibrantSwatch[2] = maxLuminance
+          }
+          if (lightVibrantSwatch[2] > maxLuminance) {
+            lightVibrantSwatch[2] = maxLuminance
+          }
+
           val paletteColors = listOf(
             Color(
               HSLToColor(vibrantSwatch)
@@ -167,6 +181,12 @@ fun NowPlaying(
             ),
             Color(
               HSLToColor(lightMutedSwatch)
+            ),
+            Color(
+              HSLToColor(darkVibrantSwatch)
+            ),
+            Color(
+              HSLToColor(lightVibrantSwatch)
             )
           )
 

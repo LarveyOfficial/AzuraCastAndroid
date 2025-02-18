@@ -3,6 +3,8 @@ package com.larvey.azuracastplayer.ui.mainActivity.radios
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -150,9 +150,28 @@ fun MyRadios(
       false -> {}
     }
 
-    Log.d("DEBUG", "${innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()}")
+    Log.d(
+      "DEBUG",
+      "${
+        innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()
+          .calculateBottomPadding()
+      }"
+    )
 
-    Column(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
+    val animatedPadding by animateDpAsState(
+      targetValue = if (innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()
+          .calculateBottomPadding() == 0.dp
+      ) WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding() else innerPadding.calculateBottomPadding(),
+      animationSpec = tween(durationMillis = 100)
+    )
+
+    Column(
+      modifier = Modifier.padding(
+        top = innerPadding.calculateTopPadding(),
+        bottom = 0.dp
+      )
+    ) {
       AnimatedContent(radioListMode) { targetState ->
         if (!targetState) {
           LazyColumn(
@@ -183,7 +202,7 @@ fun MyRadios(
               Spacer(Modifier.height(8.dp))
             }
             item {
-              Spacer(modifier = Modifier.size(350.dp))
+              Spacer(modifier = Modifier.size(animatedPadding))
             }
           }
         } else {
@@ -213,7 +232,7 @@ fun MyRadios(
               }
             }
             item {
-              Spacer(modifier = Modifier.size(350.dp))
+              Spacer(modifier = Modifier.size(animatedPadding))
             }
           }
         }
