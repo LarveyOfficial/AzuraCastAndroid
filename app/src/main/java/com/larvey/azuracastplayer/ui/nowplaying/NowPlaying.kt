@@ -119,14 +119,13 @@ fun NowPlaying(
       label = "Y"
     )
 
-    LaunchedEffect(playerState.mediaMetadata.artworkUri) {
+    LaunchedEffect(palette.value) {
       this.async(Dispatchers.IO) {
         var defaultHSL = floatArrayOf(
           0f,
           0f,
           0f
         )
-
         colorToHSL(
           defaultColor.toArgb(),
           defaultHSL
