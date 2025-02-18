@@ -148,14 +148,6 @@ fun MyRadios(
       false -> {}
     }
 
-    Log.d(
-      "DEBUG",
-      "${
-        innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()
-          .calculateBottomPadding()
-      }"
-    )
-
     val animatedPadding by animateDpAsState(
       targetValue = if (innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()
           .calculateBottomPadding() == 0.dp
