@@ -44,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -55,6 +57,7 @@ import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
@@ -122,6 +125,12 @@ fun StationGridEntry(
       GlideImage(
         model = stationData?.nowPlaying?.song?.art.toString(),
         contentDescription = "${stationData?.station?.name}",
+        failure = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
+        loading = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
         modifier = with(scope) {
           Modifier
             .size(174.dp)
@@ -185,6 +194,12 @@ fun StationGridEntry(
       GlideImage(
         model = stationData?.nowPlaying?.song?.art.toString(),
         contentDescription = "${stationData?.station?.name}",
+        failure = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
+        loading = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
         modifier = Modifier
           .size(174.dp)
           .clip(RoundedCornerShape(8.dp))

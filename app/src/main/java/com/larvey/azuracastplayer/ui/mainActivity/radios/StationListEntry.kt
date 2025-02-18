@@ -40,6 +40,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -51,6 +53,7 @@ import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
@@ -133,7 +136,13 @@ fun StationListEntry(
           contentDescription = "${stationData?.station?.name}",
           modifier = Modifier
             .size(64.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp)),
+          failure = placeholder(
+            ColorPainter(Color.DarkGray)
+          ),
+          loading = placeholder(
+            ColorPainter(Color.DarkGray)
+          )
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column(
@@ -211,7 +220,13 @@ fun StationListEntry(
             contentDescription = "${stationData?.station?.name}",
             modifier = Modifier
               .size(64.dp)
-              .clip(RoundedCornerShape(8.dp))
+              .clip(RoundedCornerShape(8.dp)),
+            failure = placeholder(
+              ColorPainter(Color.DarkGray)
+            ),
+            loading = placeholder(
+              ColorPainter(Color.DarkGray)
+            )
           )
           Spacer(modifier = Modifier.width(8.dp))
           Column(verticalArrangement = Arrangement.Center) {
