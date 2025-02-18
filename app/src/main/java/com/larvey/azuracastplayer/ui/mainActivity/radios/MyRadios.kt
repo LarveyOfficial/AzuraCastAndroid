@@ -17,12 +17,12 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
@@ -61,7 +61,9 @@ fun MyRadios(
   radioListMode: Boolean,
   editingList: MutableState<Boolean>,
   confirmEdit: MutableState<Boolean>,
-  editAllStations: (List<SavedStation>) -> Unit
+  editAllStations: (List<SavedStation>) -> Unit,
+  lazyListState: LazyListState,
+  lazyGridState: LazyGridState
 ) {
   if (savedRadioList?.isNotEmpty() == true) {
 
@@ -76,10 +78,6 @@ fun MyRadios(
       )
       list = savedRadioList
     }
-
-    val lazyListState = rememberLazyListState()
-
-    val lazyGridState = rememberLazyGridState()
 
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
       list = list.toMutableList().apply {
@@ -177,7 +175,7 @@ fun MyRadios(
           LazyColumn(
             modifier = Modifier
               .fillMaxSize()
-              .padding(all = 16.dp),
+              .padding(horizontal = 16.dp),
             state = lazyListState
           ) {
             items(

@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.palette.graphics.Palette
-import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.PlayingNext
@@ -76,14 +76,15 @@ fun NowPlaying(
   currentMount: Mount?,
   songHistory: List<SongHistory>?,
   playingNext: PlayingNext?,
-  nowPlayingData: NowPlayingData?
+  nowPlayingData: NowPlayingData?,
+  palette: MutableState<Palette?>
 ) {
 
   if (playerState?.currentMediaItem == null) hideNowPlaying()
 
   if (playerState?.currentMediaItem != null) {
 
-    val appContext = LocalContext.current.applicationContext
+    LocalContext.current.applicationContext
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -95,8 +96,6 @@ fun NowPlaying(
     val scope = rememberCoroutineScope()
 
     var colorList by remember { mutableStateOf(List(9) { defaultColor }) }
-
-    var palette by remember { mutableStateOf<Palette?>(null) }
 
     val showQueue = remember { mutableStateOf(false) }
 
@@ -122,79 +121,74 @@ fun NowPlaying(
 
     LaunchedEffect(playerState.mediaMetadata.artworkUri) {
       this.async(Dispatchers.IO) {
-        Glide.with(appContext).asBitmap().load(
-          playerState.mediaMetadata.artworkUri.toString()
-        ).submit().get().let { bitmap ->
-          palette = Palette.from(bitmap).maximumColorCount(32).generate()
+        var defaultHSL = floatArrayOf(
+          0f,
+          0f,
+          0f
+        )
 
-          var defaultHSL = floatArrayOf(
-            0f,
-            0f,
-            0f
-          )
+        colorToHSL(
+          defaultColor.toArgb(),
+          defaultHSL
+        )
+        val maxLuminance = 0.45f
 
-          colorToHSL(
-            defaultColor.toArgb(),
-            defaultHSL
-          )
-          val maxLuminance = 0.45f
+        var vibrantSwatch = palette.value?.vibrantSwatch?.hsl
+          ?: palette.value?.dominantSwatch?.hsl ?: defaultHSL
 
-          var vibrantSwatch = palette?.vibrantSwatch?.hsl
-            ?: palette?.dominantSwatch?.hsl ?: defaultHSL
-
-          var mutedSwatch = palette?.mutedSwatch?.hsl ?: palette?.dominantSwatch?.hsl
+        var mutedSwatch = palette.value?.mutedSwatch?.hsl
+          ?: palette.value?.dominantSwatch?.hsl
           ?: defaultHSL
 
-          var lightMutedSwatch = palette?.lightMutedSwatch?.hsl
-            ?: defaultHSL
+        var lightMutedSwatch = palette.value?.lightMutedSwatch?.hsl
+          ?: defaultHSL
 
-          if (vibrantSwatch[2] > maxLuminance) {
-            vibrantSwatch[2] = maxLuminance
-          }
-
-          if (mutedSwatch[2] > maxLuminance) {
-            mutedSwatch[2] = maxLuminance
-          }
-
-          if (lightMutedSwatch[2] > maxLuminance) {
-            lightMutedSwatch[2] = maxLuminance
-          }
-
-          var lightVibrantSwatch = palette?.lightVibrantSwatch?.hsl
-            ?: defaultHSL
-
-          var darkVibrantSwatch = palette?.darkVibrantSwatch?.hsl ?: defaultHSL
-
-          if (darkVibrantSwatch[2] > maxLuminance) {
-            darkVibrantSwatch[2] = maxLuminance
-          }
-          if (lightVibrantSwatch[2] > maxLuminance) {
-            lightVibrantSwatch[2] = maxLuminance
-          }
-
-          val paletteColors = listOf(
-            Color(
-              HSLToColor(vibrantSwatch)
-            ),
-            Color(
-              HSLToColor(mutedSwatch)
-            ),
-            Color(
-              HSLToColor(lightMutedSwatch)
-            ),
-            Color(
-              HSLToColor(darkVibrantSwatch)
-            ),
-            Color(
-              HSLToColor(lightVibrantSwatch)
-            )
-          )
-
-          colorList = weightedRandomColors(
-            paletteColors,
-            9
-          )
+        if (vibrantSwatch[2] > maxLuminance) {
+          vibrantSwatch[2] = maxLuminance
         }
+
+        if (mutedSwatch[2] > maxLuminance) {
+          mutedSwatch[2] = maxLuminance
+        }
+
+        if (lightMutedSwatch[2] > maxLuminance) {
+          lightMutedSwatch[2] = maxLuminance
+        }
+
+        var lightVibrantSwatch = palette.value?.lightVibrantSwatch?.hsl
+          ?: defaultHSL
+
+        var darkVibrantSwatch = palette.value?.darkVibrantSwatch?.hsl ?: defaultHSL
+
+        if (darkVibrantSwatch[2] > maxLuminance) {
+          darkVibrantSwatch[2] = maxLuminance
+        }
+        if (lightVibrantSwatch[2] > maxLuminance) {
+          lightVibrantSwatch[2] = maxLuminance
+        }
+
+        val paletteColors = listOf(
+          Color(
+            HSLToColor(vibrantSwatch)
+          ),
+          Color(
+            HSLToColor(mutedSwatch)
+          ),
+          Color(
+            HSLToColor(lightMutedSwatch)
+          ),
+          Color(
+            HSLToColor(darkVibrantSwatch)
+          ),
+          Color(
+            HSLToColor(lightVibrantSwatch)
+          )
+        )
+
+        colorList = weightedRandomColors(
+          paletteColors,
+          9
+        )
       }.await()
     }
 
@@ -271,7 +265,7 @@ fun NowPlaying(
               play = play,
               playerState = playerState,
               currentMount = currentMount,
-              palette = palette,
+              palette = palette.value,
               nowPlayingData = nowPlayingData
             )
           }
