@@ -48,8 +48,6 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @OptIn(
   ExperimentalMaterial3Api::class,
-  ExperimentalGlideComposeApi::class,
-  ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
 fun MyRadios(
@@ -161,7 +159,7 @@ fun MyRadios(
       animationSpec = tween(durationMillis = 100)
     )
 
-    var isRefreshing = remember { mutableStateOf(false) }
+    val isRefreshing = remember { mutableStateOf(false) }
 
     PullToRefreshBox(
       onRefresh = {
@@ -195,7 +193,6 @@ fun MyRadios(
               ) {
                 StationListEntry(
                   scope = this,
-                  interactionSource = remember { MutableInteractionSource() },
                   station = item,
                   setPlaybackSource = setPlaybackSource,
                   staticDataMap = staticDataMap,

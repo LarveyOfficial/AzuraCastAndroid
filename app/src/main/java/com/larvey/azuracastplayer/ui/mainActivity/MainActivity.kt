@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
         //endregion
 
         //region Animated Add Button Colors
-        var animatedFabColor = animateColorAsState(
+        val animatedFabColor = animateColorAsState(
           targetValue =
           if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.rgb != null
             || mainActivityViewModel?.palette?.value?.dominantSwatch?.rgb != null
@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
           else MaterialTheme.colorScheme.primaryContainer,
           label = "Fab Color"
         )
-        var animatedFabIconTint = animateColorAsState(
+        val animatedFabIconTint = animateColorAsState(
           targetValue =
           if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.bodyTextColor != null
             || mainActivityViewModel?.palette?.value?.dominantSwatch?.bodyTextColor != null

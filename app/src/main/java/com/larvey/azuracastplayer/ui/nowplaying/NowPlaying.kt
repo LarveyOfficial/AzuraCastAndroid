@@ -54,7 +54,6 @@ import kotlinx.coroutines.launch
 
 @OptIn(
   ExperimentalMaterial3Api::class,
-  ExperimentalGlideComposeApi::class,
   ExperimentalSharedTransitionApi::class
 )
 @Composable

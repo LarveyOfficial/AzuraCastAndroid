@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +57,7 @@ import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
+import com.larvey.azuracastplayer.utils.conditional
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
@@ -68,7 +68,6 @@ import sh.calvin.reorderable.ReorderableCollectionItemScope
 @Composable
 fun StationListEntry(
   scope: ReorderableCollectionItemScope,
-  interactionSource: MutableInteractionSource,
   station: SavedStation,
   setPlaybackSource: (String, String, String) -> Unit,
   staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
@@ -93,83 +92,107 @@ fun StationListEntry(
     )
   )
 
-  if (editingList.value) {
-    Card(
-      onClick = {},
-      interactionSource = interactionSource,
-      colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
-      ),
-      modifier = with(scope) {
-        Modifier.longPressDraggableHandle(
-          onDragStarted = {
-            Log.d(
-              "DEBUG",
-              "Dragging"
-            )
-            ViewCompat.performHapticFeedback(
-              view,
-              HapticFeedbackConstantsCompat.GESTURE_START
-            )
-          },
-          onDragStopped = {
-            Log.d(
-              "DEBUG",
-              "Stopped dragging"
-            )
-            ViewCompat.performHapticFeedback(
-              view,
-              HapticFeedbackConstantsCompat.GESTURE_END
-            )
-          }
-        )
-      },
-    ) {
-      Row(
-        modifier = Modifier
-          .padding(8.dp)
-          .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        GlideImage(
-          model = stationData?.nowPlaying?.song?.art.toString(),
-          contentDescription = "${stationData?.station?.name}",
-          modifier = Modifier
-            .size(64.dp)
-            .clip(RoundedCornerShape(8.dp)),
-          failure = placeholder(
-            ColorPainter(Color.DarkGray)
-          ),
-          loading = placeholder(
-            ColorPainter(Color.DarkGray)
-          )
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(
-          verticalArrangement = Arrangement.Center,
-          modifier = Modifier.weight(1f)
-        ) {
-          Text(
-            text = station.name,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-          )
-          if (stationData?.nowPlaying?.song?.title.toString() != "null") {
-            Row {
-              Text(
-                text = "Now playing: "
+  Card(
+    colors = CardDefaults.cardColors(
+      containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ),
+    modifier = with(scope) {
+      Modifier
+        .conditional(editingList.value) {
+          longPressDraggableHandle(
+            onDragStarted = {
+              Log.d(
+                "DEBUG",
+                "Dragging"
               )
-              Text(
-                text = "${stationData?.nowPlaying?.song?.title}",
-                maxLines = 1,
-                modifier = Modifier
-                  .basicMarquee(iterations = Int.MAX_VALUE)
+              ViewCompat.performHapticFeedback(
+                view,
+                HapticFeedbackConstantsCompat.GESTURE_START
+              )
+            },
+            onDragStopped = {
+              Log.d(
+                "DEBUG",
+                "Stopped dragging"
+              )
+              ViewCompat.performHapticFeedback(
+                view,
+                HapticFeedbackConstantsCompat.GESTURE_END
               )
             }
+          )
+        }
+        .conditional(!editingList.value) {
+          pointerInteropFilter {
+            offset = Offset(
+              it.x,
+              it.y
+            )
+            false
+          }
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(
+              onClick = {
+                setPlaybackSource(
+                  station.url,
+                  station.defaultMount,
+                  station.shortcode
+                )
+
+              },
+              onLongClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                showDropdown = true
+              }
+            )
+        }
+    },
+  ) {
+    Row(
+      modifier = Modifier
+        .padding(8.dp)
+        .fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      GlideImage(
+        model = stationData?.nowPlaying?.song?.art.toString(),
+        contentDescription = "${stationData?.station?.name}",
+        modifier = Modifier
+          .size(64.dp)
+          .clip(RoundedCornerShape(8.dp)),
+        failure = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
+        loading = placeholder(
+          ColorPainter(Color.DarkGray)
+        )
+      )
+      Spacer(modifier = Modifier.width(8.dp))
+      Column(
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.weight(1f)
+      ) {
+        Text(
+          text = station.name,
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold
+        )
+        if (stationData?.nowPlaying?.song?.title.toString() != "null") {
+          Row {
+            Text(
+              text = "Now playing: "
+            )
+            Text(
+              text = "${stationData?.nowPlaying?.song?.title}",
+              maxLines = 1,
+              modifier = Modifier
+                .basicMarquee(iterations = Int.MAX_VALUE)
+            )
           }
         }
+      }
+      if (editingList.value) {
         IconButton(
-
           onClick = {}
         ) {
           Icon(
@@ -179,134 +202,59 @@ fun StationListEntry(
         }
       }
     }
-  } else {
-    Card(
-      colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
-      ),
-      modifier = Modifier
-        .pointerInteropFilter {
-          offset = Offset(
-            it.x,
-            it.y
-          )
-          false
-        }
-        .clip(RoundedCornerShape(12.dp))
-        .combinedClickable(
+  }
+  if (!editingList.value) {
+    Box {
+      DropdownMenu(
+        expanded = showDropdown,
+        onDismissRequest = { showDropdown = false },
+        offset = DpOffset(
+          (0.3 * offset.x).dp,
+          (0.369 * offset.y).dp
+        )
+      ) {
+        DropdownMenuItem(
+          text = { Text("Delete") },
           onClick = {
-            setPlaybackSource(
-              station.url,
-              station.defaultMount,
-              station.shortcode
-            )
-
+            showDelete = true
+            showDropdown = false
           },
-          onLongClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            showDropdown = true
+          leadingIcon = {
+            Icon(
+              imageVector = Icons.Rounded.Delete,
+              contentDescription = "Delete Radio"
+            )
           }
         )
-    ) {
-      Box {
-        Row(
-          modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          GlideImage(
-            model = stationData?.nowPlaying?.song?.art.toString(),
-            contentDescription = "${stationData?.station?.name}",
-            modifier = Modifier
-              .size(64.dp)
-              .clip(RoundedCornerShape(8.dp)),
-            failure = placeholder(
-              ColorPainter(Color.DarkGray)
-            ),
-            loading = placeholder(
-              ColorPainter(Color.DarkGray)
-            )
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Column(verticalArrangement = Arrangement.Center) {
-            Text(
-              text = station.name,
-              style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold
-            )
-            if (stationData?.nowPlaying?.song?.title.toString() != "null") {
-              Row {
-                Text(
-                  text = "Now playing: "
-                )
-                Text(
-                  text = "${stationData?.nowPlaying?.song?.title}",
-                  maxLines = 1,
-                  modifier = Modifier
-                    .basicMarquee(iterations = Int.MAX_VALUE)
-                )
-              }
-            }
-          }
-          Spacer(modifier = Modifier.weight(1f))
-        }
-        Box {
-          DropdownMenu(
-            expanded = showDropdown,
-            onDismissRequest = { showDropdown = false },
-            offset = DpOffset(
-              (0.3 * offset.x).dp,
-              (0.369 * offset.y).dp
-            )
-          ) {
-            DropdownMenuItem(
-              text = { Text("Delete") },
-              onClick = {
-                showDelete = true
-                showDropdown = false
-              },
-              leadingIcon = {
-                Icon(
-                  imageVector = Icons.Rounded.Delete,
-                  contentDescription = "Delete Radio"
-                )
-              }
-            )
-            DropdownMenuItem(
-              text = { Text("Edit") },
-              onClick = {
-                showEdit = true
-                showDropdown = false
-              },
-              leadingIcon = {
-                Icon(
-                  imageVector = Icons.Rounded.Edit,
-                  contentDescription = "Edit Radio"
-                )
-              }
-            )
-            DropdownMenuItem(
-              text = { Text("Change Order") },
-              onClick = {
-                editingList.value = true
-                showDropdown = false
-              },
-              leadingIcon = {
-                Icon(
-                  imageVector = Icons.Rounded.FormatListNumbered,
-                  contentDescription = "Change Order"
-                )
-              }
+        DropdownMenuItem(
+          text = { Text("Edit") },
+          onClick = {
+            showEdit = true
+            showDropdown = false
+          },
+          leadingIcon = {
+            Icon(
+              imageVector = Icons.Rounded.Edit,
+              contentDescription = "Edit Radio"
             )
           }
-        }
+        )
+        DropdownMenuItem(
+          text = { Text("Change Order") },
+          onClick = {
+            editingList.value = true
+            showDropdown = false
+          },
+          leadingIcon = {
+            Icon(
+              imageVector = Icons.Rounded.FormatListNumbered,
+              contentDescription = "Change Order"
+            )
+          }
+        )
       }
     }
   }
-
-
-
   when {
     showDelete -> {
       ConfirmStationDelete(

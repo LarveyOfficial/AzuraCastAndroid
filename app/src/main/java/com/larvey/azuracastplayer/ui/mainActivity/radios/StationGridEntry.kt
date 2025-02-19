@@ -62,6 +62,7 @@ import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
+import com.larvey.azuracastplayer.utils.conditional
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
@@ -96,46 +97,48 @@ fun StationGridEntry(
       station.shortcode
     )
   )
-  if (editingList.value) {
 
-    val infiniteShake = rememberInfiniteTransition(label = "infiniteShake")
+  val infiniteShake = rememberInfiniteTransition(label = "infiniteShake")
 
-    var shakeItemRotation by remember { mutableFloatStateOf(0f) }
+  var shakeItemRotation by remember { mutableFloatStateOf(0f) }
 
-    shakeItemRotation = infiniteShake.animateFloat(
-      initialValue = 0.5f,
-      targetValue = -0.5f,
-      animationSpec = infiniteRepeatable(
-        animation = tween(
-          90
-        ),
-        repeatMode = RepeatMode.Reverse
+  shakeItemRotation = infiniteShake.animateFloat(
+    initialValue = 0.5f,
+    targetValue = -0.5f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(
+        90
       ),
-      label = "rotation"
-    ).value
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "rotation"
+  ).value
 
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-      modifier = Modifier
-        .padding(top = 8.dp)
-        .fillMaxWidth()
-        .rotate(shakeItemRotation)
-    ) {
-      GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString(),
-        contentDescription = "${stationData?.station?.name}",
-        failure = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        loading = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        modifier = with(scope) {
-          Modifier
-            .size(174.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .longPressDraggableHandle(
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.Center,
+    modifier = Modifier
+      .padding(top = 8.dp)
+      .fillMaxWidth()
+      .conditional(editingList.value) {
+        rotate(shakeItemRotation)
+      }
+  ) {
+    GlideImage(
+      model = stationData?.nowPlaying?.song?.art.toString(),
+      contentDescription = "${stationData?.station?.name}",
+      failure = placeholder(
+        ColorPainter(Color.DarkGray)
+      ),
+      loading = placeholder(
+        ColorPainter(Color.DarkGray)
+      ),
+      modifier = with(scope) {
+        Modifier
+          .size(174.dp)
+          .clip(RoundedCornerShape(8.dp))
+          .conditional(editingList.value) {
+            longPressDraggableHandle(
               onDragStarted = {
                 Log.d(
                   "DEBUG",
@@ -157,97 +160,56 @@ fun StationGridEntry(
                 )
               }
             )
-        }
-      )
-      Spacer(modifier = Modifier.height(2.dp))
-      Text(
-        text = station.name,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-      )
-      Row(
-        modifier = Modifier.widthIn(max = 164.dp),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          text = "Playing: ",
-          style = MaterialTheme.typography.bodySmallEmphasized
-        )
-        Text(
-          text = "${stationData?.nowPlaying?.song?.title}",
-          maxLines = 1,
-          style = MaterialTheme.typography.bodySmallEmphasized,
-          modifier = Modifier
-            .basicMarquee(iterations = Int.MAX_VALUE)
-        )
-      }
-      Spacer(Modifier.height(16.dp))
-    }
-  } else {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-      modifier = Modifier
-        .padding(top = 8.dp)
-        .fillMaxWidth()
-    ) {
-      GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString(),
-        contentDescription = "${stationData?.station?.name}",
-        failure = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        loading = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        modifier = Modifier
-          .size(174.dp)
-          .clip(RoundedCornerShape(8.dp))
-          .pointerInteropFilter {
-            offset = Offset(
-              it.x,
-              it.y
-            )
-            false
           }
-          .combinedClickable(
-            onClick = {
-              setPlaybackSource(
-                station.url,
-                station.defaultMount,
-                station.shortcode
+          .conditional(!editingList.value) {
+            pointerInteropFilter {
+              offset = Offset(
+                it.x,
+                it.y
               )
-
-            },
-            onLongClick = {
-              haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-              showDropdown = true
+              false
             }
-          )
-      )
-      Spacer(modifier = Modifier.height(2.dp))
-      Text(
-        text = station.name,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-      )
-      Row(
-        modifier = Modifier.widthIn(max = 164.dp),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          text = "Playing: ",
-          style = MaterialTheme.typography.bodySmallEmphasized
-        )
-        Text(
-          text = "${stationData?.nowPlaying?.song?.title}",
-          maxLines = 1,
-          style = MaterialTheme.typography.bodySmallEmphasized,
-          modifier = Modifier
-            .basicMarquee(iterations = Int.MAX_VALUE)
-        )
+              .combinedClickable(
+                onClick = {
+                  setPlaybackSource(
+                    station.url,
+                    station.defaultMount,
+                    station.shortcode
+                  )
+
+                },
+                onLongClick = {
+                  haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                  showDropdown = true
+                }
+              )
+          }
       }
-      Spacer(Modifier.height(16.dp))
+    )
+    Spacer(modifier = Modifier.height(2.dp))
+    Text(
+      text = station.name,
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Bold
+    )
+    Row(
+      modifier = Modifier.widthIn(max = 164.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Text(
+        text = "Playing: ",
+        style = MaterialTheme.typography.bodySmallEmphasized
+      )
+      Text(
+        text = "${stationData?.nowPlaying?.song?.title}",
+        maxLines = 1,
+        style = MaterialTheme.typography.bodySmallEmphasized,
+        modifier = Modifier
+          .basicMarquee(iterations = Int.MAX_VALUE)
+      )
+    }
+    Spacer(Modifier.height(16.dp))
+    if (!editingList.value) {
       Box {
         DropdownMenu(
           expanded = showDropdown,
@@ -300,8 +262,6 @@ fun StationGridEntry(
       }
     }
   }
-
-
   when {
     showDelete -> {
       ConfirmStationDelete(
