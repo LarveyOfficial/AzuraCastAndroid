@@ -21,42 +21,34 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils.HSLToColor
-import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
+import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.classes.data.PlayingNext
 import com.larvey.azuracastplayer.classes.data.SongHistory
-import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.mainActivity.components.meshGradient
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
+import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
-import com.larvey.azuracastplayer.utils.weightedRandomColors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 
@@ -68,34 +60,30 @@ import kotlinx.coroutines.launch
 @Composable
 fun NowPlaying(
   hideNowPlaying: () -> Unit,
-  playerState: PlayerState?,
   pause: () -> Unit,
   play: () -> Unit,
   stop: () -> Unit,
+  playerState: PlayerState?,
   currentMount: Mount?,
   songHistory: List<SongHistory>?,
   playingNext: PlayingNext?,
-  nowPlayingData: NowPlayingData?,
-  palette: MutableState<Palette?>
+  nowPlaying: NowPlaying?,
+  palette: MutableState<Palette?>?,
+  colorList: MutableState<List<Color>>?
 ) {
 
   if (playerState?.currentMediaItem == null) hideNowPlaying()
-
-  if (playerState?.currentMediaItem != null) {
-
+  else {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val transitionA = rememberInfiniteTransition(label = "X")
     val transitionB = rememberInfiniteTransition(label = "Y")
 
-    val defaultColor = MaterialTheme.colorScheme.outline
-
     val scope = rememberCoroutineScope()
-
-    var colorList by remember { mutableStateOf(List(9) { defaultColor }) }
 
     val showQueue = remember { mutableStateOf(false) }
 
+    //region Animate Gradient Movement
     val animateA by transitionA.animateFloat(
       initialValue = 0.3f,
       targetValue = 0.8f,
@@ -105,7 +93,6 @@ fun NowPlaying(
       ),
       label = "X"
     )
-
     val animateB by transitionB.animateFloat(
       initialValue = 0.4f,
       targetValue = 0.7f,
@@ -115,78 +102,7 @@ fun NowPlaying(
       ),
       label = "Y"
     )
-
-    LaunchedEffect(palette.value) {
-      this.async(Dispatchers.IO) {
-        var defaultHSL = floatArrayOf(
-          0f,
-          0f,
-          0f
-        )
-        colorToHSL(
-          defaultColor.toArgb(),
-          defaultHSL
-        )
-        val maxLuminance = 0.45f
-
-        var vibrantSwatch = palette.value?.vibrantSwatch?.hsl
-          ?: palette.value?.dominantSwatch?.hsl ?: defaultHSL
-
-        var mutedSwatch = palette.value?.mutedSwatch?.hsl
-          ?: palette.value?.dominantSwatch?.hsl
-          ?: defaultHSL
-
-        var lightMutedSwatch = palette.value?.lightMutedSwatch?.hsl
-          ?: defaultHSL
-
-        if (vibrantSwatch[2] > maxLuminance) {
-          vibrantSwatch[2] = maxLuminance
-        }
-
-        if (mutedSwatch[2] > maxLuminance) {
-          mutedSwatch[2] = maxLuminance
-        }
-
-        if (lightMutedSwatch[2] > maxLuminance) {
-          lightMutedSwatch[2] = maxLuminance
-        }
-
-        var lightVibrantSwatch = palette.value?.lightVibrantSwatch?.hsl
-          ?: defaultHSL
-
-        var darkVibrantSwatch = palette.value?.darkVibrantSwatch?.hsl ?: defaultHSL
-
-        if (darkVibrantSwatch[2] > maxLuminance) {
-          darkVibrantSwatch[2] = maxLuminance
-        }
-        if (lightVibrantSwatch[2] > maxLuminance) {
-          lightVibrantSwatch[2] = maxLuminance
-        }
-
-        val paletteColors = listOf(
-          Color(
-            HSLToColor(vibrantSwatch)
-          ),
-          Color(
-            HSLToColor(mutedSwatch)
-          ),
-          Color(
-            HSLToColor(lightMutedSwatch)
-          ),
-          Color(
-            HSLToColor(darkVibrantSwatch)
-          ),
-          Color(
-            HSLToColor(lightVibrantSwatch)
-          )
-        )
-
-        colorList = weightedRandomColors(
-          paletteColors,
-          9
-        )
-      }.await()
-    }
+    //endregion
 
     val scrollState = rememberLazyListState()
 
@@ -224,27 +140,30 @@ fun NowPlaying(
       Box(
         modifier = Modifier
           .fillMaxSize()
-          .meshGradient(
-            resolutionX = 16,
-            resolutionY = 16,
-            points = listOf(
-              // @formatter:off
+          .conditional(colorList != null) {
+            meshGradient(
+              resolutionX = 16,
+              resolutionY = 16,
+              points = listOf(
+                // @formatter:off
               listOf(
-                Offset(0f, 0f) to colorList[0], // No move
-                Offset(animateA, 0f) to colorList[1], // Only x moves
-                Offset(1f, 0f) to colorList[2], // No move
+                Offset(0f, 0f) to colorList!!.value[0], // No move
+                Offset(animateA, 0f) to colorList.value[1], // Only x moves
+                Offset(1f, 0f) to colorList.value[2], // No move
               ), listOf(
-                Offset(0f, animateB) to colorList[3], // Only y moves
-                Offset(animateB, 1f - animateA) to colorList[4],
-                Offset(1f, 1f - animateA) to colorList[5], // Only y moves
+                Offset(0f, animateB) to colorList.value[3], // Only y moves
+                Offset(animateB, 1f - animateA) to colorList.value[4],
+                Offset(1f, 1f - animateA) to colorList.value[5], // Only y moves
               ), listOf(
-                Offset(0f, 1f) to colorList[6], // No move
-                Offset(1f - animateB, 1f) to colorList[7], //Only x moves
-                Offset(1f, 1f) to colorList[8], // No move
+                Offset(0f, 1f) to colorList.value[6], // No move
+                Offset(1f - animateB, 1f) to colorList.value[7], //Only x moves
+                Offset(1f, 1f) to colorList.value[8], // No move
               )
               // @formatter:on
+              )
             )
-          )
+          }
+
       ) {
         Scaffold(
           modifier = Modifier
@@ -261,8 +180,8 @@ fun NowPlaying(
               play = play,
               playerState = playerState,
               currentMount = currentMount,
-              palette = palette.value,
-              nowPlayingData = nowPlayingData
+              palette = palette?.value,
+              nowPlaying = nowPlaying
             )
           }
         ) { innerPadding ->
@@ -308,3 +227,4 @@ fun NowPlaying(
     }
   }
 }
+

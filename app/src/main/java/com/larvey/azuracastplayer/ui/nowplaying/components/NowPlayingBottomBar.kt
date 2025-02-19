@@ -35,7 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
-import com.larvey.azuracastplayer.classes.models.NowPlayingData
+import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
 
@@ -50,7 +50,7 @@ fun NowPlayingBottomBar(
   playerState: PlayerState,
   currentMount: Mount?,
   palette: Palette?,
-  nowPlayingData: NowPlayingData?,
+  nowPlaying: NowPlaying?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -73,7 +73,7 @@ fun NowPlayingBottomBar(
         currentPosition = position
       },
       playerState = playerState,
-      nowPlayingData = nowPlayingData
+      nowPlaying = nowPlaying
     )
   }
 
@@ -138,13 +138,13 @@ suspend fun updateTime(
   isVisible: Boolean,
   updateProgress: (Float, Long) -> Unit,
   playerState: PlayerState?,
-  nowPlayingData: NowPlayingData?
+  nowPlaying: NowPlaying?
 ) {
   while (isVisible) {
     if (playerState?.isPlaying == true) {
       var currentPosition: Number = 0f
       currentPosition = if (playerState.player.isCurrentMediaItemDynamic) {
-        ((System.currentTimeMillis() / 1000).minus(nowPlayingData?.staticData?.value?.nowPlaying?.playedAt!!) * 1000) - playerState.player.currentPosition
+        ((System.currentTimeMillis() / 1000).minus(nowPlaying?.playedAt!!) * 1000) - playerState.player.currentPosition
       } else {
         playerState.player.currentPosition
       }

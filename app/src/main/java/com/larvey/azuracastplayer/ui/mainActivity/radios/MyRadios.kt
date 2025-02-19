@@ -82,6 +82,7 @@ fun MyRadios(
       list = savedRadioList
     }
 
+    //region reOrderableLists
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
       list = list.toMutableList().apply {
         add(
@@ -150,6 +151,7 @@ fun MyRadios(
 
       false -> {}
     }
+    //endregion
 
     val animatedPadding by animateDpAsState(
       targetValue = if (innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()

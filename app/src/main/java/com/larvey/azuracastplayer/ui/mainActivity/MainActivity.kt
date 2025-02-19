@@ -2,7 +2,6 @@ package com.larvey.azuracastplayer.ui.mainActivity
 
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -37,12 +36,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.palette.graphics.Palette
-import com.bumptech.glide.Glide
-import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
@@ -53,9 +48,6 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlaying
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 
 
 class MainActivity : ComponentActivity() {
@@ -94,72 +86,61 @@ class MainActivity : ComponentActivity() {
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
         val mediaController by rememberManagedMediaController()
+
+        //region List States for MyRadios
         val lazyListState = rememberLazyListState()
         val lazyGridState = rememberLazyGridState()
+        //endregion
 
+        //region List editing variables
         val editingList = remember { mutableStateOf(false) }
         val confirmEdit = remember { mutableStateOf(false) }
-
-        var palette = remember { mutableStateOf<Palette?>(null) }
-
+        //endregion
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
         }
 
-        val appContext = LocalContext.current.applicationContext
-
+        //region NowPlaying gradient colors
+        val defaultColor = MaterialTheme.colorScheme.outline
         LaunchedEffect(playerState?.mediaMetadata?.artworkUri) {
-          if (playerState?.mediaMetadata?.artworkUri != null) {
-            this.async(Dispatchers.IO) {
-              Glide.with(appContext).asBitmap().load(
-                playerState?.mediaMetadata?.artworkUri.toString()
-              ).submit().get().let { bitmap ->
-                palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
-              }
-            }
-          } else {
-            palette.value = null
-          }
+          mainActivityViewModel?.updatePalette(playerState)
         }
+        LaunchedEffect(mainActivityViewModel?.palette?.value) {
+          mainActivityViewModel?.updateColorList(defaultColor)
+        }
+        //endregion
 
+        //region Animated Add Button Colors
         var animatedFabColor = animateColorAsState(
           targetValue =
-          if (palette.value?.vibrantSwatch?.rgb != null
-            || palette.value?.dominantSwatch?.rgb != null
+          if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.rgb != null
+            || mainActivityViewModel?.palette?.value?.dominantSwatch?.rgb != null
           ) androidx.compose.ui.graphics.Color(
-            palette.value?.vibrantSwatch?.rgb ?: palette.value?.dominantSwatch?.rgb!!
+            mainActivityViewModel?.palette?.value?.vibrantSwatch?.rgb
+              ?: mainActivityViewModel?.palette?.value?.dominantSwatch?.rgb!!
           )
           else MaterialTheme.colorScheme.primaryContainer,
           label = "Fab Color"
         )
         var animatedFabIconTint = animateColorAsState(
           targetValue =
-          if (palette.value?.vibrantSwatch?.bodyTextColor != null
-            || palette.value?.dominantSwatch?.bodyTextColor != null
+          if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.bodyTextColor != null
+            || mainActivityViewModel?.palette?.value?.dominantSwatch?.bodyTextColor != null
           ) androidx.compose.ui.graphics.Color(
-            palette.value?.vibrantSwatch?.bodyTextColor
-              ?: palette.value?.dominantSwatch?.bodyTextColor!!
+            mainActivityViewModel?.palette?.value?.vibrantSwatch?.bodyTextColor
+              ?: mainActivityViewModel?.palette?.value?.dominantSwatch?.bodyTextColor!!
           ) else MaterialTheme.colorScheme.onPrimaryContainer,
           label = "Fab Icon Color"
         )
+        //endregion
 
         LaunchedEffect(Unit) {
           mainActivityViewModel?.getStationList(false)
+          mainActivityViewModel?.periodicUpdate(30)
         }
 
-        LaunchedEffect(key1 = mainActivityViewModel?.savedRadioList) {
-          while (mainActivityViewModel?.savedRadioList != null && mainActivityViewModel?.savedRadioList != emptyList<SavedStation>()) {
-            Log.d(
-              "DEBUG",
-              "Waiting 30 seconds to fetch data"
-            )
-            delay(30000)
-            mainActivityViewModel?.updateRadioList()
-          }
-        }
-
-        DisposableEffect(key1 = mediaController) {
+        DisposableEffect(mediaController) {
           mediaController?.run {
             playerState = state()
           }
@@ -168,7 +149,7 @@ class MainActivity : ComponentActivity() {
           }
         }
 
-        DisposableEffect(key1 = this) {
+        DisposableEffect(this) {
           onDispose {
             mediaController?.run {
               pause()
@@ -266,6 +247,7 @@ class MainActivity : ComponentActivity() {
             radioListMode != null,
             enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 })
           ) {
+
             MyRadios(
               savedRadioList = mainActivityViewModel?.savedRadioList,
               innerPadding = innerPadding,
@@ -328,8 +310,9 @@ class MainActivity : ComponentActivity() {
               currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
               songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
               playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
-              nowPlayingData = mainActivityViewModel?.nowPlayingData,
-              palette = palette
+              nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
+              palette = mainActivityViewModel?.palette,
+              colorList = mainActivityViewModel?.colorList
             )
           }
         }
