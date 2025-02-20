@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,9 +25,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FormatListNumbered
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,13 +65,19 @@ import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
 import com.larvey.azuracastplayer.utils.conditional
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.materials.HazeMaterials
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
   ExperimentalMaterial3ExpressiveApi::class,
   ExperimentalGlideComposeApi::class,
   ExperimentalComposeUiApi::class,
-  ExperimentalFoundationApi::class
+  ExperimentalFoundationApi::class,
+  ExperimentalHazeMaterialsApi::class
 )
 @Composable
 fun StationGridEntry(
@@ -98,6 +105,8 @@ fun StationGridEntry(
       station.shortcode
     )
   )
+
+  val hazeState = remember { HazeState() }
 
   val infiniteShake = rememberInfiniteTransition(label = "infiniteShake")
 
@@ -186,11 +195,59 @@ fun StationGridEntry(
                   }
                 )
             }
+            .hazeSource(
+              state = hazeState,
+              zIndex = 2f
+            )
         }
       )
-      ElevatedAssistChip(
-        onClick = {},
-        label = { Text("1") })
+      if (stationData?.listeners?.current != null && !editingList.value) {
+        Box(
+          modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(
+              end = 4.dp,
+              bottom = 4.dp
+            )
+            .widthIn(
+              min = 48.dp,
+              max = 72.dp
+            )
+            .height(26.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .hazeEffect(
+              state = hazeState,
+              style = HazeMaterials.ultraThin()
+            )
+            .border(
+              width = 1.dp,
+              color = MaterialTheme.colorScheme.outline,
+              shape = RoundedCornerShape(8.dp)
+            ),
+          contentAlignment = Alignment.Center
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+          ) {
+            Spacer(Modifier.size(4.dp))
+            Icon(
+              imageVector = Icons.Rounded.Headphones,
+              contentDescription = "Listeners",
+              modifier = Modifier
+                .size(16.dp)
+            )
+            Spacer(Modifier.size(4.dp))
+            Text(
+              text = "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
+              modifier = Modifier.padding(horizontal = 2.dp)
+            )
+            Spacer(Modifier.size(4.dp))
+          }
+
+        }
+      }
+
     }
 
     Spacer(modifier = Modifier.height(2.dp))

@@ -37,7 +37,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.util.UnstableApi
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
@@ -48,6 +47,7 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlaying
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
+import dev.chrisbanes.haze.HazeState
 
 
 class MainActivity : ComponentActivity() {
@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
     mainActivityViewModel?.resumeActivity()
   }
 
-  @androidx.annotation.OptIn(UnstableApi::class)
+
   @OptIn(
     ExperimentalMaterial3Api::class
   )
@@ -96,6 +96,8 @@ class MainActivity : ComponentActivity() {
         val editingList = remember { mutableStateOf(false) }
         val confirmEdit = remember { mutableStateOf(false) }
         //endregion
+
+        val hazeState = remember { HazeState() }
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
@@ -162,8 +164,8 @@ class MainActivity : ComponentActivity() {
         Scaffold(
           topBar = {
             TopAppBar(colors = topAppBarColors(
-              containerColor = MaterialTheme.colorScheme.background,
-              titleContentColor = MaterialTheme.colorScheme.onBackground,
+              containerColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
+              titleContentColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
             ),
               title = { Text("Radio List") },
               actions = {

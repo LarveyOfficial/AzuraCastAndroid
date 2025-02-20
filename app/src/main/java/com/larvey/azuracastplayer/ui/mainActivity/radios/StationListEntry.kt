@@ -10,19 +10,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FormatListNumbered
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -168,28 +172,59 @@ fun StationListEntry(
         )
       )
       Spacer(modifier = Modifier.width(8.dp))
-      Column(
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.weight(1f)
-      ) {
-        Text(
-          text = station.name,
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold
-        )
-        if (stationData?.nowPlaying?.song?.title.toString() != "null") {
-          Row {
-            Text(
-              text = "Now playing: "
-            )
-            Text(
-              text = "${stationData?.nowPlaying?.song?.title}",
-              maxLines = 1,
-              modifier = Modifier
-                .basicMarquee(iterations = Int.MAX_VALUE)
-            )
+      Box(modifier = Modifier.weight(1f)) {
+        if (stationData?.listeners?.current != null && !editingList.value) {
+          ElevatedAssistChip(
+            onClick = {
+              setPlaybackSource(
+                station.url,
+                station.defaultMount,
+                station.shortcode
+              )
+            },
+            leadingIcon = {
+              Row {
+                Spacer(Modifier.size(4.dp))
+                Icon(
+                  imageVector = Icons.Rounded.Headphones,
+                  contentDescription = "Delete Radio",
+                  modifier = Modifier.size(16.dp)
+                )
+              }
+
+            },
+            label = { Text("${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}") },
+            modifier = Modifier
+              .align(Alignment.TopEnd)
+              .widthIn(max = 80.dp)
+              .offset(y = (-14).dp)
+          )
+        }
+        Column(
+          verticalArrangement = Arrangement.Center,
+          modifier = Modifier
+            .fillMaxWidth()
+        ) {
+          Text(
+            text = station.name,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+          )
+          if (stationData?.nowPlaying?.song?.title.toString() != "null") {
+            Row {
+              Text(
+                text = "Now playing: "
+              )
+              Text(
+                text = "${stationData?.nowPlaying?.song?.title}",
+                maxLines = 1,
+                modifier = Modifier
+                  .basicMarquee(iterations = Int.MAX_VALUE)
+              )
+            }
           }
         }
+
       }
       if (editingList.value) {
         IconButton(

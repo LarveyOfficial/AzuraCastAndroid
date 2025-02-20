@@ -27,13 +27,12 @@ import kotlinx.coroutines.launch
 class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
 
   val nowPlayingData = (app as AppSetup).nowPlayingData
-  val savedStationsDB = (app as AppSetup).savedStationsDB
-
+  private val savedStationsDB = (app as AppSetup).savedStationsDB
 
   var palette = mutableStateOf<Palette?>(null)
-  var colorList = mutableStateOf<List<Color>>(List(9) { Color.Gray })
+  var colorList = mutableStateOf(List(9) { Color.Gray })
 
-  var fetchData = mutableStateOf(true)
+  private var fetchData = mutableStateOf(true)
 
   var savedRadioList = mutableStateListOf<SavedStation>()
 
@@ -50,19 +49,20 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     }
   }
 
-  fun updateRadioList() {
+  private fun updateRadioList() {
     if (fetchData.value) {
-      for (item in savedRadioList) {
-        Log.d(
-          "DEBUG",
-          "Fetching Data for ${item.name}"
-        )
-        nowPlayingData.getStationInformation(
-          item.url,
-          item.shortcode
-        )
+      viewModelScope.launch {
+        for (item in savedRadioList) {
+          Log.d(
+            "DEBUG",
+            "Fetching Data for ${item.name}"
+          )
+          nowPlayingData.getStationInformation(
+            item.url,
+            item.shortcode
+          )
+        }
       }
-
     }
   }
 
@@ -83,7 +83,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   }
 
   fun updateColorList(defaultColor: Color) {
-    var defaultHSL = floatArrayOf(
+    val defaultHSL = floatArrayOf(
       0f,
       0f,
       0f
@@ -95,20 +95,20 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     val maxLuminance = 0.45f
     val maxSaturation = 0.75f
 
-    var vibrantSwatch = palette.value?.vibrantSwatch?.hsl
+    val vibrantSwatch = palette.value?.vibrantSwatch?.hsl
       ?: palette.value?.dominantSwatch?.hsl ?: defaultHSL
 
-    var mutedSwatch = palette.value?.mutedSwatch?.hsl
+    val mutedSwatch = palette.value?.mutedSwatch?.hsl
       ?: palette.value?.dominantSwatch?.hsl
       ?: defaultHSL
 
-    var lightMutedSwatch = palette.value?.lightMutedSwatch?.hsl
+    val lightMutedSwatch = palette.value?.lightMutedSwatch?.hsl
       ?: defaultHSL
 
-    var lightVibrantSwatch = palette.value?.lightVibrantSwatch?.hsl
+    val lightVibrantSwatch = palette.value?.lightVibrantSwatch?.hsl
       ?: defaultHSL
 
-    var darkVibrantSwatch = palette.value?.darkVibrantSwatch?.hsl ?: defaultHSL
+    val darkVibrantSwatch = palette.value?.darkVibrantSwatch?.hsl ?: defaultHSL
 
     if (vibrantSwatch[2] > maxLuminance) {
       vibrantSwatch[2] = maxLuminance
@@ -172,9 +172,9 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   fun setPlaybackSource(
     url: String, uri: String, shortCode: String, mediaController: MediaController?
   ) {
-    val uri = Uri.parse(uri)
+    val parsedURI = Uri.parse(uri)
     nowPlayingData.setPlaybackSource(
-      uri = uri,
+      uri = parsedURI,
       url = url,
       shortCode = shortCode,
       mediaPlayer = mediaController

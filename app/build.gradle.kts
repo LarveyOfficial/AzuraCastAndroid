@@ -58,6 +58,8 @@ dependencies {
   implementation(libs.navigation.compose)
 
   implementation("androidx.room:room-runtime:$room_version")
+  implementation(libs.haze)
+  implementation(libs.haze.materials)
 
   ksp("androidx.room:room-compiler:$room_version")
 
