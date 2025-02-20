@@ -47,7 +47,6 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlaying
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
-import dev.chrisbanes.haze.HazeState
 
 
 class MainActivity : ComponentActivity() {
@@ -96,8 +95,6 @@ class MainActivity : ComponentActivity() {
         val editingList = remember { mutableStateOf(false) }
         val confirmEdit = remember { mutableStateOf(false) }
         //endregion
-
-        val hazeState = remember { HazeState() }
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
