@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -124,68 +125,74 @@ fun StationGridEntry(
         rotate(shakeItemRotation)
       }
   ) {
-    GlideImage(
-      model = stationData?.nowPlaying?.song?.art.toString(),
-      contentDescription = "${stationData?.station?.name}",
-      failure = placeholder(
-        ColorPainter(Color.DarkGray)
-      ),
-      loading = placeholder(
-        ColorPainter(Color.DarkGray)
-      ),
-      modifier = with(scope) {
-        Modifier
-          .size(174.dp)
-          .clip(RoundedCornerShape(8.dp))
-          .conditional(editingList.value) {
-            longPressDraggableHandle(
-              onDragStarted = {
-                Log.d(
-                  "DEBUG",
-                  "Dragging"
-                )
-                ViewCompat.performHapticFeedback(
-                  view,
-                  HapticFeedbackConstantsCompat.GESTURE_START
-                )
-              },
-              onDragStopped = {
-                Log.d(
-                  "DEBUG",
-                  "Stopped dragging"
-                )
-                ViewCompat.performHapticFeedback(
-                  view,
-                  HapticFeedbackConstantsCompat.GESTURE_END
-                )
-              }
-            )
-          }
-          .conditional(!editingList.value) {
-            pointerInteropFilter {
-              offset = Offset(
-                it.x,
-                it.y
-              )
-              false
-            }
-              .combinedClickable(
-                onClick = {
-                  setPlaybackSource(
-                    station.url,
-                    station.defaultMount,
-                    station.shortcode
+    Box {
+      GlideImage(
+        model = stationData?.nowPlaying?.song?.art.toString(),
+        contentDescription = "${stationData?.station?.name}",
+        failure = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
+        loading = placeholder(
+          ColorPainter(Color.DarkGray)
+        ),
+        modifier = with(scope) {
+          Modifier
+            .size(174.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .conditional(editingList.value) {
+              longPressDraggableHandle(
+                onDragStarted = {
+                  Log.d(
+                    "DEBUG",
+                    "Dragging"
                   )
-
+                  ViewCompat.performHapticFeedback(
+                    view,
+                    HapticFeedbackConstantsCompat.GESTURE_START
+                  )
                 },
-                onLongClick = {
-                  haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                  showDropdown = true
+                onDragStopped = {
+                  Log.d(
+                    "DEBUG",
+                    "Stopped dragging"
+                  )
+                  ViewCompat.performHapticFeedback(
+                    view,
+                    HapticFeedbackConstantsCompat.GESTURE_END
+                  )
                 }
               )
-          }
-      }
-    )
+            }
+            .conditional(!editingList.value) {
+              pointerInteropFilter {
+                offset = Offset(
+                  it.x,
+                  it.y
+                )
+                false
+              }
+                .combinedClickable(
+                  onClick = {
+                    setPlaybackSource(
+                      station.url,
+                      station.defaultMount,
+                      station.shortcode
+                    )
+
+                  },
+                  onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    showDropdown = true
+                  }
+                )
+            }
+        }
+      )
+      ElevatedAssistChip(
+        onClick = {},
+        label = { Text("1") })
+    }
+
     Spacer(modifier = Modifier.height(2.dp))
     Text(
       text = station.name,
