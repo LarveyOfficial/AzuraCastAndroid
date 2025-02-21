@@ -87,8 +87,6 @@ fun MediaControls(
     IconButton(
       onClick = {
         scope.launch {
-          isSleeping?.value = false
-          sleepTimer.value.let(scheduler::cancel)
           sheetState.hide()
           stop()
         }
