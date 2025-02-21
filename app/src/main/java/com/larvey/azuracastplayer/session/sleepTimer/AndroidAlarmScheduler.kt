@@ -32,7 +32,7 @@ class AndroidAlarmScheduler(
       }, item: ${item.hashCode()}"
     )
     alarmManager.setAndAllowWhileIdle(
-      AlarmManager.RTC,
+      AlarmManager.RTC_WAKEUP,
       item.time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
       PendingIntent.getBroadcast(
         context,
