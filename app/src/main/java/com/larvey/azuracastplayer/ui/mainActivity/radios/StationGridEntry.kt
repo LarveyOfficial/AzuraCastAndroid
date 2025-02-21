@@ -112,17 +112,19 @@ fun StationGridEntry(
 
   var shakeItemRotation by remember { mutableFloatStateOf(0f) }
 
-  shakeItemRotation = infiniteShake.animateFloat(
-    initialValue = 0.5f,
-    targetValue = -0.5f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(
-        90
+  if (editingList.value) {
+    shakeItemRotation = infiniteShake.animateFloat(
+      initialValue = 0.5f,
+      targetValue = -0.5f,
+      animationSpec = infiniteRepeatable(
+        animation = tween(
+          90
+        ),
+        repeatMode = RepeatMode.Reverse
       ),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "rotation"
-  ).value
+      label = "rotation"
+    ).value
+  }
 
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
