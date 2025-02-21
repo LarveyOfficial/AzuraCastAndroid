@@ -2,7 +2,9 @@ package com.larvey.azuracastplayer
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -11,9 +13,12 @@ import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.db.SavedStationsDatabase
 import com.larvey.azuracastplayer.db.settings.UserPreferences
+import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
+import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 val Context.dataStore by preferencesDataStore("settings")
 
@@ -29,8 +34,14 @@ class AppSetup : Application() {
 
   lateinit var userPreferences: UserPreferences
 
+  lateinit var mediaSession: MediaLibrarySession
+
+  var sleepTimer = mutableStateOf(false)
+
   override fun onCreate() {
     super.onCreate()
+    val scheduler = AndroidAlarmScheduler(this)
+    SleepItem(LocalDateTime.now()).let(scheduler::cancel)
 
     //@formatter:off
     val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -80,8 +91,6 @@ class AppSetup : Application() {
 
     }
 
-
-
     db = Room.databaseBuilder(
       context = applicationContext,
       klass = SavedStationsDatabase::class.java,
@@ -101,5 +110,9 @@ class AppSetup : Application() {
     }
     userPreferences = UserPreferences(dataStore)
 
+  }
+
+  fun setSession(session: MediaLibrarySession) {
+    mediaSession = session
   }
 }

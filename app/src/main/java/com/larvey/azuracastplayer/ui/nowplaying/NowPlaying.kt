@@ -36,7 +36,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.classes.data.PlayingNext
@@ -63,6 +62,7 @@ fun NowPlaying(
   play: () -> Unit,
   stop: () -> Unit,
   playerState: PlayerState?,
+  isSleeping: MutableState<Boolean>?,
   currentMount: Mount?,
   songHistory: List<SongHistory>?,
   playingNext: PlayingNext?,
@@ -180,7 +180,8 @@ fun NowPlaying(
               playerState = playerState,
               currentMount = currentMount,
               palette = palette?.value,
-              nowPlaying = nowPlaying
+              nowPlaying = nowPlaying,
+              isSleeping = isSleeping
             )
           }
         ) { innerPadding ->

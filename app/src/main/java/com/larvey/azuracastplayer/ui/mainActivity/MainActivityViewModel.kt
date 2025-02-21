@@ -29,6 +29,8 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   val nowPlayingData = (app as AppSetup).nowPlayingData
   private val savedStationsDB = (app as AppSetup).savedStationsDB
 
+  val isSleeping = (app as AppSetup).sleepTimer
+
   var palette = mutableStateOf<Palette?>(null)
   var colorList = mutableStateOf(List(9) { Color.Gray })
 

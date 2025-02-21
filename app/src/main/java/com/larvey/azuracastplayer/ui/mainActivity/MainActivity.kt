@@ -304,14 +304,14 @@ class MainActivity : ComponentActivity() {
               stop = {
                 showNowPlaying = false
                 mediaController?.stop()
-                mediaController?.clearMediaItems()
               },
               currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
               songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
               playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
               nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
               palette = mainActivityViewModel?.palette,
-              colorList = mainActivityViewModel?.colorList
+              colorList = mainActivityViewModel?.colorList,
+              isSleeping = mainActivityViewModel?.isSleeping
             )
           }
         }

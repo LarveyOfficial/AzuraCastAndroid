@@ -48,6 +48,7 @@ fun NowPlayingBottomBar(
   pause: () -> Unit,
   play: () -> Unit,
   playerState: PlayerState,
+  isSleeping: MutableState<Boolean>?,
   currentMount: Mount?,
   palette: Palette?,
   nowPlaying: NowPlaying?,
@@ -96,7 +97,8 @@ fun NowPlayingBottomBar(
       stop = stop,
       pause = pause,
       play = play,
-      playerState = playerState
+      playerState = playerState,
+      isSleeping = isSleeping
     )
     Spacer(Modifier.weight(0.1f))
     Row(

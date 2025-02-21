@@ -4,6 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import java.time.ZoneId
 
@@ -18,49 +20,48 @@ class AndroidAlarmScheduler(
     conditional = false
   )
   override fun schedule(item: SleepItem) {
-    val intent = Intent(
-      context,
-      AlarmReceiver::class.java
-    )
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-      if (alarmManager.canScheduleExactAlarms()) {
-        alarmManager.setExactAndAllowWhileIdle(
-          AlarmManager.RTC,
-          item.time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
-          PendingIntent.getBroadcast(
-            context,
-            item.hashCode(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-          )
-        )
-      }
-    } else {
-      alarmManager.setExactAndAllowWhileIdle(
-        AlarmManager.RTC,
-        item.time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
-        PendingIntent.getBroadcast(
-          context,
-          item.hashCode(),
-          intent,
-          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-      )
+
+    val intent = Intent("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP").apply {
+      `package` = "com.larvey.azuracastplayer"
     }
+    Log.d(
+      "DEBUG",
+      "Scheduled for ${
+        item.time.atZone(ZoneId.systemDefault())
+          .toEpochSecond() * 1000
+      }, item: ${item.hashCode()}"
+    )
+    alarmManager.setAndAllowWhileIdle(
+      AlarmManager.RTC,
+      item.time.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000,
+      PendingIntent.getBroadcast(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+      )
+    )
   }
 
   override fun cancel(item: SleepItem) {
-    val intent = Intent(
-      context,
-      AlarmReceiver::class.java
+    val intent = Intent("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP").apply {
+      `package` = "com.larvey.azuracastplayer"
+    }
+    Log.d(
+      "DEBUG",
+      "Canceled Sleep Timer, item: ${item.hashCode()}"
     )
-    alarmManager.cancel(
-      PendingIntent.getBroadcast(
-        context,
-        item.hashCode(),
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    if (Build.VERSION.SDK_INT >= 34) {
+      alarmManager.cancelAll()
+    } else {
+      alarmManager.cancel(
+        PendingIntent.getBroadcast(
+          context,
+          0,
+          intent,
+          PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
       )
-    )
+    }
   }
 }

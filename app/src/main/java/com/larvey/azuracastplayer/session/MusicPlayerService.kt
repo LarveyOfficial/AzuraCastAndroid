@@ -1,8 +1,13 @@
 package com.larvey.azuracastplayer.session
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.OptIn
@@ -31,10 +36,13 @@ import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
+import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
+import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
+import java.time.LocalDateTime
 
 
-class MusicPlayerService() : MediaLibraryService() {
+class MusicPlayerService : MediaLibraryService() {
 
   lateinit var nowPlaying: NowPlayingData
 
@@ -42,7 +50,19 @@ class MusicPlayerService() : MediaLibraryService() {
 
   private var mediaSession: MediaLibrarySession? = null
 
+  private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+      Log.d(
+        "DEBUG",
+        "Yo, I got the msg"
+      )
+      mediaSession?.player?.stop()
+    }
+  }
+
   // Create your player and media session in the onCreate lifecycle event
+
+
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
@@ -50,6 +70,23 @@ class MusicPlayerService() : MediaLibraryService() {
     nowPlaying = (applicationContext as AppSetup).nowPlayingData
 
     savedStationsDB = (applicationContext as AppSetup).savedStationsDB
+
+    val isSleeping = (applicationContext as AppSetup).sleepTimer
+
+    val filter = IntentFilter("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP")
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      registerReceiver(
+        receiver,
+        filter,
+        RECEIVER_NOT_EXPORTED
+      )
+    } else {
+      registerReceiver(
+        receiver,
+        filter
+      )
+    }
 
     val player = object : ForwardingPlayer(
       ExoPlayer.Builder(this).setAudioAttributes(
@@ -67,16 +104,20 @@ class MusicPlayerService() : MediaLibraryService() {
         nowPlaying.nowPlayingShortCode.value = ""
         nowPlaying.nowPlayingURI.value = ""
         nowPlaying.nowPlayingURL.value = ""
+        val scheduler = AndroidAlarmScheduler(applicationContext)
+        SleepItem(LocalDateTime.now()).let(scheduler::cancel)
+        isSleeping.value = false
+        super.clearMediaItems()
       }
 
       override fun getCurrentPosition(): Long {
         if (nowPlaying.staticData.value?.nowPlaying?.playedAt != null) {
           if ((System.currentTimeMillis() / 1000) < nowPlaying.staticData.value?.nowPlaying?.playedAt!!) {
-            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic) super.currentPosition else 0 // System Time sync issue. Trying to prevent negative time elapsed
+            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic()) super.getCurrentPosition() else 0 // System Time sync issue. Trying to prevent negative time elapsed
           }
-          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic) super.currentPosition else 0
+          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic()) super.getCurrentPosition() else 0
         }
-        return super.currentPosition
+        return super.getCurrentPosition()
       }
     }
 
@@ -104,7 +145,10 @@ class MusicPlayerService() : MediaLibraryService() {
           PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
         )
         if (error.errorCode in badConnections) {
-          Log.d("DEBUG", "Connection issue, going to keep trying to play")
+          Log.d(
+            "DEBUG",
+            "Connection issue, going to keep trying to play"
+          )
           player.seekToDefaultPosition()
           player.prepare()
         }
@@ -140,10 +184,14 @@ class MusicPlayerService() : MediaLibraryService() {
           .build()
       )
     )
+    mediaSession?.let {
+      (applicationContext as AppSetup).setSession(mediaSession!!)
+    }
+
   }
 
   @UnstableApi
-  private inner class MyCallback() : MediaLibrarySession.Callback {
+  private inner class MyCallback : MediaLibrarySession.Callback {
     @OptIn(UnstableApi::class)
     override fun onConnect(
       session: MediaSession, controller: MediaSession.ControllerInfo
@@ -204,7 +252,6 @@ class MusicPlayerService() : MediaLibraryService() {
     ): ListenableFuture<SessionResult> {
       if (customCommand.customAction == "STOP_RADIO") {
         session.player.stop()
-        session.player.clearMediaItems()
         return Futures.immediateFuture(
           SessionResult(SessionResult.RESULT_SUCCESS)
         )
@@ -342,6 +389,7 @@ class MusicPlayerService() : MediaLibraryService() {
     nowPlaying.nowPlayingShortCode.value = ""
     nowPlaying.nowPlayingURL.value = ""
     nowPlaying.nowPlayingURI.value = ""
+    unregisterReceiver(receiver)
     android.os.Process.killProcess(android.os.Process.myPid())
   }
 
@@ -360,4 +408,6 @@ class MusicPlayerService() : MediaLibraryService() {
 
   override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
     mediaSession
+
+
 }
