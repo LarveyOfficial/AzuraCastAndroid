@@ -6,17 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,11 +51,11 @@ fun EditStation(
   }
   var stationFieldRename by remember { mutableStateOf(station.name) }
   var expandedDropdown by remember { mutableStateOf(false) }
-  val mounts = stationData.station.mounts.map { it.name }
+  var mounts = stationData.station.mounts.map { it.name }
   val hls = stationData.station.hlsEnabled
   var setMount by remember { mutableStateOf(station.defaultMount) }
   val textFieldState =
-    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS (experimental)" else mounts.find { mount -> mount == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
+    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS (experimental)" else mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
 
   Dialog(onDismissRequest = { hideDialog() }) {
     Card(
@@ -85,9 +88,11 @@ fun EditStation(
           expanded = expandedDropdown,
           onExpandedChange = { expandedDropdown = it }
         ) {
-          OutlinedTextField(
+          TextField(
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
             state = textFieldState,
             readOnly = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             label = { Text("Default Mount") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDropdown) },
             colors = ExposedDropdownMenuDefaults.textFieldColors(),
