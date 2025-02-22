@@ -61,7 +61,7 @@ import java.time.LocalDateTime
 )
 @Composable
 fun MediaControls(
-  sheetState: SheetState,
+  sheetState: SheetState?,
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,
@@ -87,7 +87,7 @@ fun MediaControls(
     IconButton(
       onClick = {
         scope.launch {
-          sheetState.hide()
+          sheetState?.hide()
           stop()
         }
       }

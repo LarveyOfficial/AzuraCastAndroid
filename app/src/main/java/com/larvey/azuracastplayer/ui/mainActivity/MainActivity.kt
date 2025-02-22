@@ -1,9 +1,12 @@
 package com.larvey.azuracastplayer.ui.mainActivity
 
+import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -12,6 +15,9 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -24,19 +30,38 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.material3.VerticalDragHandle
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
+import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
+import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.session.MediaController
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
@@ -45,13 +70,16 @@ import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationDialog
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
-import com.larvey.azuracastplayer.ui.nowplaying.NowPlaying
+import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
+import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 
 
 class MainActivity : ComponentActivity() {
 
   private var mainActivityViewModel: MainActivityViewModel? = null
+
+  private var mediaController: MediaController? = null
 
   override fun onPause() {
     super.onPause()
@@ -63,9 +91,19 @@ class MainActivity : ComponentActivity() {
     mainActivityViewModel?.resumeActivity()
   }
 
+  override fun onDestroy() {
+    super.onDestroy()
+    mediaController?.run {
+      pause()
+      stop()
+      release()
+    }
+  }
+
 
   @OptIn(
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3AdaptiveApi::class
   )
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -84,7 +122,8 @@ class MainActivity : ComponentActivity() {
         var showNowPlaying by remember { mutableStateOf(false) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
-        val mediaController by rememberManagedMediaController()
+        val medCtrler by rememberManagedMediaController()
+        mediaController = medCtrler
 
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()
@@ -95,6 +134,8 @@ class MainActivity : ComponentActivity() {
         val editingList = remember { mutableStateOf(false) }
         val confirmEdit = remember { mutableStateOf(false) }
         //endregion
+
+        val isWideDisplay = isWideDisplay(this)
 
         var playerState: PlayerState? by remember {
           mutableStateOf(mediaController?.state())
@@ -148,132 +189,320 @@ class MainActivity : ComponentActivity() {
           }
         }
 
-        DisposableEffect(this) {
-          onDispose {
-            mediaController?.run {
-              pause()
-              stop()
-              release()
-            }
-          }
-        }
+        if (isWideDisplay) {
+          val systemDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+          val customDirective = PaneScaffoldDirective(
+            maxHorizontalPartitions = systemDirective.maxHorizontalPartitions,
+            horizontalPartitionSpacerSize = 0.dp,
+            maxVerticalPartitions = systemDirective.maxVerticalPartitions,
+            verticalPartitionSpacerSize = systemDirective.verticalPartitionSpacerSize,
+            defaultPanePreferredWidth = systemDirective.defaultPanePreferredWidth,
+            excludedBounds = systemDirective.excludedBounds
+          )
+          val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
 
-        Scaffold(
-          topBar = {
-            TopAppBar(colors = topAppBarColors(
-              containerColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
-              titleContentColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
-            ),
-              title = { Text("Radio List") },
-              actions = {
-                AnimatedVisibility(radioListMode != null && !editingList.value) {
-                  IconButton(
-                    onClick = {
-                      settingsModel.toggleGridView()
+          SupportingPaneScaffold(
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
+            directive = navigator.scaffoldDirective,
+            value = navigator.scaffoldValue,
+            mainPane = {
+              AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                  topBar = {
+                    TopAppBar(colors = topAppBarColors(
+                      containerColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
+                      titleContentColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
+                    ),
+                      title = { Text("Radio List") },
+                      actions = {
+                        AnimatedVisibility(radioListMode != null && !editingList.value) {
+                          IconButton(
+                            onClick = {
+                              settingsModel.toggleGridView()
+                            }
+                          ) {
+                            Icon(
+                              imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                              contentDescription = "Add"
+                            )
+                          }
+                        }
+                      }
+                    )
+                  },
+                  floatingActionButton = {
+                    AnimatedVisibility(
+                      visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value,
+                      exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                      enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
+                    ) {
+                      FloatingActionButton(
+                        onClick = {
+                          showAddDialog = true
+                        },
+                        containerColor = animatedFabColor.value
+                      ) {
+                        Icon(
+                          Icons.Rounded.Add,
+                          contentDescription = "Add",
+                          tint = animatedFabIconTint.value
+                        )
+                      }
                     }
+                    AnimatedVisibility(
+                      visible = editingList.value,
+                      exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                      enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
+                    ) {
+                      FloatingActionButton(
+                        onClick = {
+                          confirmEdit.value = true
+                        },
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                      ) {
+                        Icon(
+                          Icons.Rounded.Check,
+                          contentDescription = "Add",
+                          tint = MaterialTheme.colorScheme.onTertiary
+                        )
+                      }
+                    }
+                  }) { innerPadding ->
+                  AnimatedVisibility(
+                    radioListMode != null,
+                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 })
                   ) {
-                    Icon(
-                      imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                      contentDescription = "Add"
+                    MyRadios(
+                      savedRadioList = mainActivityViewModel?.savedRadioList,
+                      innerPadding = innerPadding,
+                      setPlaybackSource = { url, uri, shortCode ->
+                        Log.d(
+                          "DEBUG",
+                          "What"
+                        )
+                        showNowPlaying = true
+                        mainActivityViewModel?.setPlaybackSource(
+                          url,
+                          uri,
+                          shortCode,
+                          mediaController
+                        )
+
+                      },
+                      staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
+                      deleteRadio = { station ->
+                        mainActivityViewModel?.deleteStation(station)
+                      },
+                      editRadio = { newStation ->
+                        mainActivityViewModel?.editStation(newStation)
+                      },
+                      radioListMode = radioListMode!!,
+                      editingList = editingList,
+                      confirmEdit = confirmEdit,
+                      editAllStations = { stations ->
+                        mainActivityViewModel?.editAllStations(stations)
+                      },
+                      lazyListState = lazyListState,
+                      lazyGridState = lazyGridState
                     )
                   }
                 }
               }
-            )
-          },
-          floatingActionButton = {
-            AnimatedVisibility(
-              visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value,
-              exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
-              enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
-            ) {
-              FloatingActionButton(
-                onClick = {
-                  showAddDialog = true
-                },
-                containerColor = animatedFabColor.value
-              ) {
-                Icon(
-                  Icons.Rounded.Add,
-                  contentDescription = "Add",
-                  tint = animatedFabIconTint.value
-                )
+            },
+            supportingPane = {
+              AnimatedVisibility(showNowPlaying) {
+                AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                  NowPlayingPane(
+                    playerState = playerState,
+                    pause = {
+                      mediaController?.pause()
+                    },
+                    play = {
+                      mediaController?.play()
+                    },
+                    stop = {
+                      showNowPlaying = false
+                      mediaController?.stop()
+                    },
+                    currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
+                    songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
+                    playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
+                    nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
+                    palette = mainActivityViewModel?.palette,
+                    colorList = mainActivityViewModel?.colorList,
+                    isSleeping = mainActivityViewModel?.isSleeping
+                  )
+                }
               }
+            },
+            paneExpansionState = rememberPaneExpansionState(
+              navigator.scaffoldValue,
+              anchors = listOf(
+                PaneExpansionAnchor.Proportion(0.50f),
+                PaneExpansionAnchor.Proportion(0.60f),
+                PaneExpansionAnchor.Proportion(0.65f)
+              )
+            ),
+            paneExpansionDragHandle = { state ->
+              val interactionSource =
+                remember { MutableInteractionSource() }
+              VerticalDragHandle(
+                modifier =
+                Modifier.paneExpansionDraggable(
+                  state,
+                  LocalMinimumInteractiveComponentSize.current,
+                  interactionSource,
+                  semanticsProperties = {}
+                ),
+                interactionSource = interactionSource
+              )
             }
-            AnimatedVisibility(
-              visible = editingList.value,
-              exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
-              enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
-            ) {
-              FloatingActionButton(
-                onClick = {
-                  confirmEdit.value = true
-                },
-                containerColor = MaterialTheme.colorScheme.tertiary
+          )
+        } else {
+          Scaffold(
+            topBar = {
+              TopAppBar(colors = topAppBarColors(
+                containerColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
+                titleContentColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
+              ),
+                title = { Text("Radio List") },
+                actions = {
+                  AnimatedVisibility(radioListMode != null && !editingList.value) {
+                    IconButton(
+                      onClick = {
+                        settingsModel.toggleGridView()
+                      }
+                    ) {
+                      Icon(
+                        imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                        contentDescription = "Add"
+                      )
+                    }
+                  }
+                }
+              )
+            },
+            floatingActionButton = {
+              AnimatedVisibility(
+                visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value,
+                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
               ) {
-                Icon(
-                  Icons.Rounded.Check,
-                  contentDescription = "Add",
-                  tint = MaterialTheme.colorScheme.onTertiary
-                )
-              }
-            }
-          },
-          bottomBar = {
-            AnimatedVisibility(
-              visible = playerState?.currentMediaItem?.mediaId != null,
-              enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
-              exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
-            ) {
-              BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-              ) {
-                MiniPlayer(
-                  playerState = playerState,
-                  showNowPlaying = {
-                    showNowPlaying = true
+                FloatingActionButton(
+                  onClick = {
+                    showAddDialog = true
                   },
-                  pause = {
-                    mediaController?.pause()
-                  },
-                  play = {
-                    mediaController?.play()
-                  })
+                  containerColor = animatedFabColor.value
+                ) {
+                  Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "Add",
+                    tint = animatedFabIconTint.value
+                  )
+                }
               }
-            }
-          }) { innerPadding ->
-          AnimatedVisibility(
-            radioListMode != null,
-            enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 })
-          ) {
+              AnimatedVisibility(
+                visible = editingList.value,
+                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
+              ) {
+                FloatingActionButton(
+                  onClick = {
+                    confirmEdit.value = true
+                  },
+                  containerColor = MaterialTheme.colorScheme.tertiary
+                ) {
+                  Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = "Add",
+                    tint = MaterialTheme.colorScheme.onTertiary
+                  )
+                }
+              }
+            },
+            bottomBar = {
+              AnimatedVisibility(
+                visible = playerState?.currentMediaItem?.mediaId != null,
+                enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
+                exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
+              ) {
+                BottomAppBar(
+                  containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                  MiniPlayer(
+                    playerState = playerState,
+                    showNowPlaying = {
+                      showNowPlaying = true
+                    },
+                    pause = {
+                      mediaController?.pause()
+                    },
+                    play = {
+                      mediaController?.play()
+                    })
+                }
+              }
+            }) { innerPadding ->
+            AnimatedVisibility(
+              radioListMode != null,
+              enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 })
+            ) {
 
-            MyRadios(
-              savedRadioList = mainActivityViewModel?.savedRadioList,
-              innerPadding = innerPadding,
-              setPlaybackSource = { url, uri, shortCode ->
-                mainActivityViewModel?.setPlaybackSource(
-                  url,
-                  uri,
-                  shortCode,
-                  mediaController
-                )
-              },
-              staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
-              deleteRadio = { station ->
-                mainActivityViewModel?.deleteStation(station)
-              },
-              editRadio = { newStation ->
-                mainActivityViewModel?.editStation(newStation)
-              },
-              radioListMode = radioListMode!!,
-              editingList = editingList,
-              confirmEdit = confirmEdit,
-              editAllStations = { stations ->
-                mainActivityViewModel?.editAllStations(stations)
-              },
-              lazyListState = lazyListState,
-              lazyGridState = lazyGridState
-            )
+              MyRadios(
+                savedRadioList = mainActivityViewModel?.savedRadioList,
+                innerPadding = innerPadding,
+                setPlaybackSource = { url, uri, shortCode ->
+                  mainActivityViewModel?.setPlaybackSource(
+                    url,
+                    uri,
+                    shortCode,
+                    mediaController
+                  )
+                },
+                staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
+                deleteRadio = { station ->
+                  mainActivityViewModel?.deleteStation(station)
+                },
+                editRadio = { newStation ->
+                  mainActivityViewModel?.editStation(newStation)
+                },
+                radioListMode = radioListMode!!,
+                editingList = editingList,
+                confirmEdit = confirmEdit,
+                editAllStations = { stations ->
+                  mainActivityViewModel?.editAllStations(stations)
+                },
+                lazyListState = lazyListState,
+                lazyGridState = lazyGridState
+              )
+            }
+          }
+          when {
+            showNowPlaying -> {
+              NowPlayingSheet(
+                hideNowPlaying = {
+                  showNowPlaying = false
+                },
+                playerState = playerState,
+                pause = {
+                  mediaController?.pause()
+                },
+                play = {
+                  mediaController?.play()
+                },
+                stop = {
+                  showNowPlaying = false
+                  mediaController?.stop()
+                },
+                currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
+                songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
+                playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
+                nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
+                palette = mainActivityViewModel?.palette,
+                colorList = mainActivityViewModel?.colorList,
+                isSleeping = mainActivityViewModel?.isSleeping
+              )
+            }
           }
         }
         when {
@@ -288,34 +517,22 @@ class MainActivity : ComponentActivity() {
               currentStationCount = mainActivityViewModel?.savedRadioList?.size ?: 0
             )
           }
-
-          showNowPlaying -> {
-            NowPlaying(
-              hideNowPlaying = {
-                showNowPlaying = false
-              },
-              playerState = playerState,
-              pause = {
-                mediaController?.pause()
-              },
-              play = {
-                mediaController?.play()
-              },
-              stop = {
-                showNowPlaying = false
-                mediaController?.stop()
-              },
-              currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
-              songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
-              playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
-              nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
-              palette = mainActivityViewModel?.palette,
-              colorList = mainActivityViewModel?.colorList,
-              isSleeping = mainActivityViewModel?.isSleeping
-            )
-          }
         }
       }
     }
   }
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+fun isWideDisplay(activity: Activity = LocalActivity.current as Activity): Boolean {
+
+  val windowSizeClass = calculateWindowSizeClass(activity)
+  val isWideDisplay: Boolean by remember {
+    derivedStateOf {
+      windowSizeClass.widthSizeClass >= WindowWidthSizeClass.Medium
+    }
+  }
+
+  return isWideDisplay
 }

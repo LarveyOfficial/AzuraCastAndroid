@@ -43,7 +43,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun NowPlayingBottomBar(
   showQueue: MutableState<Boolean>,
-  sheetState: SheetState,
+  sheetState: SheetState? = null,
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,

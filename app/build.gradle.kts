@@ -13,8 +13,8 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 29
     targetSdk = 35
-    versionCode = 30
-    versionName = "alpha-2.8"
+    versionCode = 31
+    versionName = "alpha-2.9"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -74,6 +74,12 @@ dependencies {
   implementation("androidx.compose.material3:material3:1.4.0-alpha08")
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
+  implementation("androidx.compose.material3.adaptive:adaptive:1.1.0-beta02")
+  implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0-beta02")
+  implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0-beta02")
+
+  implementation("androidx.compose.material3:material3-window-size-class:1.3.1")
 
   implementation(libs.reorderable)
 

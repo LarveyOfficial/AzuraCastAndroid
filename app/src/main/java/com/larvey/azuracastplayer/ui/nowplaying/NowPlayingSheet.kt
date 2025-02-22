@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
   ExperimentalSharedTransitionApi::class
 )
 @Composable
-fun NowPlaying(
+fun NowPlayingSheet(
   hideNowPlaying: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,

@@ -211,7 +211,7 @@ fun MyRadios(
             modifier = Modifier
               .fillMaxSize()
               .padding(horizontal = 16.dp),
-            columns = GridCells.Adaptive(minSize = 164.dp),
+            columns = GridCells.Adaptive(minSize = 180.dp),
             state = lazyGridState
           ) {
             items(
