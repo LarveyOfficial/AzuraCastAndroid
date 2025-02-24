@@ -15,7 +15,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
+import androidx.media3.common.MediaMetadata.MEDIA_TYPE_RADIO_STATION
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -314,10 +314,6 @@ class MusicPlayerService : MediaLibraryService() {
       pageSize: Int,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-      Log.d(
-        "DEBUG",
-        "$parentId"
-      )
       if (parentId == "/") {
         val extras = Bundle()
         extras.putInt(
@@ -331,13 +327,13 @@ class MusicPlayerService : MediaLibraryService() {
           .setExtras(extras)
           .setTitle("Stations")
           .build()
-        val metaDataDiscover = MediaMetadata.Builder()
-          .setIsBrowsable(true)
-          .setIsPlayable(false)
-          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-          .setExtras(extras)
-          .setTitle("Discover")
-          .build()
+        //        val metaDataDiscover = MediaMetadata.Builder()
+        //          .setIsBrowsable(true)
+        //          .setIsPlayable(false)
+        //          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+        //          .setExtras(extras)
+        //          .setTitle("Discover")
+        //          .build()
 
         return Futures.immediateFuture(
           LibraryResult.ofItemList(
@@ -360,7 +356,8 @@ class MusicPlayerService : MediaLibraryService() {
           val metaData = MediaMetadata.Builder()
             .setTitle(item.name)
             .setArtist(item.url)
-            .setMediaType(MEDIA_TYPE_MUSIC)
+            .setMediaType(MEDIA_TYPE_RADIO_STATION)
+            .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
             .setDurationMs(1)
             .setIsBrowsable(false)
             .setIsPlayable(true)
