@@ -189,6 +189,24 @@ class MusicPlayerService : MediaLibraryService() {
           .build()
       )
     )
+
+    mediaSession?.let { (applicationContext as AppSetup).setMediaSession(mediaSession) }
+
+    //    serviceScope.launch {
+    //      while (mediaSession != null) {
+    //        mediaSession?.notifyChildrenChanged(
+    //          "Stations",
+    //          Int.MAX_VALUE,
+    //          LibraryParams.Builder().build()
+    //        )
+    //        mediaSession?.notifyChildrenChanged(
+    //          "/",
+    //          Int.MAX_VALUE,
+    //          LibraryParams.Builder().build()
+    //        )
+    //        delay(10000)
+    //      }
+    //    }
   }
 
   @UnstableApi
@@ -207,7 +225,12 @@ class MusicPlayerService : MediaLibraryService() {
           "STOP_RADIO",
           Bundle.EMPTY
         )
-      ).remove(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH)
+      )
+        .remove(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH)
+        .add(SessionCommand.COMMAND_CODE_LIBRARY_SUBSCRIBE)
+        .add(SessionCommand.COMMAND_CODE_LIBRARY_GET_CHILDREN)
+        .add(SessionCommand.COMMAND_CODE_LIBRARY_GET_LIBRARY_ROOT)
+        .add(SessionCommand.COMMAND_CODE_LIBRARY_GET_ITEM)
 
       return ConnectionResult.accept(
         availableSessionCommands.build(),
@@ -221,7 +244,6 @@ class MusicPlayerService : MediaLibraryService() {
           .remove(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
           .build()
       )
-
     }
 
     override fun onPostConnect(
@@ -262,6 +284,15 @@ class MusicPlayerService : MediaLibraryService() {
       )
     }
 
+    override fun onSubscribe(
+      session: MediaLibrarySession,
+      browser: MediaSession.ControllerInfo,
+      parentId: String,
+      params: LibraryParams?
+    ): ListenableFuture<LibraryResult<Void>> {
+      return Futures.immediateFuture(LibraryResult.ofVoid(params))
+    }
+
     @OptIn(UnstableApi::class)
     override fun onAddMediaItems(
       mediaSessiona: MediaSession,
@@ -284,6 +315,7 @@ class MusicPlayerService : MediaLibraryService() {
       nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId.toString()
       return Futures.immediateFuture(updatedMediaItems)
     }
+
 
     override fun onGetLibraryRoot(
       session: MediaLibrarySession,
@@ -323,7 +355,7 @@ class MusicPlayerService : MediaLibraryService() {
         val metaDataStations = MediaMetadata.Builder()
           .setIsBrowsable(true)
           .setIsPlayable(false)
-          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
           .setExtras(extras)
           .setTitle("Stations")
           .build()
@@ -379,8 +411,8 @@ class MusicPlayerService : MediaLibraryService() {
         )
       }
     }
-
   }
+
 
   // The user dismissed the app from the recent tasks
   override fun onTaskRemoved(rootIntent: Intent?) {

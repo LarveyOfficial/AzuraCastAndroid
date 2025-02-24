@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -32,6 +33,8 @@ class AppSetup : Application() {
   lateinit var savedStations: List<SavedStation>
 
   lateinit var userPreferences: UserPreferences
+
+  private lateinit var mediaSession: MediaLibrarySession
 
   var sleepTimer = mutableStateOf(false)
 
@@ -106,6 +109,17 @@ class AppSetup : Application() {
       }
     }
     userPreferences = UserPreferences(dataStore)
+  }
 
+  fun setMediaSession(mediaSession: MediaLibrarySession?) {
+    mediaSession?.let {
+      this.mediaSession = mediaSession
+    }
+  }
+
+  fun getMediaSession(): MediaLibrarySession? {
+    return if (::mediaSession.isInitialized) {
+      mediaSession
+    } else null
   }
 }

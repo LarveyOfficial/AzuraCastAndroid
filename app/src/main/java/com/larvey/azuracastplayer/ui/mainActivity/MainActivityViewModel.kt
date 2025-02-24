@@ -12,6 +12,7 @@ import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaController
+import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
 import com.larvey.azuracastplayer.AppSetup
@@ -228,10 +229,20 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
       savedRadioList.clear()
       savedRadioList.addAll(savedStationsDB.getAllEntries())
       (getApplication() as AppSetup).savedStations = savedRadioList
+      notifySessionStationsUpdated()
       if (updateMetadata == true) {
         updateRadioList()
       }
+    }
+  }
 
+  private fun notifySessionStationsUpdated() {
+    (getApplication() as AppSetup).getMediaSession().let { session ->
+      session?.notifyChildrenChanged(
+        "Stations",
+        Int.MAX_VALUE,
+        LibraryParams.Builder().build()
+      )
     }
   }
 
