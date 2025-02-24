@@ -23,6 +23,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.ConnectionResult
@@ -39,6 +40,9 @@ import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.time.LocalDateTime
 
 
@@ -46,7 +50,7 @@ class MusicPlayerService : MediaLibraryService() {
 
   lateinit var nowPlaying: NowPlayingData
 
-  lateinit var savedStationsDB: SavedStationsDB
+  private lateinit var savedStationsDB: SavedStationsDB
 
   private var mediaSession: MediaLibrarySession? = null
 
@@ -61,7 +65,8 @@ class MusicPlayerService : MediaLibraryService() {
   }
 
   // Create your player and media session in the onCreate lifecycle event
-
+  private val serviceJob = SupervisorJob()
+  private val serviceScope = CoroutineScope(Dispatchers.Main.immediate + serviceJob)
 
   @OptIn(UnstableApi::class)
   override fun onCreate() {
@@ -184,10 +189,6 @@ class MusicPlayerService : MediaLibraryService() {
           .build()
       )
     )
-    mediaSession?.let {
-      (applicationContext as AppSetup).setSession(mediaSession!!)
-    }
-
   }
 
   @UnstableApi
@@ -206,13 +207,13 @@ class MusicPlayerService : MediaLibraryService() {
           "STOP_RADIO",
           Bundle.EMPTY
         )
-      )
+      ).remove(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH)
 
       return ConnectionResult.accept(
         availableSessionCommands.build(),
         Player.Commands.Builder()
           .addAllCommands()
-          //          .remove(Player.COMMAND_GET_TIMELINE)
+          .remove(Player.COMMAND_GET_TIMELINE)
           .remove(Player.COMMAND_SEEK_BACK)
           .remove(Player.COMMAND_SEEK_FORWARD)
           .remove(Player.COMMAND_SEEK_TO_NEXT)
@@ -291,14 +292,15 @@ class MusicPlayerService : MediaLibraryService() {
     ): ListenableFuture<LibraryResult<MediaItem>> {
       return Futures.immediateFuture(
         LibraryResult.ofItem(
-          MediaItem.Builder().setMediaId("/").setMediaMetadata(
-            MediaMetadata.Builder()
-              .setIsBrowsable(false)
-              .setIsPlayable(false)
-              .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-              .setTitle("AzuraCast Player")
-              .build()
-          ).build(),
+          MediaItem.Builder()
+            .setMediaId("/")
+            .setMediaMetadata(
+              MediaMetadata.Builder()
+                .setIsBrowsable(true)
+                .setIsPlayable(false)
+                .build()
+            )
+            .build(),
           params
         )
       )
@@ -312,13 +314,29 @@ class MusicPlayerService : MediaLibraryService() {
       pageSize: Int,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-
-      if (parentId != "/") {
-
-        val metaData = MediaMetadata.Builder()
+      Log.d(
+        "DEBUG",
+        "$parentId"
+      )
+      if (parentId == "/") {
+        val extras = Bundle()
+        extras.putInt(
+          MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+          MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+        )
+        val metaDataStations = MediaMetadata.Builder()
           .setIsBrowsable(true)
           .setIsPlayable(false)
-          .setTitle("Radio Stations")
+          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+          .setExtras(extras)
+          .setTitle("Stations")
+          .build()
+        val metaDataDiscover = MediaMetadata.Builder()
+          .setIsBrowsable(true)
+          .setIsPlayable(false)
+          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+          .setExtras(extras)
+          .setTitle("Discover")
           .build()
 
         return Futures.immediateFuture(
@@ -326,41 +344,43 @@ class MusicPlayerService : MediaLibraryService() {
             listOf(
               MediaItem.Builder()
                 .setMediaId("Stations")
-                .setMediaMetadata(metaData)
-                .build()
+                .setMediaMetadata(metaDataStations)
+                .build(),
+              //              MediaItem.Builder()
+              //                .setMediaId("Discover")
+              //                .setMediaMetadata(metaDataDiscover)
+              //                .build()
             ),
             params
           )
         )
-      }
-      var stations = mutableListOf<MediaItem>()
+      } else {
+        val stations = mutableListOf<MediaItem>()
+        for (item in (applicationContext as AppSetup).savedStations) {
+          val metaData = MediaMetadata.Builder()
+            .setTitle(item.name)
+            .setArtist(item.url)
+            .setMediaType(MEDIA_TYPE_MUSIC)
+            .setDurationMs(1)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .build()
 
+          val mediaItem = MediaItem.Builder()
+            .setMediaId(item.defaultMount)
+            .setMediaMetadata(metaData)
+            .build()
 
-      for (item in (applicationContext as AppSetup).savedStations) {
-        val metaData = MediaMetadata.Builder()
-          .setTitle(item.name)
-          .setAlbumTitle("This is a test")
-          .setArtist(item.url)
-          .setMediaType(MEDIA_TYPE_MUSIC)
-          .setDurationMs(1)
-          .setIsBrowsable(false)
-          .setIsPlayable(true)
-          .build()
+          stations.add(mediaItem)
+        }
 
-        val mediaItem = MediaItem.Builder()
-          .setMediaId(item.defaultMount)
-          .setMediaMetadata(metaData)
-          .build()
-
-        stations.add(mediaItem)
-      }
-
-      return Futures.immediateFuture(
-        LibraryResult.ofItemList(
-          stations,
-          params
+        return Futures.immediateFuture(
+          LibraryResult.ofItemList(
+            stations,
+            params
+          )
         )
-      )
+      }
     }
 
   }
