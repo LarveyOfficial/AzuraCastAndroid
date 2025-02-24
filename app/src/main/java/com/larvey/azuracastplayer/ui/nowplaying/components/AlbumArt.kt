@@ -23,6 +23,7 @@ import com.larvey.azuracastplayer.state.PlayerState
 )
 @Composable
 fun NowPlayingAlbumArt(
+  modifier: Modifier = Modifier,
   playerState: PlayerState,
   sharedTransitionScope: SharedTransitionScope,
   animatedVisibilityScope: AnimatedVisibilityScope,
@@ -31,7 +32,7 @@ fun NowPlayingAlbumArt(
     with(sharedTransitionScope) {
       GlideImage(
         model = url,
-        modifier = Modifier
+        modifier = modifier
           .padding(12.dp)
           .aspectRatio(1f)
           .sharedElement(

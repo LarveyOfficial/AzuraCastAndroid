@@ -7,16 +7,14 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -147,12 +145,9 @@ fun MyRadios(
       false -> {}
     }
     //endregion
-
+    
     val animatedPadding by animateDpAsState(
-      targetValue = if (innerPadding.calculateBottomPadding() - WindowInsets.navigationBars.asPaddingValues()
-          .calculateBottomPadding() == 0.dp
-      ) WindowInsets.navigationBars.asPaddingValues()
-        .calculateBottomPadding() else innerPadding.calculateBottomPadding() + 48.dp,
+      targetValue = innerPadding.calculateBottomPadding(),
       animationSpec = tween(durationMillis = 100)
     )
 
@@ -232,8 +227,10 @@ fun MyRadios(
                 )
               }
             }
-            item {
-              Spacer(modifier = Modifier.size(animatedPadding))
+            item(span = {
+              GridItemSpan(maxLineSpan)
+            }) {
+              Spacer(modifier = Modifier.height(animatedPadding))
             }
           }
         }

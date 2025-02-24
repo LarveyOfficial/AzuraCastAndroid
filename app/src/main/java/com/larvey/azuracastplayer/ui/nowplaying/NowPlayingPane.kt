@@ -12,8 +12,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.NowPlaying
@@ -156,21 +157,21 @@ fun NowPlayingPane(
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
                   .padding(bottom = innerPadding.calculateBottomPadding())
+                  .fillMaxHeight()
                   .fillMaxWidth()
+                  .padding(bottom = 32.dp)
               ) {
-                Spacer(Modifier.weight(0.75f))
                 NowPlayingAlbumArt(
+                  modifier = Modifier.fillMaxHeight(.75f),
                   playerState = playerState,
                   sharedTransitionScope = this@SharedTransitionLayout,
                   animatedVisibilityScope = this@AnimatedContent,
                 )
-                Spacer(Modifier.weight(0.1f))
                 SongAndArtist(
                   songName = playerState.mediaMetadata.displayTitle.toString(),
                   artistName = playerState.mediaMetadata.artist.toString(),
                   small = false
                 )
-                Spacer(Modifier.weight(0.1f))
               }
             } else {
               NowPlayingHistory(

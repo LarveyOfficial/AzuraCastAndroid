@@ -20,11 +20,12 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SongAndArtist(
+  modifier: Modifier = Modifier,
   songName: String,
   artistName: String,
   small: Boolean
 ) {
-  Column(modifier = Modifier.padding(if (small) 4.dp else 16.dp)) {
+  Column(modifier = modifier.padding(horizontal = if (small) 4.dp else 16.dp)) {
     Text(
       text = songName,
       modifier = Modifier

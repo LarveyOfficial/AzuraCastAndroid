@@ -12,8 +12,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
@@ -193,20 +193,20 @@ fun NowPlayingSheet(
                   verticalArrangement = Arrangement.Bottom,
                   modifier = Modifier
                     .padding(innerPadding)
+                    .fillMaxHeight()
+                    .padding(bottom = 32.dp)
                 ) {
-                  Spacer(Modifier.weight(0.75f))
                   NowPlayingAlbumArt(
+                    modifier = Modifier.fillMaxHeight(.75f),
                     playerState = playerState,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@AnimatedContent,
                   )
-                  Spacer(Modifier.weight(0.1f))
                   SongAndArtist(
                     songName = playerState.mediaMetadata.displayTitle.toString(),
                     artistName = playerState.mediaMetadata.artist.toString(),
                     small = false
                   )
-                  Spacer(Modifier.weight(0.1f))
                 }
               } else {
                 NowPlayingHistory(
