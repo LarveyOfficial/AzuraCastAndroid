@@ -66,8 +66,9 @@ import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
   private var mainActivityViewModel: MainActivityViewModel? = null
@@ -115,8 +116,7 @@ class MainActivity : ComponentActivity() {
         var showNowPlayingSheet by remember { mutableStateOf(false) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
-        val medCtrler by rememberManagedMediaController()
-        mediaController = medCtrler
+        mediaController = rememberManagedMediaController().value
 
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()

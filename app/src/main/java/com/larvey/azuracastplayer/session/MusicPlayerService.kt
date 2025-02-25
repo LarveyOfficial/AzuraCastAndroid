@@ -33,26 +33,26 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDateTime
+import javax.inject.Inject
 
-
+@AndroidEntryPoint
 class MusicPlayerService : MediaLibraryService() {
 
+  @Inject
   lateinit var nowPlaying: NowPlayingData
 
-  private lateinit var savedStationsDB: SavedStationsDB
+  @Inject
+  lateinit var savedStationsDB: SavedStationsDB
 
-  private var mediaSession: MediaLibrarySession? = null
+  var mediaSession: MediaLibrarySession? = null
 
   private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -64,19 +64,12 @@ class MusicPlayerService : MediaLibraryService() {
     }
   }
 
-  // Create your player and media session in the onCreate lifecycle event
-  private val serviceJob = SupervisorJob()
-  private val serviceScope = CoroutineScope(Dispatchers.Main.immediate + serviceJob)
 
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
 
-    nowPlaying = (applicationContext as AppSetup).nowPlayingData
-
-    savedStationsDB = (applicationContext as AppSetup).savedStationsDB
-
-    val isSleeping = (applicationContext as AppSetup).sleepTimer
+    val isSleeping = nowPlaying.isSleeping
 
     val filter = IntentFilter("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP")
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -190,23 +183,9 @@ class MusicPlayerService : MediaLibraryService() {
       )
     )
 
-    mediaSession?.let { (applicationContext as AppSetup).setMediaSession(mediaSession) }
-
-    //    serviceScope.launch {
-    //      while (mediaSession != null) {
-    //        mediaSession?.notifyChildrenChanged(
-    //          "Stations",
-    //          Int.MAX_VALUE,
-    //          LibraryParams.Builder().build()
-    //        )
-    //        mediaSession?.notifyChildrenChanged(
-    //          "/",
-    //          Int.MAX_VALUE,
-    //          LibraryParams.Builder().build()
-    //        )
-    //        delay(10000)
-    //      }
-    //    }
+    mediaSession?.let {
+      nowPlaying.mediaSession.value = mediaSession
+    }
   }
 
   @UnstableApi
@@ -300,7 +279,7 @@ class MusicPlayerService : MediaLibraryService() {
       mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
 
-      val item = (applicationContext as AppSetup).savedStations.filter {
+      val item = savedStationsDB.savedStations.value?.filter {
         it.url == Uri.parse(mediaItems[0].mediaId).host && it.shortcode == Uri.parse(
           mediaItems[0].mediaId
         ).pathSegments[1]
@@ -310,7 +289,7 @@ class MusicPlayerService : MediaLibraryService() {
       /* This is the trickiest part, if you don't do this here, nothing will play */
       val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
         .toMutableList()
-      nowPlaying.nowPlayingShortCode.value = item[0].shortcode
+      nowPlaying.nowPlayingShortCode.value = item?.get(0)!!.shortcode
       nowPlaying.nowPlayingURL.value = item[0].url
       nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId.toString()
       return Futures.immediateFuture(updatedMediaItems)
@@ -384,25 +363,26 @@ class MusicPlayerService : MediaLibraryService() {
         )
       } else {
         val stations = mutableListOf<MediaItem>()
-        for (item in (applicationContext as AppSetup).savedStations) {
-          val metaData = MediaMetadata.Builder()
-            .setTitle(item.name)
-            .setArtist(item.url)
-            .setMediaType(MEDIA_TYPE_RADIO_STATION)
-            .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
-            .setDurationMs(1)
-            .setIsBrowsable(false)
-            .setIsPlayable(true)
-            .build()
+        savedStationsDB.savedStations.value?.let {
+          for (item in savedStationsDB.savedStations.value!!) {
+            val metaData = MediaMetadata.Builder()
+              .setTitle(item.name)
+              .setArtist(item.url)
+              .setMediaType(MEDIA_TYPE_RADIO_STATION)
+              .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+              .setDurationMs(1)
+              .setIsBrowsable(false)
+              .setIsPlayable(true)
+              .build()
 
-          val mediaItem = MediaItem.Builder()
-            .setMediaId(item.defaultMount)
-            .setMediaMetadata(metaData)
-            .build()
+            val mediaItem = MediaItem.Builder()
+              .setMediaId(item.defaultMount)
+              .setMediaMetadata(metaData)
+              .build()
 
-          stations.add(mediaItem)
+            stations.add(mediaItem)
+          }
         }
-
         return Futures.immediateFuture(
           LibraryResult.ofItemList(
             stations,
@@ -428,6 +408,7 @@ class MusicPlayerService : MediaLibraryService() {
       player.stop()
       player.release()
       release()
+      nowPlaying.mediaSession.value = null
       mediaSession = null
     }
     Log.d(

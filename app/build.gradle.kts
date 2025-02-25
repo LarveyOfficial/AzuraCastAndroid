@@ -3,6 +3,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   id("com.google.devtools.ksp")
+  id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -70,6 +71,9 @@ dependencies {
     "jackson-module-kotlin",
     "2.11.0"
   )
+
+  implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
 
   implementation("androidx.compose.material3:material3:1.4.0-alpha08")
 
