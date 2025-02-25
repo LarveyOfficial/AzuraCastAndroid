@@ -294,6 +294,7 @@ class MusicPlayerService : MediaLibraryService() {
                 ""
               )
               .contains(
+                //This is stupid but Google Assistant is stupider
                 mediaItems[0].requestMetadata.searchQuery!!.lowercase()
                   .replace(
                     " ",
