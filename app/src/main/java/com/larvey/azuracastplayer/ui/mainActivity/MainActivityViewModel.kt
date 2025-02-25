@@ -9,28 +9,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaController
-import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
-import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.models.NowPlayingData
+import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.weightedRandomColors
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class MainActivityViewModel @Inject constructor(
+  val nowPlayingData: NowPlayingData,
+  private val savedStationsDB: SavedStationsDB,
+  private val application: Application
+) : ViewModel() {
 
-  val nowPlayingData = (app as AppSetup).nowPlayingData
-  private val savedStationsDB = (app as AppSetup).savedStationsDB
-
-  val isSleeping = (app as AppSetup).sleepTimer
+  val isSleeping = nowPlayingData.isSleeping
 
   var palette = mutableStateOf<Palette?>(null)
   var colorList = mutableStateOf(List(9) { Color.Gray })
@@ -73,7 +78,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     viewModelScope.launch {
       if (playerState?.mediaMetadata?.artworkUri != null) {
         this.async(Dispatchers.IO) {
-          Glide.with(getApplication<Application>().applicationContext).asBitmap().load(
+          Glide.with(application).asBitmap().load(
             playerState.mediaMetadata.artworkUri.toString()
           ).submit().get().let { bitmap ->
             palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
@@ -228,7 +233,7 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
     CoroutineScope(Dispatchers.IO).launch {
       savedRadioList.clear()
       savedRadioList.addAll(savedStationsDB.getAllEntries())
-      (getApplication() as AppSetup).savedStations = savedRadioList
+      savedStationsDB.savedStations.value = savedRadioList
       notifySessionStationsUpdated()
       if (updateMetadata == true) {
         updateRadioList()
@@ -237,11 +242,11 @@ class MainActivityViewModel(app: Application) : AndroidViewModel(app) {
   }
 
   private fun notifySessionStationsUpdated() {
-    (getApplication() as AppSetup).getMediaSession().let { session ->
+    nowPlayingData.mediaSession.value.let { session ->
       session?.notifyChildrenChanged(
         "Stations",
         Int.MAX_VALUE,
-        LibraryParams.Builder().build()
+        MediaLibraryService.LibraryParams.Builder().build()
       )
     }
   }

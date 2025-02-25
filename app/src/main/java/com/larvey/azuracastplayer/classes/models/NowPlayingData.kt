@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.media3.common.Player
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import com.larvey.azuracastplayer.api.fetchStationData
 import com.larvey.azuracastplayer.api.refreshMetadata
 import com.larvey.azuracastplayer.classes.data.StationJSON
@@ -17,6 +18,10 @@ class NowPlayingData {
   var nowPlayingURL = mutableStateOf("")
   var nowPlayingShortCode = mutableStateOf("")
   var nowPlayingURI = mutableStateOf("")
+
+  var mediaSession = mutableStateOf<MediaLibrarySession?>(null)
+
+  var isSleeping = mutableStateOf(false)
 
 
   fun setMediaMetadata(
