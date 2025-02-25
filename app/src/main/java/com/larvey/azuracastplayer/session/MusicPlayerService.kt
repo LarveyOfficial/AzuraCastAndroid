@@ -204,7 +204,6 @@ class MusicPlayerService : MediaLibraryService() {
           Bundle.EMPTY
         )
       )
-        .remove(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH)
         .add(SessionCommand.COMMAND_CODE_LIBRARY_SUBSCRIBE)
         .add(SessionCommand.COMMAND_CODE_LIBRARY_GET_CHILDREN)
         .add(SessionCommand.COMMAND_CODE_LIBRARY_GET_LIBRARY_ROOT)
@@ -273,7 +272,7 @@ class MusicPlayerService : MediaLibraryService() {
 
     @OptIn(UnstableApi::class)
     override fun onAddMediaItems(
-      mediaSessiona: MediaSession,
+      mediaSession: MediaSession,
       controller: MediaSession.ControllerInfo,
       mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
@@ -395,6 +394,73 @@ class MusicPlayerService : MediaLibraryService() {
           )
         )
       }
+    }
+
+    override fun onSearch(
+      session: MediaLibrarySession,
+      browser: MediaSession.ControllerInfo,
+      query: String,
+      params: LibraryParams?
+    ): ListenableFuture<LibraryResult<Void>> {
+      Log.d(
+        "DEBUG-SEARCH",
+        "We Searching $query"
+      )
+
+      mediaSession?.notifySearchResultChanged(
+        browser,
+        query,
+        Int.MAX_VALUE,
+        params
+      )
+
+      return super.onSearch(
+        session,
+        browser,
+        query,
+        params
+      )
+    }
+
+    override fun onGetSearchResult(
+      session: MediaLibrarySession,
+      browser: MediaSession.ControllerInfo,
+      query: String,
+      page: Int,
+      pageSize: Int,
+      params: LibraryParams?
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+
+      val foundStations = mutableListOf<MediaItem>()
+      savedStationsDB.savedStations.value?.let { stations ->
+        stations.filter { station ->
+          "${station.name}${station.url}".lowercase().contains(query.lowercase())
+        }.forEach { item ->
+          val metaData = MediaMetadata.Builder()
+            .setTitle(item.name)
+            .setArtist(item.url)
+            .setMediaType(MEDIA_TYPE_RADIO_STATION)
+            .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+            .setDurationMs(1)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .build()
+
+
+          val mediaItem = MediaItem.Builder()
+            .setMediaId(item.defaultMount)
+            .setMediaMetadata(metaData)
+            .build()
+          foundStations.add(mediaItem)
+        }
+      }
+
+      return Futures.immediateFuture(
+        LibraryResult.ofItemList(
+          foundStations,
+          params
+        )
+      )
     }
   }
 
