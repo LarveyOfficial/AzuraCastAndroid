@@ -241,10 +241,15 @@ class MainActivityViewModel @Inject constructor(
     }
   }
 
-  private fun notifySessionStationsUpdated() {
+  fun notifySessionStationsUpdated() {
     nowPlayingData.mediaSession.value.let { session ->
       session?.notifyChildrenChanged(
         "Stations",
+        Int.MAX_VALUE,
+        MediaLibraryService.LibraryParams.Builder().build()
+      )
+      session?.notifyChildrenChanged(
+        "/",
         Int.MAX_VALUE,
         MediaLibraryService.LibraryParams.Builder().build()
       )

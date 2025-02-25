@@ -170,6 +170,10 @@ class MainActivity : ComponentActivity() {
           mainActivityViewModel?.getStationList(false)
         }
 
+        //        LaunchedEffect(radioListMode) {
+        //          mainActivityViewModel?.notifySessionStationsUpdated()
+        //        }
+
         DisposableEffect(mediaController) {
           mediaController?.run {
             playerState = state()

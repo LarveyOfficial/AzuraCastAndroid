@@ -55,6 +55,7 @@ class AppSetup : Application() {
     }
   }
 
+
   @EntryPoint
   @InstallIn(SingletonComponent::class)
   interface SavedStationsDBEntryPoint {
