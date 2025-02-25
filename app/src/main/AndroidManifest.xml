@@ -32,7 +32,9 @@
             android:theme="@style/Theme.AzuraCastPlayer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
 
+                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -46,6 +48,8 @@
                 <action android:name="androidx.media3.session.MediaLibraryService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+
+                <category android:name="android.intent.category.DEFAULT" />
                 <action android:name="com.larvey.azuracastplayer.session.MusicPlayerService.sleep" />
             </intent-filter>
         </service>

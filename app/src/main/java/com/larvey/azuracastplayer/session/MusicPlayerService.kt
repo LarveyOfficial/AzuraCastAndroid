@@ -289,7 +289,33 @@ class MusicPlayerService : MediaLibraryService() {
         savedStationsDB.savedStations.value?.let { stations ->
           stations.filter { station ->
             "${station.name}${station.url}".lowercase()
-              .contains(mediaItems[0].requestMetadata.searchQuery!!.lowercase())
+              .replace(
+                " ",
+                ""
+              )
+              .contains(
+                mediaItems[0].requestMetadata.searchQuery!!.lowercase()
+                  .replace(
+                    " ",
+                    ""
+                  )
+                  .replace(
+                    "onazuracastradio",
+                    ""
+                  )
+                  .replace(
+                    "onazurecastradio",
+                    ""
+                  )
+                  .replace(
+                    "onazuracastplayer",
+                    ""
+                  )
+                  .replace(
+                    "onazurecastplayer",
+                    ""
+                  )
+              )
           }.forEach { item ->
             val metaData = MediaMetadata.Builder()
               .setTitle(item.name)
