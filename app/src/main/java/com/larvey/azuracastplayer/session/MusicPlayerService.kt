@@ -36,6 +36,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
@@ -63,8 +64,7 @@ class MusicPlayerService : MediaLibraryService() {
       mediaSession?.player?.stop()
     }
   }
-
-
+  
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()

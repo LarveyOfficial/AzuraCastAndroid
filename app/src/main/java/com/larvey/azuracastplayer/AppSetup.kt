@@ -45,6 +45,7 @@ class AppSetup : Application() {
     val nowPlayingData = nowPlayingDataEntryPoint.nowPlayingData
     CoroutineScope(Dispatchers.IO).launch {
       val stations = savedStationsDB.getAllEntries()
+      savedStationsDB.savedStations.value = stations
       for (item in stations) {
         nowPlayingData.getStationInformation(
           url = item.url,

@@ -168,7 +168,6 @@ class MainActivity : ComponentActivity() {
 
         LaunchedEffect(Unit) {
           mainActivityViewModel?.getStationList(false)
-          mainActivityViewModel?.periodicUpdate(30)
         }
 
         DisposableEffect(mediaController) {

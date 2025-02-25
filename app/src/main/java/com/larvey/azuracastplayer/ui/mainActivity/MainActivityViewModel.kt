@@ -44,15 +44,15 @@ class MainActivityViewModel @Inject constructor(
 
   var savedRadioList = mutableStateListOf<SavedStation>()
 
-  fun periodicUpdate(seconds: Long) {
+  init {
     viewModelScope.launch {
       while (savedRadioList != emptyList<SavedStation>()) {
         Log.d(
           "DEBUG",
-          "Waiting $seconds seconds to fetch data"
+          "Waiting 30 seconds to fetch data"
         )
         updateRadioList()
-        delay(seconds * 1000)
+        delay(30 * 1000)
       }
     }
   }

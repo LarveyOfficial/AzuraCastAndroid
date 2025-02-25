@@ -22,7 +22,7 @@ class NowPlayingData {
   var mediaSession = mutableStateOf<MediaLibrarySession?>(null)
 
   var isSleeping = mutableStateOf(false)
-
+  
 
   fun setMediaMetadata(
     url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false
