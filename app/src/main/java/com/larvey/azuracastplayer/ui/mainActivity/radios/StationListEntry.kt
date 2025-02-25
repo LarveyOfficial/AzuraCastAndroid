@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -159,69 +161,78 @@ fun StationListEntry(
       verticalAlignment = Alignment.CenterVertically
     ) {
       GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString(),
+        model = stationData?.nowPlaying?.song?.art.toString().replace(
+          "http://",
+          "https://"
+        ),
         contentDescription = "${stationData?.station?.name}",
         modifier = Modifier
           .size(64.dp)
+          .aspectRatio(1f)
           .clip(RoundedCornerShape(8.dp)),
         failure = placeholder(
           ColorPainter(Color.DarkGray)
         ),
         loading = placeholder(
           ColorPainter(Color.DarkGray)
-        )
+        ),
+        contentScale = ContentScale.FillBounds
       )
       Spacer(modifier = Modifier.width(8.dp))
-      Box(modifier = Modifier.weight(1f)) {
-        if (stationData?.listeners?.current != null && !editingList.value) {
-          ElevatedAssistChip(
-            onClick = {
-              setPlaybackSource(
-                station.url,
-                station.defaultMount,
-                station.shortcode
-              )
-            },
-            leadingIcon = {
-              Row {
-                Spacer(Modifier.size(4.dp))
-                Icon(
-                  imageVector = Icons.Rounded.Headphones,
-                  contentDescription = "Delete Radio",
-                  modifier = Modifier.size(16.dp)
-                )
-              }
-
-            },
-            label = { Text("${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}") },
-            modifier = Modifier
-              .align(Alignment.TopEnd)
-              .widthIn(max = 80.dp)
-              .offset(y = (-14).dp)
-          )
-        }
-        Column(
-          verticalArrangement = Arrangement.Center,
-          modifier = Modifier
-            .fillMaxWidth()
+      Column(
+        modifier = Modifier.offset(y = (-5).dp),
+        verticalArrangement = Arrangement.Center
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically
         ) {
           Text(
             text = station.name,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            modifier = Modifier
+              .weight(1f)
+              .padding(end = 2.dp)
+              .basicMarquee(iterations = Int.MAX_VALUE)
           )
-          if (stationData?.nowPlaying?.song?.title.toString() != "null") {
-            Row {
-              Text(
-                text = "Now playing: "
-              )
-              Text(
-                text = "${stationData?.nowPlaying?.song?.title}",
-                maxLines = 1,
-                modifier = Modifier
-                  .basicMarquee(iterations = Int.MAX_VALUE)
-              )
-            }
+          if (stationData?.listeners?.current != null && !editingList.value) {
+            ElevatedAssistChip(
+              onClick = {
+                setPlaybackSource(
+                  station.url,
+                  station.defaultMount,
+                  station.shortcode
+                )
+              },
+              leadingIcon = {
+                Row {
+                  Spacer(Modifier.size(4.dp))
+                  Icon(
+                    imageVector = Icons.Rounded.Headphones,
+                    contentDescription = "Delete Radio",
+                    modifier = Modifier.size(16.dp)
+                  )
+                }
+
+              },
+              label = { Text("${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}") },
+              modifier = Modifier
+                .widthIn(max = 80.dp)
+            )
+          }
+        }
+        if (stationData?.nowPlaying?.song?.title.toString() != "null") {
+          Row {
+            Text(
+              text = "Now playing: "
+            )
+            Text(
+              text = "${stationData?.nowPlaying?.song?.title}",
+              maxLines = 1,
+              modifier = Modifier
+                .basicMarquee(iterations = Int.MAX_VALUE)
+            )
           }
         }
 

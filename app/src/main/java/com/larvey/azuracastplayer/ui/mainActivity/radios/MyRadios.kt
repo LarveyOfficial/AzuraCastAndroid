@@ -145,12 +145,11 @@ fun MyRadios(
       false -> {}
     }
     //endregion
-    
+
     val animatedPadding by animateDpAsState(
-      targetValue = innerPadding.calculateBottomPadding(),
+      targetValue = innerPadding.calculateBottomPadding() + 1.dp,
       animationSpec = tween(durationMillis = 100)
     )
-
     val isRefreshing = remember { mutableStateOf(false) }
 
     PullToRefreshBox(
@@ -176,6 +175,7 @@ fun MyRadios(
               .padding(horizontal = 16.dp),
             state = lazyListState
           ) {
+            item { Spacer(modifier = Modifier.size(16.dp)) }
             items(
               list,
               key = { it.shortcode }) { item ->
@@ -209,6 +209,9 @@ fun MyRadios(
             columns = GridCells.Adaptive(minSize = 180.dp),
             state = lazyGridState
           ) {
+            item(span = {
+              GridItemSpan(maxLineSpan)
+            }) { Spacer(modifier = Modifier.size(16.dp)) }
             items(
               list,
               key = { it.shortcode }) { item ->

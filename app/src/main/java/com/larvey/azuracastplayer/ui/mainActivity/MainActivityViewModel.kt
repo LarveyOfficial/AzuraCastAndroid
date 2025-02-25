@@ -78,10 +78,19 @@ class MainActivityViewModel @Inject constructor(
     viewModelScope.launch {
       if (playerState?.mediaMetadata?.artworkUri != null) {
         this.async(Dispatchers.IO) {
-          Glide.with(application).asBitmap().load(
-            playerState.mediaMetadata.artworkUri.toString()
-          ).submit().get().let { bitmap ->
-            palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
+          try {
+            Glide.with(application).asBitmap().load(
+              playerState.mediaMetadata.artworkUri.toString()
+            ).submit()
+              .get()
+              .let { bitmap ->
+                palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
+              }
+          } catch (e: Exception) {
+            Log.d(
+              "DEBUG",
+              "Down unda': $e"
+            )
           }
         }
       } else {

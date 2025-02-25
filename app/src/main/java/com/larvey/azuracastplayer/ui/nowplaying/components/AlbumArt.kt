@@ -55,7 +55,10 @@ fun OtherAlbumArt(
 ) {
   AnimatedContent(artURL) { url ->
     GlideImage(
-      model = url,
+      model = url.replace(
+        "http://",
+        "https://"
+      ),
       modifier = Modifier
         .padding(horizontal = 12.dp)
         .aspectRatio(1f)

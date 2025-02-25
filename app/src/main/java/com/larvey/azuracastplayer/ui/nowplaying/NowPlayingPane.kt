@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer.ui.nowplaying
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.RepeatMode
@@ -9,6 +10,8 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,9 +67,13 @@ fun NowPlayingPane(
   colorList: MutableState<List<Color>>?
 ) {
 
-  if (playerState?.currentMediaItem == null) return
-  else {
 
+  AnimatedVisibility(
+    visible = playerState?.currentMediaItem != null,
+    enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }),
+    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 })
+  ) {
+    playerState!!
     val transitionA = rememberInfiniteTransition(label = "X")
     val transitionB = rememberInfiniteTransition(label = "Y")
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -138,7 +140,10 @@ fun StationGridEntry(
   ) {
     Box {
       GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString(),
+        model = stationData?.nowPlaying?.song?.art.toString().replace(
+          "http://",
+          "https://"
+        ),
         contentDescription = "${stationData?.station?.name}",
         failure = placeholder(
           ColorPainter(Color.DarkGray)
@@ -149,6 +154,7 @@ fun StationGridEntry(
         modifier = with(scope) {
           Modifier
             .size(174.dp)
+            .aspectRatio(1f)
             .clip(RoundedCornerShape(8.dp))
             .conditional(editingList.value) {
               longPressDraggableHandle(
@@ -201,7 +207,8 @@ fun StationGridEntry(
               state = hazeState,
               zIndex = 2f
             )
-        }
+        },
+        contentScale = ContentScale.FillBounds
       )
       if (stationData?.listeners?.current != null && !editingList.value) {
         Box(

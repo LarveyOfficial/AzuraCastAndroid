@@ -47,7 +47,7 @@ fun refreshMetadata(
 
   val staticCall: Call<StationJSON> = retroFitAPI.getStaticJSON(shortCode)
 
-  staticCall!!.enqueue(object : Callback<StationJSON?> {
+  staticCall.enqueue(object : Callback<StationJSON?> {
     @OptIn(UnstableApi::class)
     override fun onResponse(
       call: Call<StationJSON?>,
@@ -73,7 +73,14 @@ fun refreshMetadata(
           .setAlbumArtist(data.nowPlaying.song.artist)
           .setDescription(data.nowPlaying.song.album) // Android Auto for some reason uses Description as the Album name
           .setGenre(data.nowPlaying.song.genre)
-          .setArtworkUri(Uri.parse(data.nowPlaying.song.art))
+          .setArtworkUri(
+            Uri.parse(
+              data.nowPlaying.song.art.replace(
+                "http://",
+                "https://"
+              )
+            )
+          )
           .setDurationMs(data.nowPlaying.duration.toLong() * 1000) // Gaming
           .build()
 

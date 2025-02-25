@@ -14,8 +14,8 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 29
     targetSdk = 35
-    versionCode = 41
-    versionName = "alpha-3.3"
+    versionCode = 43
+    versionName = "alpha-3.4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -52,6 +52,7 @@ android {
 
 dependencies {
 
+  implementation(libs.androidx.material3.adaptive.navigation.suite.android)
   val room_version = "2.6.1"
 
   implementation(libs.androidx.navigation.compose)
@@ -79,11 +80,13 @@ dependencies {
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
+  implementation("androidx.window:window:1.4.0-beta02")
+
   implementation("androidx.compose.material3.adaptive:adaptive:1.1.0-beta02")
   implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0-beta02")
   implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0-beta02")
 
-  implementation("androidx.compose.material3:material3-window-size-class:1.3.1")
+  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha08")
 
   implementation(libs.reorderable)
 
