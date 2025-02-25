@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.R
+import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
@@ -277,6 +278,50 @@ class MusicPlayerService : MediaLibraryService() {
       mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
 
+      Log.d(
+        "DEBUG",
+        mediaItems[0].requestMetadata.searchQuery.toString()
+      )
+
+      if (mediaItems[0].requestMetadata.searchQuery != null) {
+        val foundStations = mutableListOf<MediaItem>()
+        val foundSavedStations = mutableListOf<SavedStation>()
+        savedStationsDB.savedStations.value?.let { stations ->
+          stations.filter { station ->
+            "${station.name}${station.url}".lowercase()
+              .contains(mediaItems[0].requestMetadata.searchQuery!!.lowercase())
+          }.forEach { item ->
+            val metaData = MediaMetadata.Builder()
+              .setTitle(item.name)
+              .setArtist(item.url)
+              .setMediaType(MEDIA_TYPE_RADIO_STATION)
+              .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+              .setDurationMs(1)
+              .setIsBrowsable(false)
+              .setIsPlayable(true)
+              .build()
+            val mediaItem = MediaItem.Builder()
+              .setMediaId(item.defaultMount)
+              .setMediaMetadata(metaData)
+              .build()
+            foundStations.add(mediaItem)
+            foundSavedStations.add(item)
+          }
+        }
+        val updatedMediaItems = foundStations.map {
+          it.buildUpon()
+            .setUri(it.mediaId)
+            .build()
+        }
+          .toMutableList()
+        if (foundSavedStations.isNotEmpty()) {
+          nowPlaying.nowPlayingShortCode.value = foundSavedStations[0].shortcode
+          nowPlaying.nowPlayingURL.value = foundSavedStations[0].url
+          nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId
+        }
+        return Futures.immediateFuture(updatedMediaItems)
+      }
+
       val item = savedStationsDB.savedStations.value?.filter {
         it.url == Uri.parse(mediaItems[0].mediaId).host && it.shortcode == Uri.parse(
           mediaItems[0].mediaId
@@ -287,9 +332,9 @@ class MusicPlayerService : MediaLibraryService() {
       /* This is the trickiest part, if you don't do this here, nothing will play */
       val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
         .toMutableList()
-      nowPlaying.nowPlayingShortCode.value = item?.get(0)!!.shortcode
-      nowPlaying.nowPlayingURL.value = item[0].url
-      nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId.toString()
+      nowPlaying.nowPlayingShortCode.value = item?.get(0)?.shortcode ?: ""
+      nowPlaying.nowPlayingURL.value = item?.get(0)?.url ?: ""
+      nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId
       return Futures.immediateFuture(updatedMediaItems)
     }
 
