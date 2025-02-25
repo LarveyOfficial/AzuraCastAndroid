@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.mainActivity.addStations
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -57,11 +58,11 @@ fun AddStationDialog(
 
   var checkedStations by remember { mutableStateOf(emptyList<AddableStation>()) }
 
-  var context = LocalContext.current
+  val context = LocalContext.current
 
   Dialog(onDismissRequest = {
     radioSearchViewModel.stationHostData =
-      mutableStateMapOf<String, List<StationJSON>>()
+      mutableStateMapOf()
     hideDialog()
   }) {
     Card(
@@ -101,16 +102,29 @@ fun AddStationDialog(
               targetState = radioSearchViewModel.stationHostData[formatedURL],
             ) { hostData ->
               if (hostData != null) {
+                val mounts = hostData.filterNot { host ->
+                  host.station.mounts.filterNot { mount ->
+                    listOf(
+                      "flac",
+                      "opus",
+                      "ogg"
+                    ).contains(mount.format)
+                  }.isEmpty()
+                }
                 LazyColumn {
-                  itemsIndexed(hostData) { _, item ->
-
-                    val mounts = item.station.mounts.filterNot {
+                  itemsIndexed(mounts) { _, item ->
+                    val supportedMounts = item.station.mounts.filterNot { mount ->
                       listOf(
                         "flac",
                         "opus",
                         "ogg"
-                      ).contains(it.format)
+                      ).contains(mount.format)
                     }
+
+                    Log.d(
+                      "DEBUG-ADD",
+                      supportedMounts.toString()
+                    )
 
                     ElevatedCard(
                       colors = CardDefaults.cardColors(
@@ -128,7 +142,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                mounts[0].url
+                                supportedMounts[0].url
                               )
                             )
                           ) {
@@ -136,7 +150,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                mounts[0].url
+                                supportedMounts[0].url
                               )
                             )
                           } else {
@@ -144,7 +158,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                mounts[0].url
+                                supportedMounts[0].url
                               )
                             )
                           }
@@ -169,7 +183,7 @@ fun AddStationDialog(
                             AddableStation(
                               item.station.name,
                               item.station.shortcode,
-                              mounts[0].url
+                              supportedMounts[0].url
                             )
                           ),
                           onCheckedChange = null

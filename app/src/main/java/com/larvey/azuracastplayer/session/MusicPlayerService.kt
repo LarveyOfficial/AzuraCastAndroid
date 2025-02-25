@@ -279,7 +279,7 @@ class MusicPlayerService : MediaLibraryService() {
     ): ListenableFuture<MutableList<MediaItem>> {
 
       Log.d(
-        "DEBUG",
+        "DEBUG-SEARCH2PLAY",
         mediaItems[0].requestMetadata.searchQuery.toString()
       )
 
@@ -349,10 +349,8 @@ class MusicPlayerService : MediaLibraryService() {
         return Futures.immediateFuture(updatedMediaItems)
       }
 
-      val item = savedStationsDB.savedStations.value?.filter {
-        it.url == Uri.parse(mediaItems[0].mediaId).host && it.shortcode == Uri.parse(
-          mediaItems[0].mediaId
-        ).pathSegments[1]
+      val item = savedStationsDB.savedStations.value?.filter { savedStation ->
+        savedStation.defaultMount == mediaItems[0].mediaId
       }
 
 

@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.mainActivity.components
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,11 +51,27 @@ fun EditStation(
   }
   var stationFieldRename by remember { mutableStateOf(station.name) }
   var expandedDropdown by remember { mutableStateOf(false) }
-  var mounts = stationData.station.mounts.map { it.name }
+  val mounts = stationData.station.mounts
   val hls = stationData.station.hlsEnabled
   var setMount by remember { mutableStateOf(station.defaultMount) }
+
+  val defaultMount = stationData.station.mounts.find {
+    it.url == station.defaultMount
+  } ?: stationData.station.mounts.filterNot {
+    listOf(
+      "flac",
+      "ogg",
+      "opus"
+    ).contains(it.format)
+  }.first()
+
   val textFieldState =
-    rememberTextFieldState(if (station.defaultMount.endsWith(".m3u8")) "HLS (experimental)" else mounts.find { it == stationData.station.mounts.find { it.url == station.defaultMount }!!.name }!!)
+    rememberTextFieldState(
+      if (station.defaultMount.endsWith(".m3u8"))
+        "HLS (experimental)"
+      else
+        defaultMount.name
+    )
 
   Dialog(onDismissRequest = { hideDialog() }) {
     Card(
@@ -105,18 +122,18 @@ fun EditStation(
                   "flac",
                   "ogg",
                   "opus"
-                ).contains(stationData.station.mounts.find { it.name == mount }!!.format)
+                ).contains(mount.format)
               ) {
                 DropdownMenuItem(
                   text = {
                     Text(
-                      mount,
+                      mount.name,
                       style = MaterialTheme.typography.bodyLarge
                     )
                   },
                   onClick = {
-                    textFieldState.setTextAndPlaceCursorAtEnd(mount)
-                    setMount = stationData.station.mounts.find { it.name == mount }?.url!!
+                    textFieldState.setTextAndPlaceCursorAtEnd(mount.name)
+                    setMount = mount.url
                     expandedDropdown = false
                   },
                   contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -154,12 +171,17 @@ fun EditStation(
           }
           TextButton(
             onClick = {
+
               val newStation = SavedStation(
                 name = stationFieldRename,
                 url = station.url,
                 shortcode = station.shortcode,
                 defaultMount = setMount,
                 position = station.position
+              )
+              Log.d(
+                "DEBUG-EDIT",
+                newStation.toString()
               )
               editStation(
                 newStation

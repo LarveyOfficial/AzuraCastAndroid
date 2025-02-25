@@ -9,7 +9,7 @@ data class StationJSON(
   @SerializedName("now_playing")
   val nowPlaying: NowPlaying,
   @SerializedName("playing_next")
-  val playingNext: PlayingNext,
+  val playingNext: PlayingNext?,
   @SerializedName("song_history")
   val songHistory: List<SongHistory>,
   @SerializedName("is_online")
@@ -82,8 +82,8 @@ data class NowPlaying(
   @SerializedName("played_at")
   val playedAt: Long,
   val duration: Number,
-  val playlist: String,
-  val streamer: String,
+  val playlist: String?,
+  val streamer: String?,
   @SerializedName("is_request")
   val isRequest: Boolean,
   val song: Song,
@@ -94,8 +94,6 @@ data class NowPlaying(
 data class Song(
   val id: String,
   val art: String,
-  @SerializedName("custom_fields")
-  val customFields: List<Any?>,
   val text: String,
   val artist: String,
   val title: String,
