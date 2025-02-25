@@ -263,6 +263,10 @@ fun StationGridEntry(
     Text(
       text = station.name,
       style = MaterialTheme.typography.titleMedium,
+      maxLines = 1,
+      modifier = Modifier
+        .widthIn(max = 164.dp)
+        .basicMarquee(iterations = Int.MAX_VALUE),
       fontWeight = FontWeight.Bold
     )
     Row(
