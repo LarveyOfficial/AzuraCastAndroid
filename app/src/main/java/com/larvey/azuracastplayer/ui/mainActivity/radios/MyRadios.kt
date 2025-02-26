@@ -174,7 +174,6 @@ fun MyRadios(
               .padding(horizontal = 16.dp),
             state = lazyListState
           ) {
-            item { Spacer(modifier = Modifier.size(16.dp)) }
             items(
               list!!,
               key = { it.shortcode }) { item ->
@@ -200,7 +199,6 @@ fun MyRadios(
             }
           }
         } else {
-
           LazyVerticalGrid(
             modifier = Modifier
               .fillMaxSize()
@@ -208,9 +206,6 @@ fun MyRadios(
             columns = GridCells.Adaptive(minSize = 180.dp),
             state = lazyGridState
           ) {
-            item(span = {
-              GridItemSpan(maxLineSpan)
-            }) { Spacer(modifier = Modifier.size(16.dp)) }
             items(
               list!!,
               key = { it.shortcode }) { item ->

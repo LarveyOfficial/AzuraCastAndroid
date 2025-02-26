@@ -151,11 +151,12 @@ class MainActivity : ComponentActivity() {
         }
         DisposableEffect(mediaController) {
           mediaController?.run {
-            playerState = state()
             mainActivityViewModel?.sharedMediaController?.playerState?.value = state()
+            playerState = state()
           }
           onDispose {
             playerState?.dispose()
+            mainActivityViewModel?.sharedMediaController?.playerState?.value?.dispose()
           }
         }
         val defaultColor = MaterialTheme.colorScheme.outline
@@ -240,12 +241,7 @@ class MainActivity : ComponentActivity() {
             } else {
               MaterialTheme.colorScheme.onBackground
             })
-
-        //        LaunchedEffect(radioListMode) {
-        //          mainActivityViewModel?.notifySessionStationsUpdated()
-        //        }
-
-
+        
         SupportingPaneScaffold(
           modifier = Modifier.background(MaterialTheme.colorScheme.background),
           directive = navigator.scaffoldDirective,
