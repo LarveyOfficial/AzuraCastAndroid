@@ -424,99 +424,105 @@ class MusicPlayerService : MediaLibraryService() {
       pageSize: Int,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-      if (parentId == "/") {
-        //        var gridView: Boolean
-        //        runBlocking {
-        //          gridView = dataStore.data.map {
-        //            it[booleanPreferencesKey(IS_GRID_VIEW)] ?: false
-        //          }.first()
-        //        }
-        val extras = Bundle()
-        extras.putInt(
-          MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
-          MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
-        )
+      when (parentId) {
+        "/" -> {
+          //        var gridView: Boolean
+          //        runBlocking {
+          //          gridView = dataStore.data.map {
+          //            it[booleanPreferencesKey(IS_GRID_VIEW)] ?: false
+          //          }.first()
+          //        }
+          val extras = Bundle()
+          extras.putInt(
+            MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+            MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+          )
 
 
-        val metaDataStations = MediaMetadata.Builder()
-          .setIsBrowsable(true)
-          .setIsPlayable(false)
-          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-          .setExtras(extras)
-          .setTitle("My Stations")
-          .setArtworkUri(
-            resourceToUri(
-              applicationContext,
-              R.drawable.stations_icon
+          val metaDataStations = MediaMetadata.Builder()
+            .setIsBrowsable(true)
+            .setIsPlayable(false)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+            .setExtras(extras)
+            .setTitle("My Stations")
+            .setArtworkUri(
+              resourceToUri(
+                applicationContext,
+                R.drawable.stations_icon
+              )
+            )
+            .build()
+          val metaDataDiscover = MediaMetadata.Builder()
+            .setIsBrowsable(true)
+            .setIsPlayable(false)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+            .setExtras(extras)
+            .setTitle("Discover")
+            .setArtworkUri(
+              resourceToUri(
+                applicationContext,
+                R.drawable.discover_icon
+              )
+            )
+            .build()
+
+
+
+          return Futures.immediateFuture(
+            LibraryResult.ofItemList(
+              listOf(
+                MediaItem.Builder()
+                  .setMediaId("Stations")
+                  .setMediaMetadata(metaDataStations)
+                  .build(),
+                MediaItem.Builder()
+                  .setMediaId("Discover")
+                  .setMediaMetadata(metaDataDiscover)
+                  .build()
+              ),
+              params
             )
           )
-          .build()
-        val metaDataDiscover = MediaMetadata.Builder()
-          .setIsBrowsable(true)
-          .setIsPlayable(false)
-          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-          .setExtras(extras)
-          .setTitle("Discover")
-          .setArtworkUri(
-            resourceToUri(
-              applicationContext,
-              R.drawable.discover_icon
-            )
-          )
-          .build()
-
-
-
-        return Futures.immediateFuture(
-          LibraryResult.ofItemList(
-            listOf(
-              MediaItem.Builder()
-                .setMediaId("Stations")
-                .setMediaMetadata(metaDataStations)
-                .build(),
-              MediaItem.Builder()
-                .setMediaId("Discover")
-                .setMediaMetadata(metaDataDiscover)
-                .build()
-            ),
-            params
-          )
-        )
-      } else if (parentId == "Stations") {
-        val stations = mutableListOf<MediaItem>()
-        savedStationsDB.savedStations.value?.let {
-          for (item in savedStationsDB.savedStations.value!!) {
-            val metaData = MediaMetadata.Builder()
-              .setTitle(item.name)
-              .setArtist(item.url)
-              .setMediaType(MEDIA_TYPE_RADIO_STATION)
-              .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
-              .setDurationMs(1)
-              .setIsBrowsable(false)
-              .setIsPlayable(true)
-              .build()
-
-            val mediaItem = MediaItem.Builder()
-              .setMediaId("SAVED_STATION-${item.defaultMount}")
-              .setMediaMetadata(metaData)
-              .build()
-
-            stations.add(mediaItem)
-          }
         }
-        return Futures.immediateFuture(
-          LibraryResult.ofItemList(
-            stations,
-            params
+
+        "Stations" -> {
+          val stations = mutableListOf<MediaItem>()
+          savedStationsDB.savedStations.value?.let {
+            for (item in savedStationsDB.savedStations.value!!) {
+              val metaData = MediaMetadata.Builder()
+                .setTitle(item.name)
+                .setArtist(item.url)
+                .setMediaType(MEDIA_TYPE_RADIO_STATION)
+                .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+                .setDurationMs(1)
+                .setIsBrowsable(false)
+                .setIsPlayable(true)
+                .build()
+
+              val mediaItem = MediaItem.Builder()
+                .setMediaId("SAVED_STATION-${item.defaultMount}")
+                .setMediaMetadata(metaData)
+                .build()
+
+              stations.add(mediaItem)
+            }
+          }
+          return Futures.immediateFuture(
+            LibraryResult.ofItemList(
+              stations,
+              params
+            )
           )
-        )
-      } else {
-        return Futures.immediateFuture(
-          LibraryResult.ofItemList(
-            ImmutableList.of(),
-            params
+        }
+
+        else -> {
+          return Futures.immediateFuture(
+            LibraryResult.ofItemList(
+              ImmutableList.of(),
+              params
+            )
           )
-        )
+        }
       }
     }
 
