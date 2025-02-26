@@ -41,6 +41,7 @@ import com.larvey.azuracastplayer.classes.models.SharedMediaController
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
+import com.larvey.azuracastplayer.utils.resourceToUri
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -435,20 +436,36 @@ class MusicPlayerService : MediaLibraryService() {
           MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
           MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
         )
+
+
         val metaDataStations = MediaMetadata.Builder()
           .setIsBrowsable(true)
           .setIsPlayable(false)
-          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
           .setExtras(extras)
-          .setTitle("Stations")
+          .setTitle("My Stations")
+          .setArtworkUri(
+            resourceToUri(
+              applicationContext,
+              R.drawable.stations_icon
+            )
+          )
           .build()
-        //        val metaDataDiscover = MediaMetadata.Builder()
-        //          .setIsBrowsable(true)
-        //          .setIsPlayable(false)
-        //          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-        //          .setExtras(extras)
-        //          .setTitle("Discover")
-        //          .build()
+        val metaDataDiscover = MediaMetadata.Builder()
+          .setIsBrowsable(true)
+          .setIsPlayable(false)
+          .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+          .setExtras(extras)
+          .setTitle("Discover")
+          .setArtworkUri(
+            resourceToUri(
+              applicationContext,
+              R.drawable.discover_icon
+            )
+          )
+          .build()
+
+
 
         return Futures.immediateFuture(
           LibraryResult.ofItemList(
@@ -457,15 +474,15 @@ class MusicPlayerService : MediaLibraryService() {
                 .setMediaId("Stations")
                 .setMediaMetadata(metaDataStations)
                 .build(),
-              //              MediaItem.Builder()
-              //                .setMediaId("Discover")
-              //                .setMediaMetadata(metaDataDiscover)
-              //                .build()
+              MediaItem.Builder()
+                .setMediaId("Discover")
+                .setMediaMetadata(metaDataDiscover)
+                .build()
             ),
             params
           )
         )
-      } else {
+      } else if (parentId == "Stations") {
         val stations = mutableListOf<MediaItem>()
         savedStationsDB.savedStations.value?.let {
           for (item in savedStationsDB.savedStations.value!!) {
@@ -493,6 +510,13 @@ class MusicPlayerService : MediaLibraryService() {
             params
           )
         )
+      } else {
+        return Futures.immediateFuture(
+          LibraryResult.ofItemList(
+            ImmutableList.of(),
+            params
+          )
+        )
       }
     }
 
@@ -502,18 +526,12 @@ class MusicPlayerService : MediaLibraryService() {
       query: String,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<Void>> {
-      Log.d(
-        "DEBUG-SEARCH",
-        "We Searching $query"
-      )
-
       mediaSession?.notifySearchResultChanged(
         browser,
         query,
-        Int.MAX_VALUE,
+        query.length,
         params
       )
-
       return super.onSearch(
         session,
         browser,
