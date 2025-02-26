@@ -3,7 +3,6 @@ package com.larvey.azuracastplayer.ui.mainActivity
 import android.app.Application
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -18,7 +17,7 @@ import com.bumptech.glide.Glide
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
-import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.classes.models.SharedMediaController
 import com.larvey.azuracastplayer.utils.weightedRandomColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -31,22 +30,21 @@ import javax.inject.Inject
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
   val nowPlayingData: NowPlayingData,
-  private val savedStationsDB: SavedStationsDB,
+  val savedStationsDB: SavedStationsDB,
+  val sharedMediaController: SharedMediaController,
   private val application: Application
 ) : ViewModel() {
 
-  val isSleeping = nowPlayingData.isSleeping
+  val isSleeping = sharedMediaController.isSleeping
 
   var palette = mutableStateOf<Palette?>(null)
   var colorList = mutableStateOf(List(9) { Color.Gray })
 
   private var fetchData = mutableStateOf(true)
 
-  var savedRadioList = mutableStateListOf<SavedStation>()
-
   init {
     viewModelScope.launch {
-      while (savedRadioList != emptyList<SavedStation>()) {
+      while (!savedStationsDB.savedStations.value.isNullOrEmpty()) {
         Log.d(
           "DEBUG",
           "Waiting 30 seconds to fetch data"
@@ -63,31 +61,34 @@ class MainActivityViewModel @Inject constructor(
   private fun updateRadioList() {
     if (fetchData.value) {
       viewModelScope.launch {
-        for (item in savedRadioList) {
-          Log.d(
-            "DEBUG",
-            "Fetching Data for ${item.name}"
-          )
-          nowPlayingData.getStationInformation(
-            item.url,
-            item.shortcode
-          )
+        savedStationsDB.savedStations.value?.let { savedRadioList ->
+          for (item in savedRadioList) {
+            Log.d(
+              "DEBUG",
+              "Fetching Data for ${item.name}"
+            )
+            nowPlayingData.getStationInformation(
+              item.url,
+              item.shortcode
+            )
+          }
         }
       }
     }
   }
 
-  fun updatePalette(playerState: PlayerState?) {
+  fun updatePalette(defaultColor: Color) {
     viewModelScope.launch {
-      if (playerState?.mediaMetadata?.artworkUri != null) {
+      if (sharedMediaController.playerState.value?.mediaMetadata?.artworkUri != null) {
         this.async(Dispatchers.IO) {
           try {
             Glide.with(application).asBitmap().load(
-              playerState.mediaMetadata.artworkUri.toString()
+              sharedMediaController.playerState.value?.mediaMetadata?.artworkUri.toString()
             ).submit()
               .get()
               .let { bitmap ->
                 palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
+                updateColorList(defaultColor)
               }
           } catch (e: Exception) {
             Log.d(
@@ -102,7 +103,7 @@ class MainActivityViewModel @Inject constructor(
     }
   }
 
-  fun updateColorList(defaultColor: Color) {
+  private fun updateColorList(defaultColor: Color) {
     val defaultHSL = floatArrayOf(
       0f,
       0f,
@@ -243,9 +244,7 @@ class MainActivityViewModel @Inject constructor(
 
   fun getStationList(updateMetadata: Boolean? = true) {
     CoroutineScope(Dispatchers.IO).launch {
-      savedRadioList.clear()
-      savedRadioList.addAll(savedStationsDB.getAllEntries())
-      savedStationsDB.savedStations.value = savedRadioList
+      savedStationsDB.savedStations.value = savedStationsDB.getAllEntries()
       notifySessionStationsUpdated()
       if (updateMetadata == true) {
         updateRadioList()
@@ -254,7 +253,7 @@ class MainActivityViewModel @Inject constructor(
   }
 
   private fun notifySessionStationsUpdated() {
-    nowPlayingData.mediaSession.value.let { session ->
+    sharedMediaController.mediaSession.value.let { session ->
       session?.notifyChildrenChanged(
         "Stations",
         Int.MAX_VALUE,

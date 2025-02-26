@@ -18,12 +18,7 @@ class NowPlayingData {
   var nowPlayingURL = mutableStateOf("")
   var nowPlayingShortCode = mutableStateOf("")
   var nowPlayingURI = mutableStateOf("")
-
-  var mediaSession = mutableStateOf<MediaLibrarySession?>(null)
-
-  var isSleeping = mutableStateOf(false)
   
-
   fun setMediaMetadata(
     url: String, shortCode: String, mediaPlayer: Player?, reset: Boolean? = false
   ) {
