@@ -24,11 +24,11 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -36,7 +36,8 @@ import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.larvey.azuracastplayer.classes.data.SavedStation
-import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -46,45 +47,44 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 )
 @Composable
 fun MyRadios(
-  savedRadioList: List<SavedStation>?,
   innerPadding: PaddingValues,
-  setPlaybackSource: (String, String, String) -> Unit,
-  staticDataMap: SnapshotStateMap<Pair<String, String>, StationJSON>?,
   deleteRadio: (SavedStation) -> Unit,
   editRadio: (SavedStation) -> Unit,
-  radioListMode: Boolean,
   editingList: MutableState<Boolean>,
   confirmEdit: MutableState<Boolean>,
   editAllStations: (List<SavedStation>) -> Unit,
   lazyListState: LazyListState,
   lazyGridState: LazyGridState
 ) {
-  if (savedRadioList?.isNotEmpty() == true) {
+  val view = LocalView.current
 
-    val view = LocalView.current
+  val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
+  val radioListMode by settingsModel.gridView.collectAsState()
 
-    val myRadiosViewModel: MyRadiosViewModel = viewModel()
+  val myRadiosViewModel: MyRadiosViewModel = viewModel()
 
-    var list by remember { mutableStateOf(savedRadioList) }
+  if (!myRadiosViewModel.savedStationsDB.savedStations.value.isNullOrEmpty()) {
 
-    LaunchedEffect(savedRadioList.size) {
+    var list by remember { mutableStateOf(myRadiosViewModel.savedStationsDB.savedStations.value) }
+
+    LaunchedEffect(myRadiosViewModel.savedStationsDB.savedStations.value?.size) {
       Log.d(
         "DEBUG",
         "Updating List"
       )
-      list = savedRadioList
+      list = myRadiosViewModel.savedStationsDB.savedStations.value
     }
 
     //region reOrderableLists
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-      list = list.toMutableList().apply {
+      list = list?.toMutableList()?.apply {
         add(
           to.index,
           removeAt(from.index)
         )
       }
 
-      list = list.toMutableList().apply {
+      list = list?.toMutableList()?.apply {
         for ((index, item) in this.withIndex()) {
           this[index] = SavedStation(
             item.name,
@@ -106,18 +106,18 @@ fun MyRadios(
     BackHandler(editingList.value) {
       editingList.value = false
       confirmEdit.value = false
-      list = savedRadioList
+      list = myRadiosViewModel.savedStationsDB.savedStations.value
     }
 
     val reorderableLazyGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
-      list = list.toMutableList().apply {
+      list = list!!.toMutableList().apply {
         add(
           to.index,
           removeAt(from.index)
         )
       }
 
-      list = list.toMutableList().apply {
+      list = list!!.toMutableList().apply {
         for ((index, item) in this.withIndex()) {
           this[index] = SavedStation(
             item.name,
@@ -139,7 +139,7 @@ fun MyRadios(
       true -> {
         editingList.value = false
         confirmEdit.value = false
-        editAllStations(list)
+        editAllStations(list!!)
       }
 
       false -> {}
@@ -156,7 +156,6 @@ fun MyRadios(
       onRefresh = {
         isRefreshing.value = true
         myRadiosViewModel.refreshList(
-          savedRadioList,
           isRefreshing
         )
       },
@@ -168,16 +167,15 @@ fun MyRadios(
         )
     ) {
       AnimatedContent(radioListMode) { targetState ->
-        if (!targetState) {
+        if (targetState == false) {
           LazyColumn(
             modifier = Modifier
               .fillMaxSize()
               .padding(horizontal = 16.dp),
             state = lazyListState
           ) {
-            item { Spacer(modifier = Modifier.size(16.dp)) }
             items(
-              list,
+              list!!,
               key = { it.shortcode }) { item ->
               ReorderableItem(
                 reorderableLazyListState,
@@ -186,8 +184,8 @@ fun MyRadios(
                 StationListEntry(
                   scope = this,
                   station = item,
-                  setPlaybackSource = setPlaybackSource,
-                  staticDataMap = staticDataMap,
+                  setPlaybackSource = myRadiosViewModel::setPlaybackSource,
+                  staticDataMap = myRadiosViewModel.nowPlayingData.staticDataMap,
                   deleteRadio = deleteRadio,
                   editRadio = editRadio,
                   editingList = editingList
@@ -201,7 +199,6 @@ fun MyRadios(
             }
           }
         } else {
-
           LazyVerticalGrid(
             modifier = Modifier
               .fillMaxSize()
@@ -209,11 +206,8 @@ fun MyRadios(
             columns = GridCells.Adaptive(minSize = 180.dp),
             state = lazyGridState
           ) {
-            item(span = {
-              GridItemSpan(maxLineSpan)
-            }) { Spacer(modifier = Modifier.size(16.dp)) }
             items(
-              list,
+              list!!,
               key = { it.shortcode }) { item ->
               ReorderableItem(
                 reorderableLazyGridState,
@@ -222,8 +216,8 @@ fun MyRadios(
                 StationGridEntry(
                   scope = this,
                   station = item,
-                  setPlaybackSource = setPlaybackSource,
-                  staticDataMap = staticDataMap,
+                  setPlaybackSource = myRadiosViewModel::setPlaybackSource,
+                  staticDataMap = myRadiosViewModel.nowPlayingData.staticDataMap,
                   deleteRadio = deleteRadio,
                   editRadio = editRadio,
                   editingList = editingList

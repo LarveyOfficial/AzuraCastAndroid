@@ -41,7 +41,7 @@ fun ProgressBar(
   palette: Palette?
 ) {
   Column {
-    var brightDominant = floatArrayOf(
+    val brightDominant = floatArrayOf(
       0f,
       0f,
       0f

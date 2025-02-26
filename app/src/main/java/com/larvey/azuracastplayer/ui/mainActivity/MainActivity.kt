@@ -142,19 +142,34 @@ class MainActivity : ComponentActivity() {
         Color.TRANSPARENT
       )
     )
-
     setContent {
       AzuraCastPlayerTheme {
         mainActivityViewModel = viewModel()
+        mediaController = rememberManagedMediaController().value
+        var playerState: PlayerState? by remember {
+          mutableStateOf(mediaController?.state())
+        }
+        DisposableEffect(mediaController) {
+          mediaController?.run {
+            mainActivityViewModel?.sharedMediaController?.playerState?.value = state()
+            playerState = state()
+          }
+          onDispose {
+            playerState?.dispose()
+            mainActivityViewModel?.sharedMediaController?.playerState?.value?.dispose()
+          }
+        }
+        val defaultColor = MaterialTheme.colorScheme.outline
+        LaunchedEffect(playerState?.mediaMetadata?.artworkUri) {
+          mainActivityViewModel?.updatePalette(
+            defaultColor
+          )
+        }
+
         val showAddDialog = remember { mutableStateOf(false) }
         val showNowPlayingSheet = remember { mutableStateOf(false) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
-        mediaController = rememberManagedMediaController().value
-
-        var playerState: PlayerState? by remember {
-          mutableStateOf(mediaController?.state())
-        }
 
         val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
         val systemDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
@@ -226,30 +241,7 @@ class MainActivity : ComponentActivity() {
             } else {
               MaterialTheme.colorScheme.onBackground
             })
-
-        //region NowPlaying gradient colors
-        val defaultColor = MaterialTheme.colorScheme.outline
-        LaunchedEffect(playerState?.mediaMetadata?.artworkUri) {
-          mainActivityViewModel?.updatePalette(playerState)
-        }
-        LaunchedEffect(mainActivityViewModel?.palette?.value) {
-          mainActivityViewModel?.updateColorList(defaultColor)
-        }
-        //endregion
-
-        //        LaunchedEffect(radioListMode) {
-        //          mainActivityViewModel?.notifySessionStationsUpdated()
-        //        }
-
-        DisposableEffect(mediaController) {
-          mediaController?.run {
-            playerState = state()
-          }
-          onDispose {
-            playerState?.dispose()
-          }
-        }
-
+        
         SupportingPaneScaffold(
           modifier = Modifier.background(MaterialTheme.colorScheme.background),
           directive = navigator.scaffoldDirective,
@@ -426,25 +418,13 @@ class MainActivity : ComponentActivity() {
                       when (destination) {
                         AppDestinations.STATIONS -> {
                           MyRadios(
-                            savedRadioList = mainActivityViewModel?.savedRadioList,
                             innerPadding = innerPadding,
-                            setPlaybackSource = { url, uri, shortCode ->
-                              mainActivityViewModel?.setPlaybackSource(
-                                url,
-                                uri,
-                                shortCode,
-                                mediaController
-                              )
-
-                            },
-                            staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
                             deleteRadio = { station ->
                               mainActivityViewModel?.deleteStation(station)
                             },
                             editRadio = { newStation ->
                               mainActivityViewModel?.editStation(newStation)
                             },
-                            radioListMode = radioListMode!!,
                             editingList = editingList,
                             confirmEdit = confirmEdit,
                             editAllStations = { stations ->
@@ -479,23 +459,8 @@ class MainActivity : ComponentActivity() {
             ) {
               AnimatedPane(modifier = Modifier.fillMaxSize()) {
                 NowPlayingPane(
-                  playerState = playerState,
-                  pause = {
-                    mediaController?.pause()
-                  },
-                  play = {
-                    mediaController?.play()
-                  },
-                  stop = {
-                    mediaController?.stop()
-                  },
-                  currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
-                  songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
-                  playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
-                  nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
                   palette = mainActivityViewModel?.palette,
-                  colorList = mainActivityViewModel?.colorList,
-                  isSleeping = mainActivityViewModel?.isSleeping
+                  colorList = mainActivityViewModel?.colorList
                 )
               }
             }
@@ -533,7 +498,8 @@ class MainActivity : ComponentActivity() {
                   stations
                 )
               },
-              currentStationCount = mainActivityViewModel?.savedRadioList?.size ?: 0
+              currentStationCount = mainActivityViewModel?.savedStationsDB?.savedStations?.value?.size
+                ?: 0
             )
           }
 
@@ -542,24 +508,8 @@ class MainActivity : ComponentActivity() {
               hideNowPlaying = {
                 showNowPlayingSheet.value = false
               },
-              playerState = playerState,
-              pause = {
-                mediaController?.pause()
-              },
-              play = {
-                mediaController?.play()
-              },
-              stop = {
-                showNowPlayingSheet.value = false
-                mediaController?.stop()
-              },
-              currentMount = mainActivityViewModel?.nowPlayingData?.staticData?.value?.station?.mounts?.find { it.url == playerState?.currentMediaItem?.mediaId },
-              songHistory = mainActivityViewModel?.nowPlayingData?.staticData?.value?.songHistory,
-              playingNext = mainActivityViewModel?.nowPlayingData?.staticData?.value?.playingNext,
-              nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
               palette = mainActivityViewModel?.palette,
-              colorList = mainActivityViewModel?.colorList,
-              isSleeping = mainActivityViewModel?.isSleeping
+              colorList = mainActivityViewModel?.colorList
             )
           }
         }

@@ -35,12 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.palette.graphics.Palette
-import com.larvey.azuracastplayer.classes.data.Mount
-import com.larvey.azuracastplayer.classes.data.NowPlaying
-import com.larvey.azuracastplayer.classes.data.PlayingNext
-import com.larvey.azuracastplayer.classes.data.SongHistory
-import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.mainActivity.components.meshGradient
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
@@ -58,20 +54,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun NowPlayingSheet(
   hideNowPlaying: () -> Unit,
-  pause: () -> Unit,
-  play: () -> Unit,
-  stop: () -> Unit,
-  playerState: PlayerState?,
-  isSleeping: MutableState<Boolean>?,
-  currentMount: Mount?,
-  songHistory: List<SongHistory>?,
-  playingNext: PlayingNext?,
-  nowPlaying: NowPlaying?,
   palette: MutableState<Palette?>?,
   colorList: MutableState<List<Color>>?
 ) {
 
-  if (playerState?.currentMediaItem == null) hideNowPlaying()
+  val nowPlayingViewModel: NowPlayingViewModel = viewModel()
+
+  if (nowPlayingViewModel.sharedMediaController.playerState.value?.currentMediaItem == null) hideNowPlaying()
   else {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -174,14 +163,20 @@ fun NowPlayingSheet(
             NowPlayingBottomBar(
               showQueue = showQueue,
               sheetState = sheetState,
-              stop = stop,
-              pause = pause,
-              play = play,
-              playerState = playerState,
-              currentMount = currentMount,
+              stop = {
+                nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
+              },
+              pause = {
+                nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.pause()
+              },
+              play = {
+                nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.play()
+              },
+              playerState = nowPlayingViewModel.sharedMediaController.playerState.value!!,
+              currentMount = nowPlayingViewModel.nowPlayingData.staticData.value?.station?.mounts?.find { it.url == nowPlayingViewModel.sharedMediaController.playerState.value?.currentMediaItem?.mediaId },
               palette = palette?.value,
-              nowPlaying = nowPlaying,
-              isSleeping = isSleeping
+              nowPlaying = nowPlayingViewModel.nowPlayingData.staticData.value?.nowPlaying,
+              isSleeping = nowPlayingViewModel.sharedMediaController.isSleeping
             )
           }
         ) { innerPadding ->
@@ -198,22 +193,22 @@ fun NowPlayingSheet(
                 ) {
                   NowPlayingAlbumArt(
                     modifier = Modifier.fillMaxHeight(.75f),
-                    playerState = playerState,
+                    playerState = nowPlayingViewModel.sharedMediaController.playerState.value!!,
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@AnimatedContent,
                   )
                   SongAndArtist(
-                    songName = playerState.mediaMetadata.displayTitle.toString(),
-                    artistName = playerState.mediaMetadata.artist.toString(),
+                    songName = nowPlayingViewModel.sharedMediaController.playerState.value?.mediaMetadata?.displayTitle.toString(),
+                    artistName = nowPlayingViewModel.sharedMediaController.playerState.value?.mediaMetadata?.artist.toString(),
                     small = false
                   )
                 }
               } else {
                 NowPlayingHistory(
                   innerPadding = innerPadding,
-                  playerState = playerState,
-                  songHistory = songHistory,
-                  playingNext = playingNext,
+                  playerState = nowPlayingViewModel.sharedMediaController.playerState.value!!,
+                  songHistory = nowPlayingViewModel.nowPlayingData.staticData.value?.songHistory,
+                  playingNext = nowPlayingViewModel.nowPlayingData.staticData.value?.playingNext,
                   scrollState = scrollState,
                   showQueue = showQueue,
                   sharedTransitionScope = this@SharedTransitionLayout,

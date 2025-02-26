@@ -37,6 +37,7 @@ import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
+import com.larvey.azuracastplayer.classes.models.SharedMediaController
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
@@ -52,6 +53,9 @@ class MusicPlayerService : MediaLibraryService() {
 
   @Inject
   lateinit var savedStationsDB: SavedStationsDB
+
+  @Inject
+  lateinit var sharedMediaController: SharedMediaController
 
   var mediaSession: MediaLibrarySession? = null
 
@@ -69,7 +73,7 @@ class MusicPlayerService : MediaLibraryService() {
   override fun onCreate() {
     super.onCreate()
 
-    val isSleeping = nowPlaying.isSleeping
+    val isSleeping = sharedMediaController.isSleeping
 
     val filter = IntentFilter("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP")
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -184,7 +188,7 @@ class MusicPlayerService : MediaLibraryService() {
     )
 
     mediaSession?.let {
-      nowPlaying.mediaSession.value = mediaSession
+      sharedMediaController.mediaSession.value = mediaSession
     }
   }
 
@@ -549,7 +553,7 @@ class MusicPlayerService : MediaLibraryService() {
       player.stop()
       player.release()
       release()
-      nowPlaying.mediaSession.value = null
+      sharedMediaController.mediaSession.value = null
       mediaSession = null
     }
     Log.d(
