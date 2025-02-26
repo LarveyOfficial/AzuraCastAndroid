@@ -19,8 +19,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -53,15 +51,11 @@ import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,12 +67,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.session.MediaController
-import androidx.window.core.layout.WindowSizeClass
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
+import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationDialog
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
@@ -89,19 +83,23 @@ import dagger.hilt.android.AndroidEntryPoint
 
 enum class AppDestinations(
   val label: String,
-  val icon: ImageVector
+  val icon: ImageVector,
+  val title: String,
 ) {
   STATIONS(
     "Stations",
-    Icons.Rounded.Radio
+    Icons.Rounded.Radio,
+    "My Stations"
   ),
   DISCOVER(
     "Discover",
-    Icons.Rounded.Public
+    Icons.Rounded.Public,
+    "Discover"
   ),
   FAVORITES(
     "Favorites",
-    Icons.Rounded.Favorite
+    Icons.Rounded.Favorite,
+    "Favorites"
   )
 }
 
@@ -133,7 +131,8 @@ class MainActivity : ComponentActivity() {
 
 
   @OptIn(
-    ExperimentalMaterial3AdaptiveApi::class
+    ExperimentalMaterial3AdaptiveApi::class,
+    ExperimentalMaterial3Api::class
   )
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -153,6 +152,23 @@ class MainActivity : ComponentActivity() {
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
         mediaController = rememberManagedMediaController().value
 
+        var playerState: PlayerState? by remember {
+          mutableStateOf(mediaController?.state())
+        }
+
+        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+        val systemDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+        val customDirective = PaneScaffoldDirective(
+          maxHorizontalPartitions = systemDirective.maxHorizontalPartitions,
+          horizontalPartitionSpacerSize = 0.dp,
+          maxVerticalPartitions = systemDirective.maxVerticalPartitions,
+          verticalPartitionSpacerSize = systemDirective.verticalPartitionSpacerSize,
+          defaultPanePreferredWidth = systemDirective.defaultPanePreferredWidth,
+          excludedBounds = systemDirective.excludedBounds
+        )
+        val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
+        var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.STATIONS) }
+
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()
         val lazyGridState = rememberLazyGridState()
@@ -161,20 +177,6 @@ class MainActivity : ComponentActivity() {
         //region List editing variables
         val editingList = remember { mutableStateOf(false) }
         val confirmEdit = remember { mutableStateOf(false) }
-        //endregion
-
-        var playerState: PlayerState? by remember {
-          mutableStateOf(mediaController?.state())
-        }
-
-        //region NowPlaying gradient colors
-        val defaultColor = MaterialTheme.colorScheme.outline
-        LaunchedEffect(playerState?.mediaMetadata?.artworkUri) {
-          mainActivityViewModel?.updatePalette(playerState)
-        }
-        LaunchedEffect(mainActivityViewModel?.palette?.value) {
-          mainActivityViewModel?.updateColorList(defaultColor)
-        }
         //endregion
 
         //region Animated Add Button Colors
@@ -201,9 +203,39 @@ class MainActivity : ComponentActivity() {
         )
         //endregion
 
-        LaunchedEffect(Unit) {
-          mainActivityViewModel?.getStationList(false)
+        val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
+        val topBarContainerColor = (
+            if (currentDestination == AppDestinations.STATIONS) {
+              if ((!lazyGridState.canScrollBackward && radioListMode == true)
+                || (!lazyListState.canScrollBackward) && radioListMode == false
+              )
+                MaterialTheme.colorScheme.background
+              else
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+              MaterialTheme.colorScheme.background
+            })
+        val topBarTitleColor = (
+            if (currentDestination == AppDestinations.STATIONS) {
+              if ((!lazyGridState.canScrollBackward && radioListMode == true)
+                || (!lazyListState.canScrollBackward) && radioListMode == false
+              )
+                MaterialTheme.colorScheme.onBackground
+              else
+                MaterialTheme.colorScheme.onSurface
+            } else {
+              MaterialTheme.colorScheme.onBackground
+            })
+
+        //region NowPlaying gradient colors
+        val defaultColor = MaterialTheme.colorScheme.outline
+        LaunchedEffect(playerState?.mediaMetadata?.artworkUri) {
+          mainActivityViewModel?.updatePalette(playerState)
         }
+        LaunchedEffect(mainActivityViewModel?.palette?.value) {
+          mainActivityViewModel?.updateColorList(defaultColor)
+        }
+        //endregion
 
         //        LaunchedEffect(radioListMode) {
         //          mainActivityViewModel?.notifySessionStationsUpdated()
@@ -217,19 +249,6 @@ class MainActivity : ComponentActivity() {
             playerState?.dispose()
           }
         }
-        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-        val systemDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
-        val customDirective = PaneScaffoldDirective(
-          maxHorizontalPartitions = systemDirective.maxHorizontalPartitions,
-          horizontalPartitionSpacerSize = 0.dp,
-          maxVerticalPartitions = systemDirective.maxVerticalPartitions,
-          verticalPartitionSpacerSize = systemDirective.verticalPartitionSpacerSize,
-          defaultPanePreferredWidth = systemDirective.defaultPanePreferredWidth,
-          excludedBounds = systemDirective.excludedBounds
-        )
-        val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
-
-        var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.STATIONS) }
 
         SupportingPaneScaffold(
           modifier = Modifier.background(MaterialTheme.colorScheme.background),
@@ -259,68 +278,197 @@ class MainActivity : ComponentActivity() {
                   navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 )
               ) {
-                AnimatedContent(
-                  currentDestination,
-                  label = "Current Location",
-                  transitionSpec = {
-                    if (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0) {
-                      if (targetState.ordinal > initialState.ordinal) {
-                        slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }) togetherWith slideOutVertically(
-                          targetOffsetY = { fullHeight -> -fullHeight * 2 }
-                        )
-                      } else {
-                        slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }) togetherWith slideOutVertically(
-                          targetOffsetY = { fullHeight -> fullHeight * 2 }
+                Scaffold(
+                  topBar = {
+                    TopAppBar(colors = topAppBarColors(
+                      containerColor = topBarContainerColor,
+                      titleContentColor = topBarTitleColor,
+                    ),
+                      title = { Text(currentDestination.title) },
+                      actions = {
+                        AnimatedVisibility(radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS) {
+                          IconButton(
+                            onClick = {
+                              settingsModel.toggleGridView()
+                            }
+                          ) {
+                            Icon(
+                              imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                              contentDescription = "Add"
+                            )
+                          }
+                        }
+                      }
+                    )
+                  },
+                  floatingActionButton = {
+                    AnimatedVisibility(
+                      visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value && currentDestination == AppDestinations.STATIONS,
+                      exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
+                        fullWidth * 2 * if (isWide) {
+                          -1
+                        } else {
+                          1
+                        }
+                      }),
+                      enter = slideInHorizontally(initialOffsetX = { fullWidth ->
+                        fullWidth * 2 * if (isWide) {
+                          -1
+                        } else {
+                          1
+                        }
+                      }),
+                    ) {
+                      FloatingActionButton(
+                        onClick = {
+                          showAddDialog.value = true
+                        },
+                        containerColor = animatedFabColor.value
+                      ) {
+                        Icon(
+                          Icons.Rounded.Add,
+                          contentDescription = "Add",
+                          tint = animatedFabIconTint.value
                         )
                       }
-                    } else {
-                      if (targetState.ordinal > initialState.ordinal) {
-                        slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }) togetherWith slideOutHorizontally(
-                          targetOffsetX = { fullWidth -> -fullWidth * 2 }
-                        )
-                      } else {
-                        slideInHorizontally(initialOffsetX = { fullWidth -> -fullWidth * 2 }) togetherWith slideOutHorizontally(
-                          targetOffsetX = { fullWidth -> fullWidth * 2 }
+                    }
+                    AnimatedVisibility(
+                      visible = editingList.value,
+                      exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
+                        fullWidth * 2 * if (isWide) {
+                          -1
+                        } else {
+                          1
+                        }
+                      }),
+                      enter = slideInHorizontally(initialOffsetX = { fullWidth ->
+                        fullWidth * 2 * if (isWide) {
+                          -1
+                        } else {
+                          1
+                        }
+                      }),
+                    ) {
+                      FloatingActionButton(
+                        onClick = {
+                          confirmEdit.value = true
+                        },
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                      ) {
+                        Icon(
+                          Icons.Rounded.Check,
+                          contentDescription = "Add",
+                          tint = MaterialTheme.colorScheme.onTertiary
                         )
                       }
                     }
-                  }
-                ) { destination ->
-                  when (destination) {
-                    AppDestinations.STATIONS -> {
-                      MyStationsPage(
-                        lazyGridState,
-                        radioListMode,
-                        lazyListState,
-                        editingList,
-                        settingsModel,
-                        showAddDialog,
-                        animatedFabColor,
-                        animatedFabIconTint,
-                        confirmEdit,
-                        playerState,
-                        navigator,
-                        showNowPlayingSheet,
-                        windowSizeClass
-                      )
+                  },
+                  floatingActionButtonPosition = if (isWide) {
+                    FabPosition.Start
+                  } else {
+                    FabPosition.End
+                  },
+                  bottomBar = {
+                    AnimatedVisibility(
+                      visible = playerState?.currentMediaItem?.mediaId != null && navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded,
+                      enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
+                      exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
+                    ) {
+                      BottomAppBar(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                      ) {
+                        MiniPlayer(
+                          playerState = playerState,
+                          showNowPlaying = {
+                            showNowPlayingSheet.value = true
+                          },
+                          pause = {
+                            mediaController?.pause()
+                          },
+                          play = {
+                            mediaController?.play()
+                          })
+                      }
                     }
+                  }) { innerPadding ->
+                  AnimatedVisibility(
+                    radioListMode != null,
+                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }),
+                    exit = ExitTransition.None
+                  ) {
+                    AnimatedContent(
+                      currentDestination,
+                      label = "Current Location",
+                      transitionSpec = {
+                        if (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0) {
+                          if (targetState.ordinal > initialState.ordinal) {
+                            slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }) togetherWith slideOutVertically(
+                              targetOffsetY = { fullHeight -> -fullHeight * 2 }
+                            )
+                          } else {
+                            slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }) togetherWith slideOutVertically(
+                              targetOffsetY = { fullHeight -> fullHeight * 2 }
+                            )
+                          }
+                        } else {
+                          if (targetState.ordinal > initialState.ordinal) {
+                            slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }) togetherWith slideOutHorizontally(
+                              targetOffsetX = { fullWidth -> -fullWidth * 2 }
+                            )
+                          } else {
+                            slideInHorizontally(initialOffsetX = { fullWidth -> -fullWidth * 2 }) togetherWith slideOutHorizontally(
+                              targetOffsetX = { fullWidth -> fullWidth * 2 }
+                            )
+                          }
+                        }
+                      }
+                    ) { destination ->
+                      when (destination) {
+                        AppDestinations.STATIONS -> {
+                          MyRadios(
+                            savedRadioList = mainActivityViewModel?.savedRadioList,
+                            innerPadding = innerPadding,
+                            setPlaybackSource = { url, uri, shortCode ->
+                              mainActivityViewModel?.setPlaybackSource(
+                                url,
+                                uri,
+                                shortCode,
+                                mediaController
+                              )
 
-                    AppDestinations.FAVORITES -> {
-                      Box(
-                        modifier = Modifier
-                          .fillMaxSize()
-                      )
-                    }
+                            },
+                            staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
+                            deleteRadio = { station ->
+                              mainActivityViewModel?.deleteStation(station)
+                            },
+                            editRadio = { newStation ->
+                              mainActivityViewModel?.editStation(newStation)
+                            },
+                            radioListMode = radioListMode!!,
+                            editingList = editingList,
+                            confirmEdit = confirmEdit,
+                            editAllStations = { stations ->
+                              mainActivityViewModel?.editAllStations(stations)
+                            },
+                            lazyListState = lazyListState,
+                            lazyGridState = lazyGridState
+                          )
+                        }
 
-                    AppDestinations.DISCOVER -> {
-                      Box(
-                        modifier = Modifier
-                          .fillMaxSize()
-                      )
+                        AppDestinations.DISCOVER -> {
+                          Discovery(innerPadding)
+                        }
+
+                        AppDestinations.FAVORITES -> {
+                          Box(
+                            modifier = Modifier
+                              .fillMaxSize()
+                          )
+                        }
+                      }
                     }
                   }
                 }
-
               }
             }
           },
@@ -415,179 +563,6 @@ class MainActivity : ComponentActivity() {
             )
           }
         }
-      }
-    }
-  }
-
-  @Composable
-  @OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3AdaptiveApi::class
-  )
-  private fun MyStationsPage(
-    lazyGridState: LazyGridState,
-    radioListMode: Boolean?,
-    lazyListState: LazyListState,
-    editingList: MutableState<Boolean>,
-    settingsModel: SettingsViewModel,
-    showAddDialog: MutableState<Boolean>,
-    animatedFabColor: State<androidx.compose.ui.graphics.Color>,
-    animatedFabIconTint: State<androidx.compose.ui.graphics.Color>,
-    confirmEdit: MutableState<Boolean>,
-    playerState: PlayerState?,
-    navigator: ThreePaneScaffoldNavigator<Any>,
-    showNowPlayingSheet: MutableState<Boolean>,
-    windowSizeClass: WindowSizeClass
-  ) {
-    val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
-
-    Scaffold(
-      topBar = {
-        TopAppBar(colors = topAppBarColors(
-          containerColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
-          titleContentColor = if ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurface,
-        ),
-          title = { Text("Radio List") },
-          actions = {
-            AnimatedVisibility(radioListMode != null && !editingList.value) {
-              IconButton(
-                onClick = {
-                  settingsModel.toggleGridView()
-                }
-              ) {
-                Icon(
-                  imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                  contentDescription = "Add"
-                )
-              }
-            }
-          }
-        )
-      },
-      floatingActionButton = {
-        AnimatedVisibility(
-          visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value,
-          exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
-            fullWidth * 2 * if (isWide) {
-              -1
-            } else {
-              1
-            }
-          }),
-          enter = slideInHorizontally(initialOffsetX = { fullWidth ->
-            fullWidth * 2 * if (isWide) {
-              -1
-            } else {
-              1
-            }
-          }),
-        ) {
-          FloatingActionButton(
-            onClick = {
-              showAddDialog.value = true
-            },
-            containerColor = animatedFabColor.value
-          ) {
-            Icon(
-              Icons.Rounded.Add,
-              contentDescription = "Add",
-              tint = animatedFabIconTint.value
-            )
-          }
-        }
-        AnimatedVisibility(
-          visible = editingList.value,
-          exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
-            fullWidth * 2 * if (isWide) {
-              -1
-            } else {
-              1
-            }
-          }),
-          enter = slideInHorizontally(initialOffsetX = { fullWidth ->
-            fullWidth * 2 * if (isWide) {
-              -1
-            } else {
-              1
-            }
-          }),
-        ) {
-          FloatingActionButton(
-            onClick = {
-              confirmEdit.value = true
-            },
-            containerColor = MaterialTheme.colorScheme.tertiary
-          ) {
-            Icon(
-              Icons.Rounded.Check,
-              contentDescription = "Add",
-              tint = MaterialTheme.colorScheme.onTertiary
-            )
-          }
-        }
-      },
-      floatingActionButtonPosition =
-      if (isWide) {
-        FabPosition.Start
-      } else {
-        FabPosition.End
-      },
-      bottomBar = {
-        AnimatedVisibility(
-          visible = playerState?.currentMediaItem?.mediaId != null && navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded,
-          enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
-          exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
-        ) {
-          BottomAppBar(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-          ) {
-            MiniPlayer(
-              playerState = playerState,
-              showNowPlaying = {
-                showNowPlayingSheet.value = true
-              },
-              pause = {
-                mediaController?.pause()
-              },
-              play = {
-                mediaController?.play()
-              })
-          }
-        }
-      }) { innerPadding ->
-      AnimatedVisibility(
-        radioListMode != null,
-        enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }),
-        exit = ExitTransition.None
-      ) {
-        MyRadios(
-          savedRadioList = mainActivityViewModel?.savedRadioList,
-          innerPadding = innerPadding,
-          setPlaybackSource = { url, uri, shortCode ->
-            mainActivityViewModel?.setPlaybackSource(
-              url,
-              uri,
-              shortCode,
-              mediaController
-            )
-
-          },
-          staticDataMap = mainActivityViewModel?.nowPlayingData?.staticDataMap,
-          deleteRadio = { station ->
-            mainActivityViewModel?.deleteStation(station)
-          },
-          editRadio = { newStation ->
-            mainActivityViewModel?.editStation(newStation)
-          },
-          radioListMode = radioListMode!!,
-          editingList = editingList,
-          confirmEdit = confirmEdit,
-          editAllStations = { stations ->
-            mainActivityViewModel?.editAllStations(stations)
-          },
-          lazyListState = lazyListState,
-          lazyGridState = lazyGridState
-        )
       }
     }
   }

@@ -55,6 +55,9 @@ class MainActivityViewModel @Inject constructor(
         delay(30 * 1000)
       }
     }
+    viewModelScope.launch {
+      getStationList(false)
+    }
   }
 
   private fun updateRadioList() {
@@ -250,7 +253,7 @@ class MainActivityViewModel @Inject constructor(
     }
   }
 
-  fun notifySessionStationsUpdated() {
+  private fun notifySessionStationsUpdated() {
     nowPlayingData.mediaSession.value.let { session ->
       session?.notifyChildrenChanged(
         "Stations",
