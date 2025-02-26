@@ -1,7 +1,6 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -37,15 +36,11 @@ class MyRadiosViewModel @Inject constructor(
   }
 
   fun setPlaybackSource(
-    url: String, uri: String, shortCode: String
+    url: String, mountURI: String, shortCode: String
   ) {
-    val parsedURI = Uri.parse(uri)
-    Log.d(
-      "DEBUG",
-      sharedMediaController.mediaSession.value?.player.toString()
-    )
+    val parsedURI = Uri.parse(mountURI)
     nowPlayingData.setPlaybackSource(
-      uri = parsedURI,
+      mountURI = parsedURI,
       url = url,
       shortCode = shortCode,
       mediaPlayer = sharedMediaController.mediaSession.value?.player

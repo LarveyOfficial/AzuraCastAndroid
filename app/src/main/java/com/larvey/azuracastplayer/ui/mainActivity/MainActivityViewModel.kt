@@ -35,8 +35,6 @@ class MainActivityViewModel @Inject constructor(
   private val application: Application
 ) : ViewModel() {
 
-  val isSleeping = sharedMediaController.isSleeping
-
   var palette = mutableStateOf<Palette?>(null)
   var colorList = mutableStateOf(List(9) { Color.Gray })
 
@@ -195,7 +193,7 @@ class MainActivityViewModel @Inject constructor(
   ) {
     val parsedURI = Uri.parse(uri)
     nowPlayingData.setPlaybackSource(
-      uri = parsedURI,
+      mountURI = parsedURI,
       url = url,
       shortCode = shortCode,
       mediaPlayer = mediaController

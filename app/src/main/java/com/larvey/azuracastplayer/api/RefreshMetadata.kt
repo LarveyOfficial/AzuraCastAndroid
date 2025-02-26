@@ -30,7 +30,7 @@ interface RetroFitStatic {
 fun refreshMetadata(
   staticDataMap: MutableMap<Pair<String, String>, StationJSON>,
   url: String, shortCode: String,
-  uri: String?,
+  mountURI: String?,
   reset: Boolean,
   mediaPlayer: Player? = null,
   staticData: MutableState<StationJSON?>
@@ -85,7 +85,7 @@ fun refreshMetadata(
           .build()
 
         val newMedia = MediaItem.Builder()
-          .setMediaId(uri.toString())
+          .setMediaId(mountURI.toString())
           .setMediaMetadata(metaData)
           .build()
 

@@ -104,7 +104,7 @@ class MusicPlayerService : MediaLibraryService() {
       override fun stop() {
         super.stop()
         nowPlaying.nowPlayingShortCode.value = ""
-        nowPlaying.nowPlayingURI.value = ""
+        nowPlaying.nowPlayingMount.value = ""
         nowPlaying.nowPlayingURL.value = ""
         val scheduler = AndroidAlarmScheduler(applicationContext)
         SleepItem(LocalDateTime.now()).let(scheduler::cancel)
@@ -348,25 +348,51 @@ class MusicPlayerService : MediaLibraryService() {
         if (foundSavedStations.isNotEmpty()) {
           nowPlaying.nowPlayingShortCode.value = foundSavedStations[0].shortcode
           nowPlaying.nowPlayingURL.value = foundSavedStations[0].url
-          nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId
+          nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
         }
         return Futures.immediateFuture(updatedMediaItems)
       }
 
       val item = savedStationsDB.savedStations.value?.filter { savedStation ->
-        savedStation.defaultMount == mediaItems[0].mediaId
+        if (mediaItems[0].mediaId.startsWith("SAVED_STATION-")) {
+          savedStation.defaultMount == mediaItems[0].mediaId.replaceFirst(
+            "SAVED_STATION-",
+            ""
+          )
+        } else {
+          savedStation.defaultMount == mediaItems[0].mediaId
+        }
       }
-
+      val updatedMediaItems: MutableList<MediaItem> =
+        if (mediaItems[0].mediaId.startsWith("SAVED_STATION-")) {
+          mediaItems.map {
+            it.buildUpon()
+              .setUri(
+                it.mediaId.replaceFirst(
+                  "SAVED_STATION-",
+                  ""
+                )
+              ).setMediaId(
+                it.mediaId.replaceFirst(
+                  "SAVED_STATION-",
+                  ""
+                )
+              )
+              .build()
+          }
+            .toMutableList()
+        } else {
+          mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
+            .toMutableList()
+        }
 
       /* This is the trickiest part, if you don't do this here, nothing will play */
-      val updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
-        .toMutableList()
+
       nowPlaying.nowPlayingShortCode.value = item?.get(0)?.shortcode ?: ""
       nowPlaying.nowPlayingURL.value = item?.get(0)?.url ?: ""
-      nowPlaying.nowPlayingURI.value = updatedMediaItems[0].mediaId
+      nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
       return Futures.immediateFuture(updatedMediaItems)
     }
-
 
     override fun onGetLibraryRoot(
       session: MediaLibrarySession,
@@ -454,7 +480,7 @@ class MusicPlayerService : MediaLibraryService() {
               .build()
 
             val mediaItem = MediaItem.Builder()
-              .setMediaId(item.defaultMount)
+              .setMediaId("SAVED_STATION-${item.defaultMount}")
               .setMediaMetadata(metaData)
               .build()
 
@@ -563,7 +589,7 @@ class MusicPlayerService : MediaLibraryService() {
     super.onDestroy()
     nowPlaying.nowPlayingShortCode.value = ""
     nowPlaying.nowPlayingURL.value = ""
-    nowPlaying.nowPlayingURI.value = ""
+    nowPlaying.nowPlayingMount.value = ""
     unregisterReceiver(receiver)
     android.os.Process.killProcess(android.os.Process.myPid())
   }
