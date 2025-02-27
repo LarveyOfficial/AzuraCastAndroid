@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
@@ -34,7 +36,8 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.larvey.azuracastplayer.R
-import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.data.DiscoveryJSON
+import com.larvey.azuracastplayer.classes.data.DiscoveryStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
@@ -43,6 +46,7 @@ import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
 import com.larvey.azuracastplayer.utils.resourceToUri
 import dagger.hilt.android.AndroidEntryPoint
+import java.net.URL
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -57,6 +61,9 @@ class MusicPlayerService : MediaLibraryService() {
 
   @Inject
   lateinit var sharedMediaController: SharedMediaController
+
+  @Inject
+  lateinit var discoveryJSON: MutableState<DiscoveryJSON?>
 
   var mediaSession: MediaLibrarySession? = null
 
@@ -127,6 +134,10 @@ class MusicPlayerService : MediaLibraryService() {
     player.addListener(object : Player.Listener {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
         if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
+          Log.d(
+            "DEBUG-FUNKEY",
+            nowPlaying.nowPlayingURL.value
+          )
           nowPlaying.setMediaMetadata(
             nowPlaying.nowPlayingURL.value,
             nowPlaying.nowPlayingShortCode.value,
@@ -290,39 +301,49 @@ class MusicPlayerService : MediaLibraryService() {
 
       if (mediaItems[0].requestMetadata.searchQuery != null) {
         val foundStations = mutableListOf<MediaItem>()
-        val foundSavedStations = mutableListOf<SavedStation>()
+        var url = ""
+        var shortCode = ""
+        //This is stupid but Google Assistant is stupider
+        val searchQuery = mediaItems[0].requestMetadata.searchQuery!!.lowercase()
+          .replace(
+            " ",
+            ""
+          )
+          .replace(
+            "onazuracastradio",
+            ""
+          )
+          .replace(
+            "onazurecastradio",
+            ""
+          )
+          .replace(
+            "onazuracastplayer",
+            ""
+          )
+          .replace(
+            "onazurecastplayer",
+            ""
+          )
+          .replace(
+            "onazuracast",
+            ""
+          )
+          .replace(
+            "onazurecast",
+            ""
+          )
         savedStationsDB.savedStations.value?.let { stations ->
-          stations.filter { station ->
-            "${station.name}${station.url}".lowercase()
+          stations.find { station ->
+            station.name.lowercase()
               .replace(
                 " ",
                 ""
               )
               .contains(
-                //This is stupid but Google Assistant is stupider
-                mediaItems[0].requestMetadata.searchQuery!!.lowercase()
-                  .replace(
-                    " ",
-                    ""
-                  )
-                  .replace(
-                    "onazuracastradio",
-                    ""
-                  )
-                  .replace(
-                    "onazurecastradio",
-                    ""
-                  )
-                  .replace(
-                    "onazuracastplayer",
-                    ""
-                  )
-                  .replace(
-                    "onazurecastplayer",
-                    ""
-                  )
+                searchQuery
               )
-          }.forEach { item ->
+          }?.let { item ->
             val metaData = MediaMetadata.Builder()
               .setTitle(item.name)
               .setArtist(item.url)
@@ -337,8 +358,64 @@ class MusicPlayerService : MediaLibraryService() {
               .setMediaMetadata(metaData)
               .build()
             foundStations.add(mediaItem)
-            foundSavedStations.add(item)
+            url = item.url
+            shortCode = item.shortcode
           }
+        }
+
+        if (foundStations.isEmpty()) {
+          val item = mutableStateOf<DiscoveryStation?>(null)
+          discoveryJSON.value?.let { json ->
+            json.featuredStations.stations.find { stationData ->
+              stationData.friendlyName.lowercase()
+                .replace(
+                  " ",
+                  ""
+                )
+                .contains(searchQuery)
+            }?.let {
+              item.value = it
+            }
+            if (item.value == null) {
+              json.discoveryStations.flatMap { it.stations }.find { stationData ->
+                stationData.friendlyName.lowercase()
+                  .replace(
+                    " ",
+                    ""
+                  )
+                  .contains(searchQuery)
+              }?.let {
+                item.value = it
+              }
+            }
+          }
+          item.value?.let {
+            Log.d(
+              "DEBUG",
+              "I founded it"
+            )
+            val metaData = MediaMetadata.Builder()
+              .setTitle(it.friendlyName)
+              .setArtist(it.description)
+              .setMediaType(MEDIA_TYPE_RADIO_STATION)
+              .setArtworkUri(Uri.parse(it.imageMediaUrl))
+              .setDurationMs(1)
+              .setIsBrowsable(false)
+              .setIsPlayable(true)
+              .build()
+            val mediaItem = MediaItem.Builder()
+              .setMediaId(it.preferredMount)
+              .setMediaMetadata(metaData)
+              .build()
+            foundStations.add(mediaItem)
+            shortCode = it.shortCode
+            url = URL(it.publicPlayerUrl).host.toString()
+          }
+        }
+        if (foundStations.isEmpty()) {
+          return Futures.immediateFuture(
+            mutableListOf()
+          )
         }
         val updatedMediaItems = foundStations.map {
           it.buildUpon()
@@ -346,27 +423,28 @@ class MusicPlayerService : MediaLibraryService() {
             .build()
         }
           .toMutableList()
-        if (foundSavedStations.isNotEmpty()) {
-          nowPlaying.nowPlayingShortCode.value = foundSavedStations[0].shortcode
-          nowPlaying.nowPlayingURL.value = foundSavedStations[0].url
-          nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
-        }
+        nowPlaying.nowPlayingShortCode.value = shortCode
+        nowPlaying.nowPlayingURL.value = url
+        nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
         return Futures.immediateFuture(updatedMediaItems)
       }
 
-      val item = savedStationsDB.savedStations.value?.filter { savedStation ->
-        if (mediaItems[0].mediaId.startsWith("SAVED_STATION-")) {
-          savedStation.defaultMount == mediaItems[0].mediaId.replaceFirst(
-            "SAVED_STATION-",
-            ""
-          )
-        } else {
-          savedStation.defaultMount == mediaItems[0].mediaId
-        }
-      }
-      val updatedMediaItems: MutableList<MediaItem> =
-        if (mediaItems[0].mediaId.startsWith("SAVED_STATION-")) {
-          mediaItems.map {
+      var shortCode = ""
+      var url = ""
+
+      var updatedMediaItems = mutableListOf<MediaItem>()
+
+      when {
+        mediaItems[0].mediaId.startsWith("SAVED_STATION-") -> {
+          val item = savedStationsDB.savedStations.value?.find { savedStation ->
+            savedStation.defaultMount == mediaItems[0].mediaId.replaceFirst(
+              "SAVED_STATION-",
+              ""
+            )
+          }
+          shortCode = item?.shortcode ?: ""
+          url = item?.url ?: ""
+          updatedMediaItems = mediaItems.map {
             it.buildUpon()
               .setUri(
                 it.mediaId.replaceFirst(
@@ -382,16 +460,70 @@ class MusicPlayerService : MediaLibraryService() {
               .build()
           }
             .toMutableList()
-        } else {
-          mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
-            .toMutableList()
         }
 
-      /* This is the trickiest part, if you don't do this here, nothing will play */
+        mediaItems[0].mediaId.startsWith("DISCOVERED-") -> {
+          val item = mutableStateOf<DiscoveryStation?>(null)
+          discoveryJSON.value?.let { json ->
+            json.featuredStations.stations.find { stationData ->
+              stationData.preferredMount == mediaItems[0].mediaId.replaceFirst(
+                "DISCOVERED-",
+                ""
+              )
+            }?.let {
+              item.value = it
+            }
+            if (item.value == null) {
+              json.discoveryStations.flatMap { it.stations }.find { stationData ->
+                stationData.preferredMount == mediaItems[0].mediaId.replaceFirst(
+                  "DISCOVERED-",
+                  ""
+                )
+              }?.let {
+                item.value = it
+              }
+            }
+          }
+          shortCode = item.value?.shortCode ?: ""
+          url = if (item.value != null) {
+            URL(item.value?.publicPlayerUrl).host.toString()
+          } else {
+            ""
+          }
+          updatedMediaItems = mediaItems.map {
+            it.buildUpon()
+              .setUri(
+                it.mediaId.replaceFirst(
+                  "DISCOVERED-",
+                  ""
+                )
+              ).setMediaId(
+                it.mediaId.replaceFirst(
+                  "DISCOVERED-",
+                  ""
+                )
+              )
+              .build()
+          }
+            .toMutableList()
 
-      nowPlaying.nowPlayingShortCode.value = item?.get(0)?.shortcode ?: ""
-      nowPlaying.nowPlayingURL.value = item?.get(0)?.url ?: ""
+        }
+
+        else -> {
+          val item = savedStationsDB.savedStations.value?.find { savedStation ->
+            savedStation.defaultMount == mediaItems[0].mediaId
+          }
+          shortCode = item?.shortcode ?: ""
+          url = item?.url ?: ""
+          updatedMediaItems = mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }
+            .toMutableList()
+        }
+      }
+
+      nowPlaying.nowPlayingShortCode.value = shortCode
+      nowPlaying.nowPlayingURL.value = url
       nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
+
       return Futures.immediateFuture(updatedMediaItems)
     }
 
@@ -424,6 +556,14 @@ class MusicPlayerService : MediaLibraryService() {
       pageSize: Int,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+
+      val gridStyleChildren = Bundle()
+
+      gridStyleChildren.putInt(
+        MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+        MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+      )
+
       when (parentId) {
         "/" -> {
           //        var gridView: Boolean
@@ -432,18 +572,12 @@ class MusicPlayerService : MediaLibraryService() {
           //            it[booleanPreferencesKey(IS_GRID_VIEW)] ?: false
           //          }.first()
           //        }
-          val extras = Bundle()
-          extras.putInt(
-            MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
-            MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
-          )
-
 
           val metaDataStations = MediaMetadata.Builder()
             .setIsBrowsable(true)
             .setIsPlayable(false)
             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-            .setExtras(extras)
+            .setExtras(gridStyleChildren)
             .setTitle("My Stations")
             .setArtworkUri(
               resourceToUri(
@@ -456,7 +590,7 @@ class MusicPlayerService : MediaLibraryService() {
             .setIsBrowsable(true)
             .setIsPlayable(false)
             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-            .setExtras(extras)
+            .setExtras(gridStyleChildren)
             .setTitle("Discover")
             .setArtworkUri(
               resourceToUri(
@@ -515,7 +649,127 @@ class MusicPlayerService : MediaLibraryService() {
           )
         }
 
+        "Discover" -> {
+          val featuredStations = MediaItem.Builder()
+            .setMediaId("Discover/Featured_Stations")
+            .setMediaMetadata(
+              MediaMetadata.Builder()
+                .setTitle("Featured Stations")
+                .setArtist("Stations hand-picked by listeners for listeners")
+                .setIsBrowsable(true)
+                .setIsPlayable(false)
+                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+                .setExtras(gridStyleChildren)
+                .build()
+            ).build()
+
+          val categories = mutableListOf(featuredStations)
+
+          discoveryJSON.value?.let { json ->
+            json.discoveryStations.forEach {
+              val category = MediaItem.Builder()
+                .setMediaId(
+                  "Discover/${
+                    it.title.replace(
+                      " ",
+                      "_"
+                    )
+                  }"
+                )
+                .setMediaMetadata(
+                  MediaMetadata.Builder()
+                    .setTitle(it.title)
+                    .setArtist(it.description)
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+                    .setExtras(gridStyleChildren)
+                    .build()
+                )
+                .build()
+              categories.add(category)
+            }
+          }
+
+          return Futures.immediateFuture(
+            LibraryResult.ofItemList(
+              categories,
+              params
+            )
+          )
+        }
+
         else -> {
+
+          if (parentId.startsWith("Discover/")) {
+            val category = parentId.replaceFirst(
+              "Discover/",
+              ""
+            )
+            val stations = mutableListOf<MediaItem>()
+
+            if (parentId == "Discover/Featured_Stations") {
+              discoveryJSON.value?.let { discoveryData ->
+                discoveryData.featuredStations.stations.forEach { stationData ->
+                  val station = MediaItem.Builder()
+                    .setMediaId("DISCOVERED-${stationData.preferredMount}")
+                    .setMediaMetadata(
+                      MediaMetadata.Builder()
+                        .setTitle(stationData.friendlyName)
+                        .setArtist(stationData.description)
+                        .setMediaType(MEDIA_TYPE_RADIO_STATION)
+                        .setIsBrowsable(false)
+                        .setIsPlayable(true)
+                        .setArtworkUri(Uri.parse(stationData.imageMediaUrl))
+                        .setDurationMs(1)
+                        .build()
+                    )
+                    .build()
+                  stations.add(station)
+                }
+              }
+              return Futures.immediateFuture(
+                LibraryResult.ofItemList(
+                  stations,
+                  params
+                )
+              )
+            } else {
+              discoveryJSON.value?.let { discoveryData ->
+                val discoveryCategory = discoveryData.discoveryStations.first { discoveryCategory ->
+                  discoveryCategory.title.replace(
+                    " ",
+                    "_"
+                  ) == category
+                }
+
+                discoveryCategory.stations.forEach { stationData ->
+                  val station = MediaItem.Builder()
+                    .setMediaId("DISCOVERED-${stationData.preferredMount}")
+                    .setMediaMetadata(
+                      MediaMetadata.Builder()
+                        .setTitle(stationData.friendlyName)
+                        .setArtist(stationData.description)
+                        .setMediaType(MEDIA_TYPE_RADIO_STATION)
+                        .setIsBrowsable(false)
+                        .setIsPlayable(true)
+                        .setArtworkUri(Uri.parse(stationData.imageMediaUrl))
+                        .setDurationMs(1)
+                        .build()
+                    )
+                    .build()
+                  stations.add(station)
+                }
+              }
+              return Futures.immediateFuture(
+                LibraryResult.ofItemList(
+                  stations,
+                  params
+                )
+              )
+            }
+          }
+
           return Futures.immediateFuture(
             LibraryResult.ofItemList(
               ImmutableList.of(),

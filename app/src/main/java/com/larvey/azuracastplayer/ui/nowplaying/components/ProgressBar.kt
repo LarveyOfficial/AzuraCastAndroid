@@ -104,30 +104,32 @@ fun ProgressBar(
         color = Color.White
       )
       Spacer(modifier = Modifier.weight(1f))
-      SuggestionChip(
-        onClick = {},
-        label = {
-          if (playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
-            Text(
-              "HLS",
-              style = MaterialTheme.typography.labelSmall,
-              color = Color.White
-            )
-          } else {
-            Text(
-              "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
-              style = MaterialTheme.typography.labelSmall,
-              color = Color.White
-            )
-          }
+      if (currentMount?.bitrate != null && currentMount.format != null) {
+        SuggestionChip(
+          onClick = {},
+          label = {
+            if (playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
+              Text(
+                "HLS",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White
+              )
+            } else {
+              Text(
+                "${currentMount.format.uppercase()} ${currentMount.bitrate}kbps",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White
+              )
+            }
 
-        },
-        border = BorderStroke(
-          width = 1.dp,
-          color = Color.White
-        ),
-        modifier = Modifier.heightIn(max = 24.dp)
-      )
+          },
+          border = BorderStroke(
+            width = 1.dp,
+            color = Color.White
+          ),
+          modifier = Modifier.heightIn(max = 24.dp)
+        )
+      }
       Spacer(modifier = Modifier.weight(1f))
       Text(
         durationString,
