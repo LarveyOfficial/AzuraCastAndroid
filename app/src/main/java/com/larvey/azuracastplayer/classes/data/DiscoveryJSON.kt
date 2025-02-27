@@ -17,7 +17,9 @@ data class DiscoveryStation(
   val friendlyName: String,
   val shortCode: String,
   val imageMediaUrl: String,
-  val publicPlayerURL: String,
+  val publicPlayerUrl: String,
+  val preferredMount: String,
   val description: String,
-  val supportsHls: Boolean
+  val supportsHls: Boolean,
+  val hlsUrl: String?
 )
