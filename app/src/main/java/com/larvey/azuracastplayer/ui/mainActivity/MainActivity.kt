@@ -22,6 +22,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -87,6 +88,8 @@ import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
+import com.larvey.azuracastplayer.utils.correctedDominantColor
+import com.larvey.azuracastplayer.utils.correctedOnDominantColor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -209,24 +212,17 @@ class MainActivity : ComponentActivity() {
 
         //region Animated Add Button Colors
         val animatedFabColor = animateColorAsState(
-          targetValue =
-          if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.rgb != null
-            || mainActivityViewModel?.palette?.value?.dominantSwatch?.rgb != null
-          ) androidx.compose.ui.graphics.Color(
-            mainActivityViewModel?.palette?.value?.vibrantSwatch?.rgb
-              ?: mainActivityViewModel?.palette?.value?.dominantSwatch?.rgb!!
-          )
-          else MaterialTheme.colorScheme.primaryContainer,
+          targetValue = correctedDominantColor(
+            mainActivityViewModel?.palette,
+            isSystemInDarkTheme()
+          ) ?: MaterialTheme.colorScheme.primaryContainer,
           label = "Fab Color"
         )
+
         val animatedFabIconTint = animateColorAsState(
-          targetValue =
-          if (mainActivityViewModel?.palette?.value?.vibrantSwatch?.bodyTextColor != null
-            || mainActivityViewModel?.palette?.value?.dominantSwatch?.bodyTextColor != null
-          ) androidx.compose.ui.graphics.Color(
-            mainActivityViewModel?.palette?.value?.vibrantSwatch?.bodyTextColor
-              ?: mainActivityViewModel?.palette?.value?.dominantSwatch?.bodyTextColor!!
-          ) else MaterialTheme.colorScheme.onPrimaryContainer,
+          targetValue = correctedOnDominantColor(
+            mainActivityViewModel?.palette
+          ) ?: MaterialTheme.colorScheme.onPrimaryContainer,
           label = "Fab Icon Color"
         )
         //endregion
@@ -277,7 +273,7 @@ class MainActivity : ComponentActivity() {
                       icon = {
                         Icon(
                           it.icon,
-                          contentDescription = it.label
+                          contentDescription = it.label,
                         )
                       },
                       label = {
@@ -426,12 +422,15 @@ class MainActivity : ComponentActivity() {
                           showNowPlaying = {
                             showNowPlayingSheet.value = true
                           },
+                          nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
                           pause = {
                             mediaController?.pause()
                           },
                           play = {
                             mediaController?.play()
-                          })
+                          },
+                          palette = mainActivityViewModel?.palette,
+                        )
                       }
                     }
                   }) { innerPadding ->

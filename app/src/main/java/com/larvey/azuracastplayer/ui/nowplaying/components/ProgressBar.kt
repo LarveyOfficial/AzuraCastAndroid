@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.annotation.OptIn
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +11,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -32,6 +34,7 @@ import kotlin.time.toDuration
 
 
 @OptIn(UnstableApi::class)
+@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun ProgressBar(
   progressAnimation: Float,
@@ -53,20 +56,25 @@ fun ProgressBar(
     if (brightDominant[2] <= 0.7f) {
       brightDominant[2] = 0.7f
     }
-    LinearProgressIndicator(
+
+    val isPlaying = animateFloatAsState(
+      targetValue = if (playerState.isPlaying) 1f else 0f,
+    )
+
+    LinearWavyProgressIndicator(
       progress = { progressAnimation },
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp)
-        .clip(RoundedCornerShape(16.dp)),
-      drawStopIndicator = {},
       trackColor = Color(
         palette?.lightVibrantSwatch?.bodyTextColor
           ?: Color.DarkGray.toArgb()
       ),
-      color = Color(
-        HSLToColor(brightDominant)
-      )
+      amplitude = { isPlaying.value },
+      stopSize = 0.dp,
+      waveSpeed = 15.dp,
+      color = Color(HSLToColor(brightDominant)),
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp)
+        .clip(RoundedCornerShape(16.dp)),
     )
 
     Spacer(modifier = Modifier.size(8.dp))

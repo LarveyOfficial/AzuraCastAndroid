@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SheetState
@@ -32,14 +33,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
-import kotlinx.coroutines.delay
+import com.larvey.azuracastplayer.utils.updateTime
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun NowPlayingBottomBar(
   showQueue: MutableState<Boolean>,
@@ -144,28 +147,3 @@ fun NowPlayingBottomBar(
   }
 }
 
-@androidx.annotation.OptIn(UnstableApi::class)
-suspend fun updateTime(
-  isVisible: Boolean,
-  updateProgress: (Float, Long) -> Unit,
-  playerState: PlayerState?,
-  nowPlaying: NowPlaying?
-) {
-  while (isVisible) {
-    if (playerState?.isPlaying == true) {
-      var currentPosition: Number = 0f
-      currentPosition = if (playerState.player.isCurrentMediaItemDynamic) {
-        ((System.currentTimeMillis() / 1000).minus(nowPlaying?.playedAt!!) * 1000) - playerState.player.currentPosition
-      } else {
-        playerState.player.currentPosition
-      }
-
-      updateProgress(
-        currentPosition.toFloat() / (if (playerState.player.mediaMetadata.durationMs == 0L) 1 else playerState.player.mediaMetadata.durationMs
-          ?: 1).toFloat(),
-        currentPosition.toLong()
-      )
-    }
-    delay(1000)
-  }
-}
