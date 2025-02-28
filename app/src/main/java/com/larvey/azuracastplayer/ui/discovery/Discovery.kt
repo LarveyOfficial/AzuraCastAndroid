@@ -205,14 +205,6 @@ fun Discovery(
                     interactionSource = pageInteractionSource,
                     indication = LocalIndication.current
                   ) {
-                    //                    discoveryViewModel.setPlaybackSource(
-                    //                      url = URL(discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.publicPlayerUrl).host
-                    //                        ?: "",
-                    //                      mountURI = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.preferredMount
-                    //                        ?: "",
-                    //                      shortCode = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.shortCode
-                    //                        ?: ""
-                    //                    )
                     scope.launch {
                       navigator.navigateTo(
                         SupportingPaneScaffoldRole.Supporting,
@@ -323,79 +315,83 @@ fun Discovery(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
                 ) {
-                  Column(
-                    Modifier
-                      .padding(horizontal = 16.dp)
-                  ) {
-                    Card(
-                      modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 256.dp)
-                        .padding(bottom = 16.dp)
-                    ) {
-                      GlideImage(
-                        model = animatedStation.imageMediaUrl,
-                        contentDescription = "Station Artwork",
-                        modifier = Modifier
-                          .fillMaxWidth(),
-                        contentScale = ContentScale.FillWidth
-                      )
-                    }
-                    Text(
-                      animatedStation.friendlyName,
-                      style = MaterialTheme.typography.titleLarge,
-                      modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    if (animatedStation.description != "") {
-                      Text(
-                        animatedStation.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                      )
-                    }
-                    Row(
-                      modifier = Modifier.fillMaxWidth(),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                      Button(
-                        onClick = {
-                          discoveryViewModel.setPlaybackSource(
-                            url = URL(animatedStation.publicPlayerUrl).host
-                              ?: "",
-                            mountURI = animatedStation.preferredMount,
-                            shortCode = animatedStation.shortCode
-                          )
-                        }
+                  LazyColumn {
+                    item {
+                      Column(
+                        Modifier
+                          .padding(horizontal = 16.dp)
                       ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                          Icon(
-                            Icons.Rounded.PlayArrow,
-                            contentDescription = "Play"
+                        Card(
+                          modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 256.dp)
+                            .padding(bottom = 16.dp)
+                        ) {
+                          GlideImage(
+                            model = animatedStation.imageMediaUrl,
+                            contentDescription = "Station Artwork",
+                            modifier = Modifier
+                              .fillMaxWidth(),
+                            contentScale = ContentScale.FillWidth
                           )
-                          Text("Play Station")
                         }
-                      }
-                      Button(
-                        onClick = {
-                          discoveryViewModel.addStation(animatedStation)
-                        },
-                        enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation.shortCode }
-                          ?: true
-                      ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                          Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Add"
+                        Text(
+                          animatedStation.friendlyName,
+                          style = MaterialTheme.typography.titleLarge,
+                          modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        if (animatedStation.description != "") {
+                          Text(
+                            animatedStation.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
                           )
-                          Text("Save Station")
                         }
+                        Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.SpaceEvenly,
+                        ) {
+                          Button(
+                            onClick = {
+                              discoveryViewModel.setPlaybackSource(
+                                url = URL(animatedStation.publicPlayerUrl).host
+                                  ?: "",
+                                mountURI = animatedStation.preferredMount,
+                                shortCode = animatedStation.shortCode
+                              )
+                            }
+                          ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                              Icon(
+                                Icons.Rounded.PlayArrow,
+                                contentDescription = "Play"
+                              )
+                              Text("Play Station")
+                            }
+                          }
+                          Button(
+                            onClick = {
+                              discoveryViewModel.addStation(animatedStation)
+                            },
+                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation.shortCode }
+                              ?: true
+                          ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                              Icon(
+                                Icons.Rounded.Add,
+                                contentDescription = "Add"
+                              )
+                              Text("Save Station")
+                            }
+                          }
+                        }
+                        Spacer(modifier = Modifier.size(16.dp))
                       }
                     }
                   }
                 }
               }
-
             }
           }
         }
