@@ -401,7 +401,7 @@ class MainActivity : ComponentActivity() {
                   },
                   bottomBar = {
                     AnimatedVisibility(
-                      visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination == AppDestinations.STATIONS),
+                      visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination == AppDestinations.STATIONS && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded),
                       enter = slideInVertically(
                         initialOffsetY = { fullHeight -> fullHeight * 2 },
                         animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
