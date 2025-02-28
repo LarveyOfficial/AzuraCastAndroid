@@ -237,6 +237,10 @@ class MainActivity : ComponentActivity() {
           LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
 
+        if (discoveryViewingStation.value) {
+          LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
+        }
+
         val topBarContainerColor = (
             if (currentDestination == AppDestinations.STATIONS) {
               if ((!lazyGridState.canScrollBackward && radioListMode == true)
@@ -284,12 +288,8 @@ class MainActivity : ComponentActivity() {
                         } else {
                           if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
                             currentDestination = it
-                            if (playerState?.isPlaying == true) {
-                              scope.launch {
-                                delay(1000)
-                                discoveryViewingStation.value = false
-                              }
-                            } else {
+                            scope.launch {
+                              delay(1000)
                               discoveryViewingStation.value = false
                             }
                           } else {

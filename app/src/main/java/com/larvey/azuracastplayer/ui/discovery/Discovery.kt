@@ -132,7 +132,6 @@ fun Discovery(
     } else {
       timedBoolean.value = discoveryViewingStation.value
     }
-
   }
 
   discoveryViewModel.discoveryJSON.value?.discoveryStations?.let { discoveryCategories ->
@@ -198,6 +197,7 @@ fun Discovery(
                         SupportingPaneScaffoldRole.Supporting,
                         contentKey = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)
                       )
+                      discoveryViewingStation.value = true
                     }
                   }
 
