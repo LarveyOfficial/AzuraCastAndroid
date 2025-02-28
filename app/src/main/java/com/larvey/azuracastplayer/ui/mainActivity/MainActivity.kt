@@ -280,7 +280,12 @@ class MainActivity : ComponentActivity() {
                           contentDescription = it.label
                         )
                       },
-                      label = { Text(it.label) },
+                      label = {
+                        Text(
+                          it.label,
+                          maxLines = 1
+                        )
+                      },
                       selected = it == currentDestination,
                       onClick = {
                         if (!isWide) {
@@ -310,7 +315,12 @@ class MainActivity : ComponentActivity() {
                       containerColor = topBarContainerColor,
                       titleContentColor = topBarTitleColor,
                     ),
-                      title = { Text(currentDestination.title) },
+                      title = {
+                        Text(
+                          currentDestination.title,
+                          maxLines = 1
+                        )
+                      },
                       actions = {
                         AnimatedVisibility(
                           radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS

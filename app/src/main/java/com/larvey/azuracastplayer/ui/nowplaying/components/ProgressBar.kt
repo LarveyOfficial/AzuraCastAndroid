@@ -100,6 +100,7 @@ fun ProgressBar(
       }
       Text(
         positionString,
+        maxLines = 1,
         style = MaterialTheme.typography.labelMedium,
         color = Color.White
       )
@@ -112,12 +113,14 @@ fun ProgressBar(
               Text(
                 "HLS",
                 style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
                 color = Color.White
               )
             } else {
               Text(
                 "${currentMount.format.uppercase()} ${currentMount.bitrate}kbps",
                 style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
                 color = Color.White
               )
             }
@@ -134,6 +137,7 @@ fun ProgressBar(
       Text(
         durationString,
         style = MaterialTheme.typography.labelMedium,
+        maxLines = 1,
         color = Color.White
       )
     }

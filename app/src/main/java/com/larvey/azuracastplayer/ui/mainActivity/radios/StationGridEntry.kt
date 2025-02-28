@@ -249,6 +249,7 @@ fun StationGridEntry(
             Spacer(Modifier.size(4.dp))
             Text(
               text = "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
+              maxLines = 1,
               modifier = Modifier.padding(horizontal = 2.dp)
             )
             Spacer(Modifier.size(4.dp))
@@ -275,6 +276,7 @@ fun StationGridEntry(
     ) {
       Text(
         text = "Playing: ",
+        maxLines = 1,
         style = MaterialTheme.typography.bodySmallEmphasized
       )
       Text(

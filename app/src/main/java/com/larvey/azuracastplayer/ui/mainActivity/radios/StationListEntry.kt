@@ -216,7 +216,12 @@ fun StationListEntry(
                 }
 
               },
-              label = { Text("${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}") },
+              label = {
+                Text(
+                  "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
+                  maxLines = 1
+                )
+              },
               modifier = Modifier
                 .widthIn(max = 80.dp)
             )
@@ -225,7 +230,8 @@ fun StationListEntry(
         if (stationData?.nowPlaying?.song?.title.toString() != "null") {
           Row {
             Text(
-              text = "Now playing: "
+              text = "Now playing: ",
+              maxLines = 1,
             )
             Text(
               text = "${stationData?.nowPlaying?.song?.title}",

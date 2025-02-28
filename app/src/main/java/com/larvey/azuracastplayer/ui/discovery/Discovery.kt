@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -178,6 +179,7 @@ fun Discovery(
                 Card(modifier = Modifier
                   .fillMaxWidth()
                   .padding(horizontal = 16.dp)
+                  .wrapContentHeight()
                   .heightIn(max = if (isWide) 300.dp else 200.dp)
                   .graphicsLayer {
                     val pageOffset = (
@@ -222,7 +224,7 @@ fun Discovery(
                       .requiredWidthIn(min = 1.dp)
                       .requiredHeightIn(min = 1.dp)
                       .fillMaxWidth(),
-                    contentScale = ContentScale.FillWidth
+                    contentScale = ContentScale.Crop
                   )
                 }
               }
@@ -233,14 +235,20 @@ fun Discovery(
             ) { category ->
               Text(
                 category.title,
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleLarge
-              )
-              Text(
-                category.description,
+                maxLines = 1,
                 modifier = Modifier
                   .padding(horizontal = 16.dp)
-                  .padding(bottom = 4.dp),
+                  .basicMarquee(Int.MAX_VALUE),
+                style = MaterialTheme.typography.titleLarge,
+
+                )
+              Text(
+                category.description,
+                maxLines = 1,
+                modifier = Modifier
+                  .padding(horizontal = 16.dp)
+                  .padding(bottom = 4.dp)
+                  .basicMarquee(Int.MAX_VALUE),
                 style = MaterialTheme.typography.bodyMedium
               )
               val categoryState = rememberLazyListState()
@@ -389,6 +397,7 @@ fun Discovery(
                         Spacer(modifier = Modifier.size(16.dp))
                       }
                     }
+                    item { Spacer(Modifier.size(animatedPadding)) }
                   }
                 }
               }

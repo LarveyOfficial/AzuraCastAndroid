@@ -194,7 +194,7 @@ fun NowPlayingSheet(
                   modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxHeight()
-                    .padding(bottom = 32.dp)
+                    .padding(bottom = 16.dp)
                 ) {
                   NowPlayingAlbumArt(
                     modifier = Modifier.fillMaxHeight(.75f),

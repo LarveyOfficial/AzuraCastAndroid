@@ -92,46 +92,55 @@ fun NowPlayingBottomBar(
     )
     Spacer(Modifier.weight(0.05f))
     // Media Controls + Share
-    MediaControls(
-      sheetState = sheetState,
-      stop = stop,
-      pause = pause,
-      play = play,
-      playerState = playerState,
-      isSleeping = isSleeping
-    )
-    Spacer(Modifier.weight(0.1f))
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp)
+    Column(
+      modifier = Modifier.fillMaxHeight(),
+      verticalArrangement = Arrangement.SpaceEvenly,
+      horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      IconButton(
-        enabled = false,
-        onClick = {}
+      MediaControls(
+        modifier = Modifier.weight(1f),
+        sheetState = sheetState,
+        stop = stop,
+        pause = pause,
+        play = play,
+        playerState = playerState,
+        isSleeping = isSleeping
+      )
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 16.dp)
+          .weight(0.5f),
+        horizontalArrangement = Arrangement.Center
       ) {
-        Icon(
-          imageVector = Icons.Rounded.StarBorder,
-          contentDescription = "Favorite",
-          modifier = Modifier.size(48.dp),
-          tint = Color.White
-        )
-      }
-      Spacer(modifier = Modifier.weight(1f))
-      IconButton(
-        enabled = true,
-        onClick = {
-          showQueue.value = !showQueue.value
+        IconButton(
+          enabled = false,
+          onClick = {}
+        ) {
+          Icon(
+            imageVector = Icons.Rounded.StarBorder,
+            contentDescription = "Favorite",
+            modifier = Modifier.size(48.dp),
+            tint = Color.White
+          )
         }
-      ) {
-        Icon(
-          imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-          contentDescription = "Queue",
-          modifier = Modifier.size(48.dp),
-          tint = Color.White
-        )
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(
+          enabled = true,
+          onClick = {
+            showQueue.value = !showQueue.value
+          }
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+            contentDescription = "Queue",
+            modifier = Modifier.size(48.dp),
+            tint = Color.White
+          )
+        }
       }
     }
+
   }
 }
 

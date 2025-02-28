@@ -3,6 +3,7 @@ package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -61,6 +62,7 @@ import java.time.LocalDateTime
 )
 @Composable
 fun MediaControls(
+  modifier: Modifier = Modifier,
   sheetState: SheetState?,
   stop: () -> Unit,
   pause: () -> Unit,
@@ -78,9 +80,9 @@ fun MediaControls(
 
   Row(
     verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier
+    horizontalArrangement = Arrangement.SpaceEvenly,
+    modifier = modifier
       .fillMaxWidth()
-      .padding(horizontal = 64.dp)
   ) {
 
     // Stop Button
@@ -99,9 +101,6 @@ fun MediaControls(
         tint = Color.White
       )
     }
-
-    Spacer(modifier = Modifier.weight(1f))
-
     // Play/Pause Button
     AnimatedContent(targetState = playerState.playbackState) { loading ->
       if (loading != 2) {
@@ -139,8 +138,6 @@ fun MediaControls(
         )
       }
     }
-
-    Spacer(modifier = Modifier.weight(1f))
 
     //Sleep Button
     IconButton(
