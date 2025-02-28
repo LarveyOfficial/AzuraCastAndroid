@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.discovery
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.animateDpAsState
@@ -9,19 +10,22 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidthIn
@@ -34,13 +38,21 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,6 +75,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.classes.data.DiscoveryStation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.net.URL
 import kotlin.math.absoluteValue
 
 @OptIn(
@@ -89,8 +102,16 @@ fun Discovery(
   val pageIsPressed by pageInteractionSource.collectIsPressedAsState()
 
   val columnState = rememberLazyListState()
-
-  val navigator = rememberSupportingPaneScaffoldNavigator<DiscoveryStation>()
+  val systemDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+  val customDirective = PaneScaffoldDirective(
+    maxHorizontalPartitions = systemDirective.maxHorizontalPartitions,
+    horizontalPartitionSpacerSize = 0.dp,
+    maxVerticalPartitions = systemDirective.maxVerticalPartitions,
+    verticalPartitionSpacerSize = systemDirective.verticalPartitionSpacerSize,
+    defaultPanePreferredWidth = systemDirective.defaultPanePreferredWidth,
+    excludedBounds = systemDirective.excludedBounds
+  )
+  val navigator = rememberSupportingPaneScaffoldNavigator<DiscoveryStation>(scaffoldDirective = customDirective)
 
   BackHandler(navigator.canNavigateBack()) {
     scope.launch {
@@ -157,7 +178,7 @@ fun Discovery(
                 Card(modifier = Modifier
                   .fillMaxWidth()
                   .padding(horizontal = 16.dp)
-                  .height(200.dp)
+                  .heightIn(max = if (isWide) 300.dp else 200.dp)
                   .graphicsLayer {
                     val pageOffset = (
                         (pagerState.currentPage - station) + pagerState.currentPageOffsetFraction
@@ -245,12 +266,7 @@ fun Discovery(
                     Card(
                       modifier = Modifier.size(128.dp),
                       onClick = {
-                        //                        discoveryViewModel.setPlaybackSource(
-                        //                          url = URL(station.publicPlayerUrl).host
-                        //                            ?: "",
-                        //                          mountURI = station.preferredMount,
-                        //                          shortCode = station.shortCode
-                        //                        )
+
                         scope.launch {
                           navigator.navigateTo(
                             SupportingPaneScaffoldRole.Supporting,
@@ -300,10 +316,86 @@ fun Discovery(
           exit = if (isWide) ExitTransition.None else fadeOut()
         ) {
           AnimatedPane(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
-            if (navigator.canNavigateBack() || isWide) {
-              navigator.currentDestination?.contentKey?.let { station ->
-                Text(station.friendlyName)
+            navigator.currentDestination?.contentKey?.let { station ->
+              AnimatedContent(station) { animatedStation ->
+                Box(
+                  Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                ) {
+                  Column(
+                    Modifier
+                      .padding(horizontal = 16.dp)
+                  ) {
+                    Card(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 256.dp)
+                        .padding(bottom = 16.dp)
+                    ) {
+                      GlideImage(
+                        model = animatedStation.imageMediaUrl,
+                        contentDescription = "Station Artwork",
+                        modifier = Modifier
+                          .fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                      )
+                    }
+                    Text(
+                      animatedStation.friendlyName,
+                      style = MaterialTheme.typography.titleLarge,
+                      modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    if (animatedStation.description != "") {
+                      Text(
+                        animatedStation.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                      )
+                    }
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                      Button(
+                        onClick = {
+                          discoveryViewModel.setPlaybackSource(
+                            url = URL(animatedStation.publicPlayerUrl).host
+                              ?: "",
+                            mountURI = animatedStation.preferredMount,
+                            shortCode = animatedStation.shortCode
+                          )
+                        }
+                      ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                          Icon(
+                            Icons.Rounded.PlayArrow,
+                            contentDescription = "Play"
+                          )
+                          Text("Play Station")
+                        }
+                      }
+                      Button(
+                        onClick = {
+                          discoveryViewModel.addStation(animatedStation)
+                        },
+                        enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation.shortCode }
+                          ?: true
+                      ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                          Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = "Add"
+                          )
+                          Text("Save Station")
+                        }
+                      }
+                    }
+                  }
+                }
               }
+
             }
           }
         }
