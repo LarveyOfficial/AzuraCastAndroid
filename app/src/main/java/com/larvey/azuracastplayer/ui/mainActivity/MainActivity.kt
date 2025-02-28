@@ -1,5 +1,9 @@
 package com.larvey.azuracastplayer.ui.mainActivity
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,6 +14,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -54,16 +59,19 @@ import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.session.MediaController
@@ -80,6 +88,8 @@ import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 enum class AppDestinations(
   val label: String,
@@ -166,6 +176,8 @@ class MainActivity : ComponentActivity() {
           )
         }
 
+        val scope = rememberCoroutineScope()
+
         val showAddDialog = remember { mutableStateOf(false) }
         val showNowPlayingSheet = remember { mutableStateOf(false) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
@@ -183,6 +195,7 @@ class MainActivity : ComponentActivity() {
         )
         val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
         var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.STATIONS) }
+        val discoveryViewingStation = remember { mutableStateOf(false) }
 
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()
@@ -219,6 +232,11 @@ class MainActivity : ComponentActivity() {
         //endregion
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
+
+        if (!isWide) {
+          LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        }
+
         val topBarContainerColor = (
             if (currentDestination == AppDestinations.STATIONS) {
               if ((!lazyGridState.canScrollBackward && radioListMode == true)
@@ -261,7 +279,23 @@ class MainActivity : ComponentActivity() {
                       label = { Text(it.label) },
                       selected = it == currentDestination,
                       onClick = {
-                        currentDestination = it
+                        if (!isWide) {
+                          currentDestination = it
+                        } else {
+                          if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+                            currentDestination = it
+                            if (playerState?.isPlaying == true) {
+                              scope.launch {
+                                delay(1000)
+                                discoveryViewingStation.value = false
+                              }
+                            } else {
+                              discoveryViewingStation.value = false
+                            }
+                          } else {
+                            currentDestination = it
+                          }
+                        }
                       }
                     )
                   }
@@ -278,7 +312,9 @@ class MainActivity : ComponentActivity() {
                     ),
                       title = { Text(currentDestination.title) },
                       actions = {
-                        AnimatedVisibility(radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS) {
+                        AnimatedVisibility(
+                          radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS
+                        ) {
                           IconButton(
                             onClick = {
                               settingsModel.toggleGridView()
@@ -303,13 +339,16 @@ class MainActivity : ComponentActivity() {
                           1
                         }
                       }),
-                      enter = slideInHorizontally(initialOffsetX = { fullWidth ->
-                        fullWidth * 2 * if (isWide) {
-                          -1
-                        } else {
-                          1
-                        }
-                      }),
+                      enter = slideInHorizontally(
+                        initialOffsetX = { fullWidth ->
+                          fullWidth * 2 * if (isWide) {
+                            -1
+                          } else {
+                            1
+                          }
+                        },
+                        animationSpec = tween(delayMillis = 320)
+                      )
                     ) {
                       FloatingActionButton(
                         onClick = {
@@ -362,9 +401,12 @@ class MainActivity : ComponentActivity() {
                   },
                   bottomBar = {
                     AnimatedVisibility(
-                      visible = playerState?.currentMediaItem?.mediaId != null && navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded,
-                      enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }),
-                      exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
+                      visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination == AppDestinations.STATIONS),
+                      enter = slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight * 2 },
+                        animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
+                      ),
+                      exit = if (isWide) ExitTransition.None else slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
                     ) {
                       BottomAppBar(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -436,7 +478,11 @@ class MainActivity : ComponentActivity() {
                         }
 
                         AppDestinations.DISCOVER -> {
-                          Discovery(innerPadding)
+                          Discovery(
+                            innerPadding,
+                            discoveryViewingStation,
+                            isWide
+                          )
                         }
 
                         AppDestinations.FAVORITES -> {
@@ -454,8 +500,14 @@ class MainActivity : ComponentActivity() {
           },
           supportingPane = {
             AnimatedVisibility(
-              visible = playerState?.currentMediaItem != null,
-              enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 })
+              visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value,
+              enter = slideInHorizontally(
+                initialOffsetX = { fullWidth -> fullWidth * 2 }
+              ),
+              exit = slideOutHorizontally(
+                targetOffsetX = { fullWidth -> fullWidth * 2 },
+                animationSpec = tween(durationMillis = 250)
+              )
             ) {
               AnimatedPane(modifier = Modifier.fillMaxSize()) {
                 NowPlayingPane(
@@ -516,4 +568,25 @@ class MainActivity : ComponentActivity() {
       }
     }
   }
+
+}
+
+@Composable
+fun LockScreenOrientation(orientation: Int) {
+  val context = LocalContext.current
+  DisposableEffect(Unit) {
+    val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
+    val originalOrientation = activity.requestedOrientation
+    activity.requestedOrientation = orientation
+    onDispose {
+      // restore original orientation when view disappears
+      activity.requestedOrientation = originalOrientation
+    }
+  }
+}
+
+fun Context.findActivity(): Activity? = when (this) {
+  is Activity -> this
+  is ContextWrapper -> baseContext.findActivity()
+  else -> null
 }

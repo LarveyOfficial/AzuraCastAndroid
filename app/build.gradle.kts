@@ -82,11 +82,11 @@ dependencies {
 
   implementation("androidx.window:window:1.4.0-beta02")
 
-  implementation("androidx.compose.material3.adaptive:adaptive:1.1.0-beta02")
-  implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0-beta02")
-  implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0-beta02")
+  implementation("androidx.compose.material3.adaptive:adaptive:1.1.0-rc01")
+  implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0-rc01")
+  implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0-rc01")
 
-  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha08")
+  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha09")
 
   implementation(libs.reorderable)
 
