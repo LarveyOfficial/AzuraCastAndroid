@@ -27,7 +27,7 @@ fun SongAndArtist(
 ) {
   Column(modifier = modifier.padding(horizontal = if (small) 4.dp else 16.dp)) {
     Text(
-      text = songName,
+      text = if (songName == "null") " " else songName,
       modifier = Modifier
         .fillMaxWidth()
         .basicMarquee(iterations = Int.MAX_VALUE)
@@ -50,7 +50,7 @@ fun SongAndArtist(
 
     //Artist Name
     Text(
-      text = artistName,
+      text = if (artistName == "null") " " else artistName,
       modifier = Modifier
         .fillMaxWidth()
         .basicMarquee(iterations = Int.MAX_VALUE)
