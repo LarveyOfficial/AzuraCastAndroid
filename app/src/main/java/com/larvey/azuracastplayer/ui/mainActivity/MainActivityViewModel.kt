@@ -240,7 +240,7 @@ class MainActivityViewModel @Inject constructor(
     }
   }
 
-  fun getStationList(updateMetadata: Boolean? = true) {
+  private fun getStationList(updateMetadata: Boolean? = true) {
     CoroutineScope(Dispatchers.IO).launch {
       savedStationsDB.savedStations.value = savedStationsDB.getAllEntries()
       notifySessionStationsUpdated()

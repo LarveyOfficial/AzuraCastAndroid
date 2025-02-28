@@ -67,7 +67,7 @@ fun MyRadios(
 
     var list by remember { mutableStateOf(myRadiosViewModel.savedStationsDB.savedStations.value) }
 
-    LaunchedEffect(myRadiosViewModel.savedStationsDB.savedStations.value?.size) {
+    LaunchedEffect(myRadiosViewModel.savedStationsDB.savedStations.value) {
       Log.d(
         "DEBUG",
         "Updating List"

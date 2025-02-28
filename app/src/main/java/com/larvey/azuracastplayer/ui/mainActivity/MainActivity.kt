@@ -241,7 +241,7 @@ class MainActivity : ComponentActivity() {
             } else {
               MaterialTheme.colorScheme.onBackground
             })
-        
+
         SupportingPaneScaffold(
           modifier = Modifier.background(MaterialTheme.colorScheme.background),
           directive = navigator.scaffoldDirective,
