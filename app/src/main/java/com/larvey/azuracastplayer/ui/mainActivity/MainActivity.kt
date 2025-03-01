@@ -233,9 +233,9 @@ class MainActivity : ComponentActivity() {
           LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
 
-        if (discoveryViewingStation.value) {
-          LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
-        }
+        //        if (discoveryViewingStation.value) {
+        //          LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
+        //        }
 
         val topBarContainerColor = (
             if (currentDestination == AppDestinations.STATIONS) {

@@ -73,7 +73,7 @@ import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.larvey.azuracastplayer.classes.data.DiscoveryStation
+import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URL
@@ -112,7 +112,7 @@ fun Discovery(
     defaultPanePreferredWidth = systemDirective.defaultPanePreferredWidth,
     excludedBounds = systemDirective.excludedBounds
   )
-  val navigator = rememberSupportingPaneScaffoldNavigator<DiscoveryStation>(scaffoldDirective = customDirective)
+  val navigator = rememberSupportingPaneScaffoldNavigator<String>(scaffoldDirective = customDirective)
 
   BackHandler(navigator.canNavigateBack()) {
     scope.launch {
@@ -149,6 +149,9 @@ fun Discovery(
         }
         timedBoolean.value = true
       } else {
+        if (navigator.canNavigateBack() && !discoveryViewingStation.value) {
+          navigator.navigateBack()
+        }
         timedBoolean.value = false
       }
     } else {
@@ -210,7 +213,7 @@ fun Discovery(
                     scope.launch {
                       navigator.navigateTo(
                         SupportingPaneScaffoldRole.Supporting,
-                        contentKey = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)
+                        contentKey = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.publicPlayerUrl
                       )
                       discoveryViewingStation.value = true
                     }
@@ -270,7 +273,7 @@ fun Discovery(
                         scope.launch {
                           navigator.navigateTo(
                             SupportingPaneScaffoldRole.Supporting,
-                            contentKey = station
+                            contentKey = station.publicPlayerUrl
                           )
                           discoveryViewingStation.value = true
                         }
@@ -316,7 +319,16 @@ fun Discovery(
           exit = if (isWide) ExitTransition.None else fadeOut()
         ) {
           AnimatedPane(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
-            navigator.currentDestination?.contentKey?.let { station ->
+            navigator.currentDestination?.contentKey?.let { stationPublicUrl ->
+
+              val allCategories = remember { mutableListOf<DiscoveryCategory>() }
+
+              discoveryViewModel.discoveryJSON.value?.featuredStations?.let { allCategories.add(it) }
+              discoveryViewModel.discoveryJSON.value?.discoveryStations?.let { allCategories.addAll(it) }
+
+              val station = allCategories.flatMap { it.stations }
+                .find { it.publicPlayerUrl == stationPublicUrl }
+
               AnimatedContent(station) { animatedStation ->
                 Box(
                   Modifier
@@ -336,7 +348,7 @@ fun Discovery(
                             .padding(bottom = 16.dp)
                         ) {
                           GlideImage(
-                            model = animatedStation.imageMediaUrl,
+                            model = animatedStation?.imageMediaUrl,
                             contentDescription = "Station Artwork",
                             modifier = Modifier
                               .fillMaxWidth(),
@@ -344,13 +356,13 @@ fun Discovery(
                           )
                         }
                         Text(
-                          animatedStation.friendlyName,
+                          animatedStation?.friendlyName ?: " ",
                           style = MaterialTheme.typography.titleLarge,
                           modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        if (animatedStation.description != "") {
+                        if (animatedStation?.description != "") {
                           Text(
-                            animatedStation.description,
+                            animatedStation?.description ?: " ",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(bottom = 8.dp)
                           )
@@ -363,10 +375,10 @@ fun Discovery(
                           Button(
                             onClick = {
                               discoveryViewModel.setPlaybackSource(
-                                url = URL(animatedStation.publicPlayerUrl).host
+                                url = URL(animatedStation?.publicPlayerUrl).host
                                   ?: "",
-                                mountURI = animatedStation.preferredMount,
-                                shortCode = animatedStation.shortCode
+                                mountURI = animatedStation?.preferredMount ?: "",
+                                shortCode = animatedStation?.shortCode ?: ""
                               )
                             }
                           ) {
@@ -380,9 +392,11 @@ fun Discovery(
                           }
                           Button(
                             onClick = {
-                              discoveryViewModel.addStation(animatedStation)
+                              if (animatedStation != null) {
+                                discoveryViewModel.addStation(animatedStation)
+                              }
                             },
-                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation.shortCode }
+                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation?.shortCode }
                               ?: true
                           ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
