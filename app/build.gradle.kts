@@ -76,7 +76,7 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
-  implementation("androidx.compose.material3:material3:1.4.0-alpha08")
+  implementation("androidx.compose.material3:material3:1.4.0-alpha09")
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
