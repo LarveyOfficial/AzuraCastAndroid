@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import android.util.Log
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -32,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -128,240 +130,252 @@ fun StationGridEntry(
     ).value
   }
 
-  Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center,
-    modifier = Modifier
-      .padding(top = 8.dp)
-      .fillMaxWidth()
-      .conditional(editingList.value) {
-        rotate(shakeItemRotation)
-      }
-  ) {
-    Box {
-      GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString().replace(
-          "http://",
-          "https://"
-        ),
-        contentDescription = "${stationData?.station?.name}",
-        failure = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        loading = placeholder(
-          ColorPainter(Color.DarkGray)
-        ),
-        modifier = with(scope) {
-          Modifier
-            .size(174.dp)
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .conditional(editingList.value) {
-              longPressDraggableHandle(
-                onDragStarted = {
-                  Log.d(
-                    "DEBUG",
-                    "Dragging"
-                  )
-                  ViewCompat.performHapticFeedback(
-                    view,
-                    HapticFeedbackConstantsCompat.GESTURE_START
-                  )
-                },
-                onDragStopped = {
-                  Log.d(
-                    "DEBUG",
-                    "Stopped dragging"
-                  )
-                  ViewCompat.performHapticFeedback(
-                    view,
-                    HapticFeedbackConstantsCompat.GESTURE_END
-                  )
-                }
-              )
-            }
-            .conditional(!editingList.value) {
-              pointerInteropFilter {
-                offset = Offset(
-                  it.x,
-                  it.y
-                )
-                false
-              }
-                .combinedClickable(
-                  onClick = {
-                    setPlaybackSource(
-                      station.url,
-                      station.defaultMount,
-                      station.shortcode
-                    )
+  var isDragging by remember { mutableStateOf(false) }
 
+  val elevation by animateDpAsState(if (isDragging) 16.dp else 0.dp)
+  Surface(
+    tonalElevation = elevation,
+    shadowElevation = elevation,
+    shape = RoundedCornerShape(8.dp)
+  ) {
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+      modifier = Modifier
+        .padding(top = 8.dp)
+        .fillMaxWidth()
+        .conditional(editingList.value) {
+          rotate(shakeItemRotation)
+        }
+    ) {
+      Box {
+        GlideImage(
+          model = stationData?.nowPlaying?.song?.art.toString().replace(
+            "http://",
+            "https://"
+          ),
+          contentDescription = "${stationData?.station?.name}",
+          failure = placeholder(
+            ColorPainter(Color.DarkGray)
+          ),
+          loading = placeholder(
+            ColorPainter(Color.DarkGray)
+          ),
+          modifier = with(scope) {
+            Modifier
+              .size(174.dp)
+              .aspectRatio(1f)
+              .clip(RoundedCornerShape(8.dp))
+              .conditional(editingList.value) {
+                longPressDraggableHandle(
+                  onDragStarted = {
+                    Log.d(
+                      "DEBUG",
+                      "Dragging"
+                    )
+                    isDragging = true
+                    ViewCompat.performHapticFeedback(
+                      view,
+                      HapticFeedbackConstantsCompat.GESTURE_START
+                    )
                   },
-                  onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    showDropdown = true
+                  onDragStopped = {
+                    Log.d(
+                      "DEBUG",
+                      "Stopped dragging"
+                    )
+                    isDragging = false
+                    ViewCompat.performHapticFeedback(
+                      view,
+                      HapticFeedbackConstantsCompat.GESTURE_END
+                    )
                   }
                 )
-            }
-            .hazeSource(
-              state = hazeState,
-              zIndex = 2f
-            )
-        },
-        contentScale = ContentScale.FillBounds
-      )
-      if (stationData?.listeners?.current != null && !editingList.value) {
-        Box(
-          modifier = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(
-              end = 4.dp,
-              bottom = 4.dp
-            )
-            .widthIn(
-              min = 48.dp,
-              max = 72.dp
-            )
-            .height(26.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .hazeEffect(
-              state = hazeState,
-              style = HazeMaterials.ultraThin()
-            )
-            .border(
-              width = 1.dp,
-              color = MaterialTheme.colorScheme.outline,
-              shape = RoundedCornerShape(8.dp)
-            ),
-          contentAlignment = Alignment.Center
-        ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+              }
+              .conditional(!editingList.value) {
+                pointerInteropFilter {
+                  offset = Offset(
+                    it.x,
+                    it.y
+                  )
+                  false
+                }
+                  .combinedClickable(
+                    onClick = {
+                      setPlaybackSource(
+                        station.url,
+                        station.defaultMount,
+                        station.shortcode
+                      )
+
+                    },
+                    onLongClick = {
+                      haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                      showDropdown = true
+                    }
+                  )
+              }
+              .hazeSource(
+                state = hazeState,
+                zIndex = 2f
+              )
+          },
+          contentScale = ContentScale.FillBounds
+        )
+        //      }
+        if (stationData?.listeners?.current != null && !editingList.value) {
+          Box(
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .padding(
+                end = 4.dp,
+                bottom = 4.dp
+              )
+              .widthIn(
+                min = 48.dp,
+                max = 72.dp
+              )
+              .height(26.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .hazeEffect(
+                state = hazeState,
+                style = HazeMaterials.ultraThin()
+              )
+              .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(8.dp)
+              ),
+            contentAlignment = Alignment.Center
           ) {
-            Spacer(Modifier.size(4.dp))
-            Icon(
-              imageVector = Icons.Rounded.Headphones,
-              contentDescription = "Listeners",
-              modifier = Modifier
-                .size(16.dp)
-            )
-            Spacer(Modifier.size(4.dp))
-            Text(
-              text = "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
-              maxLines = 1,
-              modifier = Modifier.padding(horizontal = 2.dp)
-            )
-            Spacer(Modifier.size(4.dp))
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Center
+            ) {
+              Spacer(Modifier.size(4.dp))
+              Icon(
+                imageVector = Icons.Rounded.Headphones,
+                contentDescription = "Listeners",
+                modifier = Modifier
+                  .size(16.dp)
+              )
+              Spacer(Modifier.size(4.dp))
+              Text(
+                text = "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = 2.dp)
+              )
+              Spacer(Modifier.size(4.dp))
+            }
+
           }
-
         }
+
       }
 
-    }
-
-    Spacer(modifier = Modifier.height(2.dp))
-    Text(
-      text = station.name,
-      style = MaterialTheme.typography.titleMedium,
-      maxLines = 1,
-      modifier = Modifier
-        .widthIn(max = 164.dp)
-        .basicMarquee(iterations = Int.MAX_VALUE),
-      fontWeight = FontWeight.Bold
-    )
-    Row(
-      modifier = Modifier.widthIn(max = 164.dp),
-      verticalAlignment = Alignment.CenterVertically
-    ) {
+      Spacer(modifier = Modifier.height(2.dp))
       Text(
-        text = "Playing: ",
+        text = station.name,
+        style = MaterialTheme.typography.titleMedium,
         maxLines = 1,
-        style = MaterialTheme.typography.bodySmallEmphasized
-      )
-      Text(
-        text = "${stationData?.nowPlaying?.song?.title}",
-        maxLines = 1,
-        style = MaterialTheme.typography.bodySmallEmphasized,
         modifier = Modifier
-          .basicMarquee(iterations = Int.MAX_VALUE)
+          .widthIn(max = 164.dp)
+          .basicMarquee(iterations = Int.MAX_VALUE),
+        fontWeight = FontWeight.Bold
       )
-    }
-    Spacer(Modifier.height(16.dp))
-    if (!editingList.value) {
-      Box {
-        DropdownMenu(
-          expanded = showDropdown,
-          onDismissRequest = { showDropdown = false },
-          offset = DpOffset(
-            (-100 + offset.x / 3.5).dp,
-            (-200 + (offset.y / 3.5)).dp
-          ),
-          tonalElevation = 8.dp,
-          shadowElevation = 8.dp,
-          containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ) {
-          DropdownMenuItem(
-            text = { Text("Delete") },
-            onClick = {
-              showDelete = true
-              showDropdown = false
-            },
-            leadingIcon = {
-              Icon(
-                imageVector = Icons.Rounded.Delete,
-                contentDescription = "Delete Radio"
-              )
-            }
-          )
-          DropdownMenuItem(
-            text = { Text("Edit") },
-            onClick = {
-              showEdit = true
-              showDropdown = false
-            },
-            leadingIcon = {
-              Icon(
-                imageVector = Icons.Rounded.Edit,
-                contentDescription = "Edit Radio"
-              )
-            }
-          )
-          DropdownMenuItem(
-            text = { Text("Change Order") },
-            onClick = {
-              editingList.value = true
-              showDropdown = false
-            },
-            leadingIcon = {
-              Icon(
-                imageVector = Icons.Rounded.FormatListNumbered,
-                contentDescription = "Change Order"
-              )
-            }
-          )
+      Row(
+        modifier = Modifier.widthIn(max = 164.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "Playing: ",
+          maxLines = 1,
+          style = MaterialTheme.typography.bodySmallEmphasized
+        )
+        Text(
+          text = "${stationData?.nowPlaying?.song?.title}",
+          maxLines = 1,
+          style = MaterialTheme.typography.bodySmallEmphasized,
+          modifier = Modifier
+            .basicMarquee(iterations = Int.MAX_VALUE)
+        )
+      }
+      Spacer(Modifier.height(16.dp))
+      if (!editingList.value) {
+        Box {
+          DropdownMenu(
+            expanded = showDropdown,
+            onDismissRequest = { showDropdown = false },
+            offset = DpOffset(
+              (-100 + offset.x / 3.5).dp,
+              (-200 + (offset.y / 3.5)).dp
+            ),
+            tonalElevation = 8.dp,
+            shadowElevation = 8.dp,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+          ) {
+            DropdownMenuItem(
+              text = { Text("Delete") },
+              onClick = {
+                showDelete = true
+                showDropdown = false
+              },
+              leadingIcon = {
+                Icon(
+                  imageVector = Icons.Rounded.Delete,
+                  contentDescription = "Delete Radio"
+                )
+              }
+            )
+            DropdownMenuItem(
+              text = { Text("Edit") },
+              onClick = {
+                showEdit = true
+                showDropdown = false
+              },
+              leadingIcon = {
+                Icon(
+                  imageVector = Icons.Rounded.Edit,
+                  contentDescription = "Edit Radio"
+                )
+              }
+            )
+            DropdownMenuItem(
+              text = { Text("Change Order") },
+              onClick = {
+                editingList.value = true
+                showDropdown = false
+              },
+              leadingIcon = {
+                Icon(
+                  imageVector = Icons.Rounded.FormatListNumbered,
+                  contentDescription = "Change Order"
+                )
+              }
+            )
+          }
         }
       }
     }
-  }
-  when {
-    showDelete -> {
-      ConfirmStationDelete(
-        hideDialog = { showDelete = false },
-        deleteStation = {
-          deleteRadio(station)
-        },
-        stationName = station.name
-      )
-    }
+    when {
+      showDelete -> {
+        ConfirmStationDelete(
+          hideDialog = { showDelete = false },
+          deleteStation = {
+            deleteRadio(station)
+          },
+          stationName = station.name
+        )
+      }
 
-    showEdit -> {
-      EditStation(
-        hideDialog = { showEdit = false },
-        station = station,
-        stationData = stationData,
-        editStation = editRadio
-      )
+      showEdit -> {
+        EditStation(
+          hideDialog = { showEdit = false },
+          station = station,
+          stationData = stationData,
+          editStation = editRadio
+        )
+      }
     }
   }
 

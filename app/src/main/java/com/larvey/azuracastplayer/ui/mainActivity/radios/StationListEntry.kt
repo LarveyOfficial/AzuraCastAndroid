@@ -2,6 +2,7 @@ package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -30,14 +31,13 @@ import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.Headphones
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -105,10 +105,15 @@ fun StationListEntry(
     )
   )
 
-  Card(
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.surfaceContainer
-    ),
+  var isDragging by remember { mutableStateOf(false) }
+
+  val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
+
+  Surface(
+    color = MaterialTheme.colorScheme.surfaceContainer,
+    tonalElevation = elevation,
+    shadowElevation = elevation,
+    shape = RoundedCornerShape(12.dp),
     modifier = with(scope) {
       Modifier
         .conditional(editingList.value) {
@@ -118,6 +123,7 @@ fun StationListEntry(
                 "DEBUG",
                 "Dragging"
               )
+              isDragging = true
               ViewCompat.performHapticFeedback(
                 view,
                 HapticFeedbackConstantsCompat.GESTURE_START
@@ -128,6 +134,7 @@ fun StationListEntry(
                 "DEBUG",
                 "Stopped dragging"
               )
+              isDragging = false
               ViewCompat.performHapticFeedback(
                 view,
                 HapticFeedbackConstantsCompat.GESTURE_END
@@ -159,8 +166,10 @@ fun StationListEntry(
               }
             )
         }
+
     },
-  ) { // Card
+
+    ) { // Card
     Row(
       modifier = Modifier
         .padding(8.dp)
