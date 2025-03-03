@@ -296,7 +296,10 @@ fun StationGridEntry(
           offset = DpOffset(
             (-100 + offset.x / 3.5).dp,
             (-200 + (offset.y / 3.5)).dp
-          )
+          ),
+          tonalElevation = 8.dp,
+          shadowElevation = 8.dp,
+          containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
           DropdownMenuItem(
             text = { Text("Delete") },

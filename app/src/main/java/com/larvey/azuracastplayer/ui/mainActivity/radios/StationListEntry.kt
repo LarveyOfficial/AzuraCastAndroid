@@ -263,7 +263,10 @@ fun StationListEntry(
         offset = DpOffset(
           (0.3 * offset.x).dp,
           (0.369 * offset.y).dp
-        )
+        ),
+        tonalElevation = 8.dp,
+        shadowElevation = 8.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
       ) {
         DropdownMenuItem(
           text = { Text("Delete") },
