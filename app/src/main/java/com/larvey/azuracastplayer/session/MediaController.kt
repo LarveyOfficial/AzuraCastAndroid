@@ -3,7 +3,13 @@ package com.larvey.azuracastplayer.session
 import android.content.ComponentName
 import android.content.Context
 import androidx.annotation.OptIn
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -35,7 +41,7 @@ fun rememberManagedMediaController(
     val observer = LifecycleEventObserver { _, event ->
       when (event) {
         Lifecycle.Event.ON_START -> controllerManager.initialize()
-//        Lifecycle.Event.ON_STOP -> controllerManager.release()
+        //        Lifecycle.Event.ON_STOP -> controllerManager.release()
         else -> {}
       }
     }

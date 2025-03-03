@@ -840,6 +840,14 @@ class MusicPlayerService : MediaLibraryService() {
         )
       )
     }
+
+
+    override fun onDisconnected(
+      session: MediaSession,
+      controller: MediaSession.ControllerInfo
+    ) {
+      session.player.stop()
+    }
   }
 
 
@@ -864,12 +872,11 @@ class MusicPlayerService : MediaLibraryService() {
       "DEBUG-MEDIA",
       "Good-Bye! \uD83D\uDC4B\uD83C\uDFFB"
     )
-    super.onDestroy()
     nowPlaying.nowPlayingShortCode.value = ""
     nowPlaying.nowPlayingURL.value = ""
     nowPlaying.nowPlayingMount.value = ""
     unregisterReceiver(receiver)
-    android.os.Process.killProcess(android.os.Process.myPid())
+    super.onDestroy()
   }
 
   private fun getSingleTopActivity(): PendingIntent? {

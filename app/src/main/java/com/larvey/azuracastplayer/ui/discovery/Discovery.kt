@@ -319,8 +319,9 @@ fun Discovery(
           exit = if (isWide) ExitTransition.None else fadeOut()
         ) {
           AnimatedPane(modifier = Modifier.padding(top = innerPadding.calculateTopPadding())) {
-            navigator.currentDestination?.contentKey?.let { stationPublicUrl ->
-
+            AnimatedContent(
+              navigator.currentDestination?.contentKey
+            ) { stationPublicUrl ->
               val allCategories = remember { mutableListOf<DiscoveryCategory>() }
 
               discoveryViewModel.discoveryJSON.value?.featuredStations?.let { allCategories.add(it) }
