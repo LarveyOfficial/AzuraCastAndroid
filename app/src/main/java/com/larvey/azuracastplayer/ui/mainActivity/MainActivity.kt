@@ -480,7 +480,9 @@ class MainActivity : ComponentActivity() {
                             editingList = editingList,
                             confirmEdit = confirmEdit,
                             editAllStations = { stations ->
-                              mainActivityViewModel?.editAllStations(stations)
+                              scope.launch {
+                                mainActivityViewModel?.editAllStations(stations)
+                              }
                             },
                             lazyListState = lazyListState,
                             lazyGridState = lazyGridState

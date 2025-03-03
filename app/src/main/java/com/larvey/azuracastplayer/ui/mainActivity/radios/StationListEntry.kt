@@ -1,6 +1,12 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -11,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -153,13 +160,13 @@ fun StationListEntry(
             )
         }
     },
-  ) {
+  ) { // Card
     Row(
       modifier = Modifier
         .padding(8.dp)
         .fillMaxWidth(),
       verticalAlignment = Alignment.CenterVertically
-    ) {
+    ) { // Row
       GlideImage(
         model = stationData?.nowPlaying?.song?.art.toString().replace(
           "http://",
@@ -180,12 +187,14 @@ fun StationListEntry(
       )
       Spacer(modifier = Modifier.width(8.dp))
       Column(
-        modifier = Modifier.offset(y = (-5).dp),
+        modifier = Modifier
+
+          .weight(1f),
         verticalArrangement = Arrangement.Center
-      ) {
+      ) { // Column
         Row(
-          verticalAlignment = Alignment.CenterVertically
-        ) {
+          verticalAlignment = Alignment.CenterVertically,
+        ) { // Row
           Text(
             text = station.name,
             style = MaterialTheme.typography.titleLarge,
@@ -196,7 +205,16 @@ fun StationListEntry(
               .padding(end = 2.dp)
               .basicMarquee(iterations = Int.MAX_VALUE)
           )
-          if (stationData?.listeners?.current != null && !editingList.value) {
+          AnimatedVisibility(
+            visible = stationData?.listeners?.current != null && !editingList.value,
+            enter = slideInVertically(
+              initialOffsetY = { fullHeight -> -fullHeight * 2 },
+              animationSpec = tween(delayMillis = 500)
+            ),
+            exit = slideOutVertically(
+              targetOffsetY = { fullHeight -> -fullHeight * 2 }
+            )
+          ) {
             ElevatedAssistChip(
               onClick = {
                 setPlaybackSource(
@@ -210,7 +228,7 @@ fun StationListEntry(
                   Spacer(Modifier.size(4.dp))
                   Icon(
                     imageVector = Icons.Rounded.Headphones,
-                    contentDescription = "Delete Radio",
+                    contentDescription = "Current Listeners",
                     modifier = Modifier.size(16.dp)
                   )
                 }
@@ -218,12 +236,18 @@ fun StationListEntry(
               },
               label = {
                 Text(
-                  "${if (stationData.listeners.current > 999) "999+" else stationData.listeners.current}",
+                  "${if (stationData!!.listeners.current > 999) "999+" else stationData.listeners.current}",
                   maxLines = 1
                 )
               },
               modifier = Modifier
                 .widthIn(max = 80.dp)
+                .height(28.dp)
+                .offset(y = (-4).dp)
+                .conditional(editingList.value) {
+                  offset(x = (48).dp)
+                }
+                .padding(end = 2.dp)
             )
           }
         }
@@ -241,9 +265,18 @@ fun StationListEntry(
             )
           }
         }
-
       }
-      if (editingList.value) {
+      AnimatedVisibility(
+        visible = editingList.value,
+        enter = slideInHorizontally(
+          initialOffsetX = { fullWidth -> fullWidth * 2 },
+          animationSpec = tween(delayMillis = 250)
+        ),
+        exit = slideOutHorizontally(
+          targetOffsetX = { fullWidth -> fullWidth * 2 },
+          animationSpec = tween(delayMillis = 250)
+        )
+      ) {
         IconButton(
           onClick = {}
         ) {
