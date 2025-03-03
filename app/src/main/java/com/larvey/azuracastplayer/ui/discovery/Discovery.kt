@@ -73,6 +73,7 @@ import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -228,7 +229,9 @@ fun Discovery(
                       .requiredHeightIn(min = 1.dp)
                       .fillMaxWidth(),
                     contentScale = ContentScale.Crop
-                  )
+                  ) {
+                    it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                  }
                 }
               }
             }
@@ -289,7 +292,9 @@ fun Discovery(
                           .aspectRatio(1f)
                           .fillMaxSize(),
                         contentScale = ContentScale.FillBounds
-                      )
+                      ) {
+                        it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                      }
                     }
                     Text(
                       station.friendlyName,
@@ -354,7 +359,9 @@ fun Discovery(
                             modifier = Modifier
                               .fillMaxWidth(),
                             contentScale = ContentScale.FillWidth
-                          )
+                          ) {
+                            it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                          }
                         }
                         Text(
                           animatedStation?.friendlyName ?: " ",
