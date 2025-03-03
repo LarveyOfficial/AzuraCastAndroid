@@ -877,6 +877,7 @@ class MusicPlayerService : MediaLibraryService() {
     nowPlaying.nowPlayingMount.value = ""
     unregisterReceiver(receiver)
     super.onDestroy()
+    android.os.Process.killProcess(android.os.Process.myPid())
   }
 
   private fun getSingleTopActivity(): PendingIntent? {
