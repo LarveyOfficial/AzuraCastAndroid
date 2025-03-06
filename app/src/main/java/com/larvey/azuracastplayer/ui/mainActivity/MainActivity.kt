@@ -24,7 +24,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Radio
@@ -110,11 +108,11 @@ enum class AppDestinations(
     Icons.Rounded.Public,
     "Discover"
   ),
-  FAVORITES(
-    "Songs",
-    Icons.Rounded.Favorite,
-    "My Songs"
-  )
+  //  FAVORITES(
+  //    "Songs",
+  //    Icons.Rounded.Favorite,
+  //    "My Songs"
+  //  )
 }
 
 @AndroidEntryPoint
@@ -497,12 +495,12 @@ class MainActivity : ComponentActivity() {
                           )
                         }
 
-                        AppDestinations.FAVORITES -> {
-                          Box(
-                            modifier = Modifier
-                              .fillMaxSize()
-                          )
-                        }
+                        //                        AppDestinations.FAVORITES -> {
+                        //                          Box(
+                        //                            modifier = Modifier
+                        //                              .fillMaxSize()
+                        //                          )
+                        //                        }
                       }
                     }
                   }

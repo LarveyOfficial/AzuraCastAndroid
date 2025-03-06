@@ -18,8 +18,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
+import com.larvey.azuracastplayer.utils.conditional
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -175,12 +177,16 @@ fun MyRadios(
               .padding(horizontal = 16.dp),
             state = lazyListState
           ) {
-            items(
+            itemsIndexed(
               list!!,
-              key = { it.shortcode }) { item ->
+              key = { _, item -> item.shortcode }
+            ) { index, item ->
               ReorderableItem(
                 reorderableLazyListState,
-                key = item.shortcode
+                key = item.shortcode,
+                modifier = Modifier.conditional(index == 0) {
+                  padding(top = 4.dp)
+                }
               ) {
                 StationListEntry(
                   scope = this,
@@ -200,6 +206,7 @@ fun MyRadios(
             }
           }
         } else {
+          val spanLines = remember { mutableIntStateOf(1) }
           LazyVerticalGrid(
             modifier = Modifier
               .fillMaxSize()
@@ -207,12 +214,19 @@ fun MyRadios(
             columns = GridCells.Adaptive(minSize = 180.dp),
             state = lazyGridState
           ) {
-            items(
+            itemsIndexed(
               list!!,
-              key = { it.shortcode }) { item ->
+              key = { _, item -> item.shortcode },
+              span = { _, _ ->
+                spanLines.intValue = maxLineSpan
+                GridItemSpan(1)
+              }) { index, item ->
               ReorderableItem(
                 reorderableLazyGridState,
-                key = item.shortcode
+                key = item.shortcode,
+                modifier = Modifier.conditional(index < spanLines.intValue) {
+                  padding(top = 4.dp)
+                },
               ) {
                 StationGridEntry(
                   scope = this,
