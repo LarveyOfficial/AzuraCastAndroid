@@ -44,6 +44,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -68,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -82,7 +84,8 @@ import kotlin.math.absoluteValue
 
 @OptIn(
   ExperimentalGlideComposeApi::class,
-  ExperimentalMaterial3AdaptiveApi::class
+  ExperimentalMaterial3AdaptiveApi::class,
+  ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
 fun Discovery(
@@ -184,7 +187,7 @@ fun Discovery(
                   .fillMaxWidth()
                   .padding(horizontal = 16.dp)
                   .wrapContentHeight()
-                  .heightIn(max = if (isWide) 300.dp else 200.dp)
+                  .heightIn(max = if (isWide) 350.dp else 250.dp)
                   .graphicsLayer {
                     val pageOffset = (
                         (pagerState.currentPage - station) + pagerState.currentPageOffsetFraction
@@ -221,16 +224,51 @@ fun Discovery(
                   }
 
                 ) {
-                  GlideImage(
-                    model = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl,
-                    contentDescription = "Station Artwork",
-                    modifier = Modifier
-                      .requiredWidthIn(min = 1.dp)
-                      .requiredHeightIn(min = 1.dp)
-                      .fillMaxWidth(),
-                    contentScale = ContentScale.Crop
-                  ) {
-                    it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                  Column {
+                    GlideImage(
+                      model = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl,
+                      contentDescription = "Station Artwork",
+                      modifier = Modifier
+                        .requiredWidthIn(min = 1.dp)
+                        .requiredHeightIn(
+                          min = 1.dp
+                        )
+                        .fillMaxWidth()
+                        .weight(1f),
+                      contentScale = ContentScale.Crop
+                    ) {
+                      it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    }
+                    Column(
+                      modifier = Modifier.padding(
+                        start = 8.dp,
+                        end = 8.dp,
+                        bottom = 2.dp,
+                        top = 2.dp
+                      ),
+                      verticalArrangement = Arrangement.Top
+                    ) {
+                      Text(
+                        "${discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.friendlyName}",
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        modifier = Modifier.basicMarquee(Int.MAX_VALUE)
+                      )
+                      val description = if (discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.description == "") {
+                        "No Description Provided"
+                      } else {
+                        discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.description
+                      }
+                      Text(
+                        "$description",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontStyle = FontStyle.Italic,
+                        maxLines = 1,
+                        modifier = Modifier
+                          .basicMarquee(Int.MAX_VALUE)
+                          .padding(bottom = 2.dp)
+                      )
+                    }
                   }
                 }
               }
