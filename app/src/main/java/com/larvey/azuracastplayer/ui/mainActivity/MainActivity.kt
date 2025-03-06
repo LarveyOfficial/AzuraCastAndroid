@@ -318,7 +318,9 @@ class MainActivity : ComponentActivity() {
                       },
                       actions = {
                         AnimatedVisibility(
-                          radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS
+                          radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS,
+                          exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                          enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 })
                         ) {
                           IconButton(
                             onClick = {
