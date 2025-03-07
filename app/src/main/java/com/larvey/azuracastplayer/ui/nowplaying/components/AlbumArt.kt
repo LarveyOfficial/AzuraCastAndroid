@@ -16,6 +16,7 @@ import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.utils.fixHttps
 
 @OptIn(
   ExperimentalSharedTransitionApi::class,
@@ -55,10 +56,7 @@ fun OtherAlbumArt(
 ) {
   AnimatedContent(artURL) { url ->
     GlideImage(
-      model = url.replace(
-        "http://",
-        "https://"
-      ),
+      model = url.fixHttps(),
       modifier = Modifier
         .padding(horizontal = 12.dp)
         .aspectRatio(1f)

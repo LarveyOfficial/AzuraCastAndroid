@@ -69,6 +69,7 @@ import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
 import com.larvey.azuracastplayer.utils.conditional
+import com.larvey.azuracastplayer.utils.fixHttps
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
@@ -150,10 +151,7 @@ fun StationGridEntry(
     ) {
       Box {
         GlideImage(
-          model = stationData?.nowPlaying?.song?.art.toString().replace(
-            "http://",
-            "https://"
-          ),
+          model = stationData?.nowPlaying?.song?.art.toString().fixHttps(),
           contentDescription = "${stationData?.station?.name}",
           failure = placeholder(
             ColorPainter(Color.DarkGray)

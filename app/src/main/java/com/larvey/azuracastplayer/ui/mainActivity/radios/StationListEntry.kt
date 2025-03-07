@@ -71,6 +71,7 @@ import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
 import com.larvey.azuracastplayer.utils.conditional
+import com.larvey.azuracastplayer.utils.fixHttps
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
@@ -177,10 +178,7 @@ fun StationListEntry(
       verticalAlignment = Alignment.CenterVertically
     ) { // Row
       GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString().replace(
-          "http://",
-          "https://"
-        ),
+        model = stationData?.nowPlaying?.song?.art.toString().fixHttps(),
         contentDescription = "${stationData?.station?.name}",
         modifier = Modifier
           .size(64.dp)
