@@ -1,11 +1,15 @@
 package com.larvey.azuracastplayer.ui.discovery
 
-import android.net.Uri
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaLibraryService
+import androidx.palette.graphics.Palette
+import com.bumptech.glide.Glide
 import com.larvey.azuracastplayer.classes.data.DiscoveryJSON
 import com.larvey.azuracastplayer.classes.data.DiscoveryStation
 import com.larvey.azuracastplayer.classes.data.SavedStation
@@ -15,6 +19,7 @@ import com.larvey.azuracastplayer.classes.models.SharedMediaController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.net.URL
 import javax.inject.Inject
@@ -24,13 +29,33 @@ class DiscoveryViewModel @Inject constructor(
   val discoveryJSON: MutableState<DiscoveryJSON?>,
   val nowPlayingData: NowPlayingData,
   val savedStationsDB: SavedStationsDB,
-  val sharedMediaController: SharedMediaController
+  val sharedMediaController: SharedMediaController,
+  private val application: Application
 ) : ViewModel() {
+
+  var featuredPalettes = mutableStateMapOf<String, Palette.Swatch?>()
+
+  init {
+    viewModelScope.launch {
+      for (station in discoveryJSON.value?.featuredStations?.stations!!) {
+        this.async(Dispatchers.IO) {
+          Glide.with(application).asBitmap().load(
+            station.imageMediaUrl
+          ).submit().get().let { bitmap ->
+            featuredPalettes[station.imageMediaUrl] = Palette.from(
+              bitmap
+            ).generate().vibrantSwatch
+          }
+        }
+      }
+
+    }
+  }
 
   fun setPlaybackSource(
     url: String, mountURI: String, shortCode: String
   ) {
-    val parsedURI = Uri.parse(mountURI)
+    val parsedURI = mountURI.toUri()
     nowPlayingData.setPlaybackSource(
       mountURI = parsedURI,
       url = url,

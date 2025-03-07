@@ -23,9 +23,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidthIn
@@ -67,6 +70,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
@@ -183,76 +188,129 @@ fun Discovery(
                 modifier = Modifier.padding(bottom = 16.dp),
                 contentPadding = PaddingValues(horizontal = 32.dp)
               ) { station ->
-                Card(modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(horizontal = 16.dp)
-                  .wrapContentHeight()
-                  .heightIn(max = if (isWide) 350.dp else 250.dp)
-                  .graphicsLayer {
-                    val pageOffset = (
-                        (pagerState.currentPage - station) + pagerState.currentPageOffsetFraction
-                        ).absoluteValue
-                    alpha = lerp(
-                      start = 0.5f,
-                      stop = 1f,
-                      fraction = 1f - pageOffset.coerceIn(
-                        0f,
-                        1f
+                val hasColor = discoveryViewModel.featuredPalettes[discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl]?.rgb != null
+                val backgroundColor = discoveryViewModel.featuredPalettes[discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl]?.rgb
+                val textColor = discoveryViewModel.featuredPalettes[discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl]?.bodyTextColor
+                Card(
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .wrapContentHeight()
+                    .heightIn(max = if (isWide) 350.dp else 250.dp)
+
+                    .graphicsLayer {
+                      val pageOffset = (
+                          (pagerState.currentPage - station) + pagerState.currentPageOffsetFraction
+                          ).absoluteValue
+                      alpha = lerp(
+                        start = 0.5f,
+                        stop = 1f,
+                        fraction = 1f - pageOffset.coerceIn(
+                          0f,
+                          1f
+                        )
                       )
-                    )
-                    scaleY = lerp(
-                      start = 0.9f,
-                      stop = 1f,
-                      fraction = 1f - pageOffset.coerceIn(
-                        0f,
-                        1f
+                      scaleY = lerp(
+                        start = 0.9f,
+                        stop = 1f,
+                        fraction = 1f - pageOffset.coerceIn(
+                          0f,
+                          1f
+                        )
                       )
-                    )
-                  }
-                  .clip(RoundedCornerShape(12.dp))
-                  .clickable(
-                    interactionSource = pageInteractionSource,
-                    indication = LocalIndication.current
-                  ) {
-                    scope.launch {
-                      navigator.navigateTo(
-                        SupportingPaneScaffoldRole.Supporting,
-                        contentKey = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.publicPlayerUrl
-                      )
-                      discoveryViewingStation.value = true
                     }
-                  }
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(
+                      interactionSource = pageInteractionSource,
+                      indication = LocalIndication.current
+                    ) {
+                      scope.launch {
+                        navigator.navigateTo(
+                          SupportingPaneScaffoldRole.Supporting,
+                          contentKey = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.publicPlayerUrl
+                        )
+                        discoveryViewingStation.value = true
+                      }
+                    }
+                    .background(
+                      if (hasColor) {
+                        Color(backgroundColor!!)
+                      } else {
+                        MaterialTheme.colorScheme.surfaceContainer
+                      }
+                    )
 
                 ) {
-                  Column {
-                    GlideImage(
-                      model = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl,
-                      contentDescription = "Station Artwork",
-                      modifier = Modifier
-                        .requiredWidthIn(min = 1.dp)
-                        .requiredHeightIn(
-                          min = 1.dp
-                        )
-                        .fillMaxWidth()
-                        .weight(1f),
-                      contentScale = ContentScale.Crop
-                    ) {
-                      it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+
+                  Box {
+                    Column {
+                      GlideImage(
+                        model = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl,
+                        contentDescription = "Station Artwork",
+                        modifier = Modifier
+                          .requiredWidthIn(min = 1.dp)
+                          .requiredHeightIn(
+                            min = 1.dp,
+                            max = if (isWide) 325.dp else 225.dp
+                          )
+                          .fillMaxWidth(),
+                        contentScale = ContentScale.Crop
+                      ) {
+                        it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                      }
+                      Box(
+                        modifier = Modifier
+                          .height(25.dp)
+                          .fillMaxWidth()
+                          .background(
+                            if (hasColor) {
+                              Color(backgroundColor!!)
+                            } else {
+                              MaterialTheme.colorScheme.surfaceContainer
+                            }
+                          )
+                      )
                     }
+                    Box(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.5f)
+                        .align(Alignment.BottomEnd)
+                        .offset(y = -(24).dp)
+                        .background(
+                          brush = Brush.verticalGradient(
+                            startY = 25f,
+                            colors = listOf(
+                              Color.Transparent,
+                              if (hasColor) {
+                                Color(backgroundColor!!)
+                              } else {
+                                MaterialTheme.colorScheme.surfaceContainer
+                              }
+                            )
+                          )
+                        )
+
+                    )
                     Column(
-                      modifier = Modifier.padding(
-                        start = 8.dp,
-                        end = 8.dp,
-                        bottom = 2.dp,
-                        top = 2.dp
-                      ),
+                      modifier = Modifier
+                        .padding(
+                          horizontal = 8.dp,
+                          vertical = 2.dp
+                        )
+                        .align(Alignment.BottomStart),
                       verticalArrangement = Arrangement.Top
                     ) {
                       Text(
                         "${discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.friendlyName}",
                         maxLines = 1,
                         style = MaterialTheme.typography.titleMediumEmphasized,
-                        modifier = Modifier.basicMarquee(Int.MAX_VALUE)
+                        modifier = Modifier.basicMarquee(Int.MAX_VALUE),
+                        color = if (hasColor) {
+                          Color(textColor!!)
+                        } else {
+                          MaterialTheme.colorScheme.onSurface
+                        }
                       )
                       val description = if (discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.description == "") {
                         "No Description Provided"
@@ -264,12 +322,18 @@ fun Discovery(
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         maxLines = 1,
+                        color = if (hasColor) {
+                          Color(textColor!!)
+                        } else {
+                          MaterialTheme.colorScheme.onSurface
+                        },
                         modifier = Modifier
                           .basicMarquee(Int.MAX_VALUE)
                           .padding(bottom = 2.dp)
                       )
                     }
                   }
+
                 }
               }
             }
@@ -442,8 +506,7 @@ fun Discovery(
                                 discoveryViewModel.addStation(animatedStation)
                               }
                             },
-                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation?.shortCode }
-                              ?: true
+                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation?.shortCode } != false
                           ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                               Icon(

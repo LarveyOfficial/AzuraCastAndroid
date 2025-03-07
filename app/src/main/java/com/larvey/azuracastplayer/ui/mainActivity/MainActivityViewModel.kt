@@ -1,13 +1,13 @@
 package com.larvey.azuracastplayer.ui.mainActivity
 
 import android.app.Application
-import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaController
@@ -89,10 +89,6 @@ class MainActivityViewModel @Inject constructor(
                 updateColorList(defaultColor)
               }
           } catch (e: Exception) {
-            Log.d(
-              "DEBUG",
-              "Down unda': $e"
-            )
           }
         }
       } else {
@@ -191,7 +187,7 @@ class MainActivityViewModel @Inject constructor(
   fun setPlaybackSource(
     url: String, uri: String, shortCode: String, mediaController: MediaController?
   ) {
-    val parsedURI = Uri.parse(uri)
+    val parsedURI = uri.toUri()
     nowPlayingData.setPlaybackSource(
       mountURI = parsedURI,
       url = url,
