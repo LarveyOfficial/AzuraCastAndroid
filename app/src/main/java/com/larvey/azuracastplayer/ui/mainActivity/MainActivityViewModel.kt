@@ -7,10 +7,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
@@ -181,18 +179,6 @@ class MainActivityViewModel @Inject constructor(
     colorList.value = weightedRandomColors(
       paletteColors,
       9
-    )
-  }
-
-  fun setPlaybackSource(
-    url: String, uri: String, shortCode: String, mediaController: MediaController?
-  ) {
-    val parsedURI = uri.toUri()
-    nowPlayingData.setPlaybackSource(
-      mountURI = parsedURI,
-      url = url,
-      shortCode = shortCode,
-      mediaPlayer = mediaController
     )
   }
 

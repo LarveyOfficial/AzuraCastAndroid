@@ -82,6 +82,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
+import com.larvey.azuracastplayer.utils.fixHttps
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URL
@@ -487,7 +488,8 @@ fun Discovery(
                               discoveryViewModel.setPlaybackSource(
                                 url = URL(animatedStation?.publicPlayerUrl).host
                                   ?: "",
-                                mountURI = animatedStation?.preferredMount ?: "",
+                                mountURI = animatedStation?.preferredMount?.fixHttps()
+                                  ?: "",
                                 shortCode = animatedStation?.shortCode ?: ""
                               )
                             }

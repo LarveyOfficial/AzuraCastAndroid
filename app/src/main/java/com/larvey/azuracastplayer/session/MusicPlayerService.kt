@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
@@ -44,6 +45,7 @@ import com.larvey.azuracastplayer.classes.models.SharedMediaController
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
+import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.resourceToUri
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URL
@@ -348,7 +350,7 @@ class MusicPlayerService : MediaLibraryService() {
               .setTitle(item.name)
               .setArtist(item.url)
               .setMediaType(MEDIA_TYPE_RADIO_STATION)
-              .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+              .setArtworkUri("https://${item.url}/api/station/${item.shortcode}/art/-1".toUri())
               .setDurationMs(1)
               .setIsBrowsable(false)
               .setIsPlayable(true)
@@ -398,7 +400,7 @@ class MusicPlayerService : MediaLibraryService() {
               .setTitle(it.friendlyName)
               .setArtist(it.description)
               .setMediaType(MEDIA_TYPE_RADIO_STATION)
-              .setArtworkUri(Uri.parse(it.imageMediaUrl))
+              .setArtworkUri(it.imageMediaUrl.toUri())
               .setDurationMs(1)
               .setIsBrowsable(false)
               .setIsPlayable(true)
@@ -425,7 +427,7 @@ class MusicPlayerService : MediaLibraryService() {
           .toMutableList()
         nowPlaying.nowPlayingShortCode.value = shortCode
         nowPlaying.nowPlayingURL.value = url
-        nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
+        nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId.fixHttps()
         return Futures.immediateFuture(updatedMediaItems)
       }
 
@@ -522,7 +524,7 @@ class MusicPlayerService : MediaLibraryService() {
 
       nowPlaying.nowPlayingShortCode.value = shortCode
       nowPlaying.nowPlayingURL.value = url
-      nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId
+      nowPlaying.nowPlayingMount.value = updatedMediaItems[0].mediaId.fixHttps()
 
       return Futures.immediateFuture(updatedMediaItems)
     }
@@ -627,7 +629,7 @@ class MusicPlayerService : MediaLibraryService() {
                 .setTitle(item.name)
                 .setArtist(item.url)
                 .setMediaType(MEDIA_TYPE_RADIO_STATION)
-                .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+                .setArtworkUri("https://${item.url}/api/station/${item.shortcode}/art/-1".toUri())
                 .setDurationMs(1)
                 .setIsBrowsable(false)
                 .setIsPlayable(true)
@@ -720,7 +722,7 @@ class MusicPlayerService : MediaLibraryService() {
                         .setMediaType(MEDIA_TYPE_RADIO_STATION)
                         .setIsBrowsable(false)
                         .setIsPlayable(true)
-                        .setArtworkUri(Uri.parse(stationData.imageMediaUrl))
+                        .setArtworkUri(stationData.imageMediaUrl.toUri())
                         .setDurationMs(1)
                         .build()
                     )
@@ -753,7 +755,7 @@ class MusicPlayerService : MediaLibraryService() {
                         .setMediaType(MEDIA_TYPE_RADIO_STATION)
                         .setIsBrowsable(false)
                         .setIsPlayable(true)
-                        .setArtworkUri(Uri.parse(stationData.imageMediaUrl))
+                        .setArtworkUri(stationData.imageMediaUrl.toUri())
                         .setDurationMs(1)
                         .build()
                     )

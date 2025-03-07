@@ -7,6 +7,7 @@ import androidx.media3.common.Player
 import com.larvey.azuracastplayer.api.fetchStationData
 import com.larvey.azuracastplayer.api.refreshMetadata
 import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.utils.fixHttps
 
 class NowPlayingData {
 
@@ -39,7 +40,7 @@ class NowPlayingData {
     mediaPlayer: Player?
   ) {
     mediaPlayer?.stop()
-    nowPlayingMount.value = mountURI.toString()
+    nowPlayingMount.value = mountURI.toString().fixHttps()
     nowPlayingURL.value = url
     nowPlayingShortCode.value = shortCode
 

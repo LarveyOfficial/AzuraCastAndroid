@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.utils.fixHttps
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +134,7 @@ fun EditStation(
                   },
                   onClick = {
                     textFieldState.setTextAndPlaceCursorAtEnd(mount.name)
-                    setMount = mount.url
+                    setMount = mount.url.fixHttps()
                     expandedDropdown = false
                   },
                   contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -150,7 +151,7 @@ fun EditStation(
                 },
                 onClick = {
                   textFieldState.setTextAndPlaceCursorAtEnd("HLS (experimental)")
-                  setMount = stationData.station.hlsUrl!!
+                  setMount = stationData.station.hlsUrl!!.fixHttps()
                   expandedDropdown = false
                 },
                 contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding

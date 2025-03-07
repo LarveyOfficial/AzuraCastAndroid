@@ -133,7 +133,7 @@ fun ProgressBar(
         color = Color.White
       )
       Spacer(modifier = Modifier.weight(1f))
-      if (currentMount?.bitrate != null && currentMount.format != null) {
+      if ((currentMount?.bitrate != null && currentMount.format != null) || playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
         SuggestionChip(
           onClick = {},
           label = {
@@ -146,7 +146,7 @@ fun ProgressBar(
               )
             } else {
               Text(
-                "${currentMount.format.uppercase()} ${currentMount.bitrate}kbps",
+                "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 color = Color.White

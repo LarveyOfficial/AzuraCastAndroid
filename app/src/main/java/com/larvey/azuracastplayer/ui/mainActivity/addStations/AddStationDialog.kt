@@ -37,6 +37,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.utils.fixHttps
 import java.net.URL
 
 data class AddableStation(
@@ -142,7 +143,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                supportedMounts[0].url
+                                supportedMounts[0].url.fixHttps()
                               )
                             )
                           ) {
@@ -150,7 +151,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                supportedMounts[0].url
+                                supportedMounts[0].url.fixHttps()
                               )
                             )
                           } else {
@@ -158,7 +159,7 @@ fun AddStationDialog(
                               AddableStation(
                                 item.station.name,
                                 item.station.shortcode,
-                                supportedMounts[0].url
+                                supportedMounts[0].url.fixHttps()
                               )
                             )
                           }
@@ -183,7 +184,7 @@ fun AddStationDialog(
                             AddableStation(
                               item.station.name,
                               item.station.shortcode,
-                              supportedMounts[0].url
+                              supportedMounts[0].url.fixHttps()
                             )
                           ),
                           onCheckedChange = null

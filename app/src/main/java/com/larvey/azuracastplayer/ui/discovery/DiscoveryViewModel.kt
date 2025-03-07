@@ -16,6 +16,7 @@ import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
+import com.larvey.azuracastplayer.utils.fixHttps
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +56,7 @@ class DiscoveryViewModel @Inject constructor(
   fun setPlaybackSource(
     url: String, mountURI: String, shortCode: String
   ) {
-    val parsedURI = mountURI.toUri()
+    val parsedURI = mountURI.fixHttps().toUri()
     nowPlayingData.setPlaybackSource(
       mountURI = parsedURI,
       url = url,
