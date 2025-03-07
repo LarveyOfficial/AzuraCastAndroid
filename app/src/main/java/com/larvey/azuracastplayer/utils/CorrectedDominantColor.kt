@@ -6,69 +6,55 @@ import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.palette.graphics.Palette
 
-fun correctedDominantColor(
+fun correctedVibrantColor(
   palette: MutableState<Palette?>?,
   isSystemInDarkTheme: Boolean
 ): Color? {
-  val brightDominant = floatArrayOf(
+  val brightVibrant = floatArrayOf(
     0f,
     0f,
     0f
   )
-  val darkDominant = floatArrayOf(
+  val darkVibrant = floatArrayOf(
     0f,
     0f,
     0f
   )
 
-  if (palette?.value?.dominantSwatch?.rgb == null) {
+  if (palette?.value?.vibrantSwatch?.rgb == null) {
     return null
   }
 
   colorToHSL(
-    palette.value?.dominantSwatch?.rgb!!,
-    brightDominant
+    palette.value?.vibrantSwatch?.rgb!!,
+    brightVibrant
   )
   colorToHSL(
-    palette.value?.dominantSwatch?.rgb!!,
-    darkDominant
+    palette.value?.vibrantSwatch?.rgb!!,
+    darkVibrant
   )
-  if (brightDominant[2] <= 0.7f) {
-    brightDominant[2] = 0.7f
+  if (brightVibrant[2] <= 0.5f) {
+    brightVibrant[2] = 0.5f
   }
-  if (darkDominant[2] >= 0.5f) {
-    darkDominant[2] = 0.5f
+  if (darkVibrant[2] >= 0.7f) {
+    darkVibrant[2] = 0.7f
   }
 
-  val dominantColor = if (isSystemInDarkTheme) {
-    Color(HSLToColor(brightDominant))
+  val vibrantColor = if (isSystemInDarkTheme) {
+    Color(HSLToColor(brightVibrant))
   } else {
-    Color(HSLToColor(darkDominant))
+    Color(HSLToColor(darkVibrant))
   }
 
-  return dominantColor
+  return vibrantColor
 }
 
-// Basically corrupts instead of corrects the bodyTextColor to be black and white (was done on accident but if it works it works)
-fun correctedOnDominantColor(
+fun getOnVibrantColor(
   palette: MutableState<Palette?>?
 ): Color? {
-
-  val onDominant = floatArrayOf(
-    0f,
-    0f,
-    0f
-  )
-
-  if (palette?.value?.dominantSwatch?.bodyTextColor == null) {
+  if (palette?.value?.vibrantSwatch?.bodyTextColor == null) {
     return null
   }
 
-  colorToHSL(
-    palette.value?.dominantSwatch?.bodyTextColor!!,
-    onDominant
-  )
-
-
-  return Color(HSLToColor(onDominant))
+  return Color(palette.value?.vibrantSwatch?.bodyTextColor!!)
 }

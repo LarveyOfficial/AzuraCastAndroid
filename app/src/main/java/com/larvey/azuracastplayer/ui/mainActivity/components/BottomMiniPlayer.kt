@@ -48,7 +48,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
-import com.larvey.azuracastplayer.utils.correctedDominantColor
+import com.larvey.azuracastplayer.utils.correctedVibrantColor
 import com.larvey.azuracastplayer.utils.updateTime
 
 @OptIn(
@@ -89,7 +89,7 @@ fun MiniPlayer(
     )
   }
 
-  val dominantColor = correctedDominantColor(
+  val dominantColor = correctedVibrantColor(
     palette,
     isSystemInDarkTheme()
   ) ?: MaterialTheme.colorScheme.primary

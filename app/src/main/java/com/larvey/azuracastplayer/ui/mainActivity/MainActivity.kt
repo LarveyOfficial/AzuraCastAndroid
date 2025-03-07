@@ -87,8 +87,8 @@ import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
-import com.larvey.azuracastplayer.utils.correctedDominantColor
-import com.larvey.azuracastplayer.utils.correctedOnDominantColor
+import com.larvey.azuracastplayer.utils.correctedVibrantColor
+import com.larvey.azuracastplayer.utils.getOnVibrantColor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -211,7 +211,7 @@ class MainActivity : ComponentActivity() {
 
         //region Animated Add Button Colors
         val animatedFabColor = animateColorAsState(
-          targetValue = correctedDominantColor(
+          targetValue = correctedVibrantColor(
             mainActivityViewModel?.palette,
             isSystemInDarkTheme()
           ) ?: MaterialTheme.colorScheme.primaryContainer,
@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
         )
 
         val animatedFabIconTint = animateColorAsState(
-          targetValue = correctedOnDominantColor(
+          targetValue = getOnVibrantColor(
             mainActivityViewModel?.palette
           ) ?: MaterialTheme.colorScheme.onPrimaryContainer,
           label = "Fab Icon Color"
@@ -306,10 +306,11 @@ class MainActivity : ComponentActivity() {
               ) {
                 Scaffold(
                   topBar = {
-                    TopAppBar(colors = topAppBarColors(
-                      containerColor = topBarContainerColor,
-                      titleContentColor = topBarTitleColor,
-                    ),
+                    TopAppBar(
+                      colors = topAppBarColors(
+                        containerColor = topBarContainerColor,
+                        titleContentColor = topBarTitleColor,
+                      ),
                       title = {
                         Text(
                           currentDestination.title,
@@ -543,12 +544,12 @@ class MainActivity : ComponentActivity() {
               remember { MutableInteractionSource() }
             VerticalDragHandle(
               modifier =
-              Modifier.paneExpansionDraggable(
-                state,
-                LocalMinimumInteractiveComponentSize.current,
-                interactionSource,
-                semanticsProperties = {}
-              ),
+                Modifier.paneExpansionDraggable(
+                  state,
+                  LocalMinimumInteractiveComponentSize.current,
+                  interactionSource,
+                  semanticsProperties = {}
+                ),
               interactionSource = interactionSource
             )
           }
