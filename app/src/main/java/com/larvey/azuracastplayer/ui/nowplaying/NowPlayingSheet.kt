@@ -12,6 +12,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
@@ -269,7 +270,7 @@ fun NowPlayingSheet(
                     dampingRatio = Spring.DampingRatioLowBouncy,
                     stiffness = Spring.StiffnessLow
                   )
-                )
+                ) + fadeOut()
               },
               enterTransition = {
                 slideInHorizontally(
@@ -278,7 +279,7 @@ fun NowPlayingSheet(
                     dampingRatio = Spring.DampingRatioLowBouncy,
                     stiffness = Spring.StiffnessLow
                   )
-                )
+                ) + fadeIn()
               }
             ) {
               composable("nowPlaying") {

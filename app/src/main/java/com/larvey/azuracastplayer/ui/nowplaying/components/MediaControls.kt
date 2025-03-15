@@ -32,7 +32,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TimePickerDialogDefaults
 import androidx.compose.material3.rememberTimePickerState
@@ -76,7 +76,7 @@ fun MediaControls(
   val scope = rememberCoroutineScope()
 
   var showTimePicker by remember { mutableStateOf(false) }
-  val state = rememberTimePickerState(is24Hour = true)
+  val timePickerState = rememberTimePickerState(is24Hour = true)
 
   Row(
     verticalAlignment = Alignment.CenterVertically,
@@ -171,8 +171,8 @@ fun MediaControls(
 
                 sleepTimer.value = SleepItem(
                   LocalDateTime.now()
-                    .plusHours(state.hour.toLong())
-                    .plusMinutes(state.minute.toLong())
+                    .plusHours(timePickerState.hour.toLong())
+                    .plusMinutes(timePickerState.minute.toLong())
                 )
                 sleepTimer.value.let(scheduler::schedule)
                 isSleeping.value = true
@@ -185,7 +185,7 @@ fun MediaControls(
           dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
           modeToggleButton = {},
         ) {
-          TimePicker(state = state)
+          TimeInput(timePickerState)
         }
       } else {
         BasicAlertDialog(

@@ -81,7 +81,7 @@ import com.larvey.azuracastplayer.session.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
-import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationDialog
+import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
@@ -562,8 +562,10 @@ class MainActivity : ComponentActivity() {
         )
         when {
           showAddDialog.value -> {
-            AddStationDialog(
-              hideDialog = { showAddDialog.value = false },
+            AddStationSheet(
+              hideSheet = {
+                showAddDialog.value = false
+              },
               addData = { stations ->
                 mainActivityViewModel?.addStation(
                   stations

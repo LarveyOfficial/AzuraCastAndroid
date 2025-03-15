@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.api
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -15,7 +16,11 @@ interface RetroFitPlaying {
   fun getNowPlaying(): Call<List<StationJSON>>
 }
 
-fun findHostsStations(stationData: MutableMap<String, List<StationJSON>>, url: String) {
+fun findHostsStations(
+  stationData: MutableMap<String, List<StationJSON>>,
+  url: String,
+  isSearchInvalid: MutableState<Boolean>
+) {
   val okHttpClient = OkHttpClient.Builder().build()
   val retroFit = Retrofit.Builder()
     .baseUrl("https://$url")
@@ -52,6 +57,8 @@ fun findHostsStations(stationData: MutableMap<String, List<StationJSON>>, url: S
         "DEBUG",
         "Fuck"
       )
+      isSearchInvalid.value = true
+      stationData.clear()
       return
     }
   })
