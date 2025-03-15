@@ -38,18 +38,19 @@ class DiscoveryViewModel @Inject constructor(
 
   init {
     viewModelScope.launch {
-      for (station in discoveryJSON.value?.featuredStations?.stations!!) {
-        this.async(Dispatchers.IO) {
-          Glide.with(application).asBitmap().load(
-            station.imageMediaUrl
-          ).submit().get().let { bitmap ->
-            featuredPalettes[station.imageMediaUrl] = Palette.from(
-              bitmap
-            ).generate().vibrantSwatch
+      if (discoveryJSON.value?.featuredStations?.stations != null) {
+        for (station in discoveryJSON.value?.featuredStations?.stations!!) {
+          this.async(Dispatchers.IO) {
+            Glide.with(application).asBitmap().load(
+              station.imageMediaUrl
+            ).submit().get().let { bitmap ->
+              featuredPalettes[station.imageMediaUrl] = Palette.from(
+                bitmap
+              ).generate().vibrantSwatch
+            }
           }
         }
       }
-
     }
   }
 
