@@ -73,6 +73,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
@@ -80,6 +81,7 @@ import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import com.larvey.azuracastplayer.utils.fixHttps
@@ -251,11 +253,18 @@ fun Discovery(
                         modifier = Modifier
                           .requiredWidthIn(min = 1.dp)
                           .requiredHeightIn(
-                            min = 1.dp,
+                            min = if (isWide) 325.dp else 225.dp,
                             max = if (isWide) 325.dp else 225.dp
                           )
-                          .fillMaxWidth(),
-                        contentScale = ContentScale.Crop
+                          .fillMaxWidth()
+                          .background(MaterialTheme.colorScheme.surfaceContainer),
+                        contentScale = ContentScale.Crop,
+                        failure = placeholder(
+                          ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
+                        loading = placeholder(
+                          ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
+                        ),
                       ) {
                         it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                       }

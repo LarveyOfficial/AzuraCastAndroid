@@ -256,6 +256,12 @@ class MainActivity : ComponentActivity() {
             })
 
         BackHandler(currentDestination != AppDestinations.STATIONS) {
+          if (isWide && currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+            scope.launch {
+              delay(1000)
+              discoveryViewingStation.value = false
+            }
+          }
           currentDestination = AppDestinations.STATIONS
         }
 

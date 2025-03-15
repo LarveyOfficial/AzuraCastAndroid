@@ -41,12 +41,19 @@ class DiscoveryViewModel @Inject constructor(
       if (discoveryJSON.value?.featuredStations?.stations != null) {
         for (station in discoveryJSON.value?.featuredStations?.stations!!) {
           this.async(Dispatchers.IO) {
-            Glide.with(application).asBitmap().load(
-              station.imageMediaUrl
-            ).submit().get().let { bitmap ->
-              featuredPalettes[station.imageMediaUrl] = Palette.from(
-                bitmap
-              ).generate().vibrantSwatch
+            try {
+              Glide.with(application).asBitmap().load(
+                station.imageMediaUrl
+              ).submit().get().let { bitmap ->
+                featuredPalettes[station.imageMediaUrl] = Palette.from(
+                  bitmap
+                ).generate().vibrantSwatch
+              }
+            } catch (e: Exception) {
+              Log.e(
+                "DISCOVERY-ERR",
+                "Something went wrong when fetching featured station palette"
+              )
             }
           }
         }
