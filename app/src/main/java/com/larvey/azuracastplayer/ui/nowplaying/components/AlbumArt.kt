@@ -2,8 +2,12 @@ package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.ExperimentalAnimationSpecApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +24,8 @@ import com.larvey.azuracastplayer.utils.fixHttps
 
 @OptIn(
   ExperimentalSharedTransitionApi::class,
-  ExperimentalGlideComposeApi::class
+  ExperimentalGlideComposeApi::class,
+  ExperimentalAnimationSpecApi::class
 )
 @Composable
 fun NowPlayingAlbumArt(
@@ -38,7 +43,13 @@ fun NowPlayingAlbumArt(
           .aspectRatio(1f)
           .sharedElement(
             rememberSharedContentState(key = "album art"),
-            animatedVisibilityScope = animatedVisibilityScope
+            animatedVisibilityScope = animatedVisibilityScope,
+            boundsTransform = BoundsTransform { initialBounds, targetBounds ->
+              spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow
+              )
+            }
           )
           .clip(RoundedCornerShape(16.dp)),
         contentDescription = "${playerState.mediaMetadata.albumTitle}",

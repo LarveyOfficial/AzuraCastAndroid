@@ -44,7 +44,7 @@ import com.larvey.azuracastplayer.utils.updateTime
 )
 @Composable
 fun NowPlayingBottomBar(
-  showQueue: MutableState<Boolean>,
+  toggleQueueVisibility: () -> Unit,
   sheetState: SheetState? = null,
   stop: () -> Unit,
   pause: () -> Unit,
@@ -130,7 +130,7 @@ fun NowPlayingBottomBar(
         IconButton(
           enabled = true,
           onClick = {
-            showQueue.value = !showQueue.value
+            toggleQueueVisibility()
           }
         ) {
           Icon(
