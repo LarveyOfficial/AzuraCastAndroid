@@ -1,33 +1,34 @@
 [versions]
 accompanistSystemuicontroller = "0.18.0"
-activity = "1.10.0"
+activity = "1.10.1"
 agp = "8.9.0"
 coilCompose = "3.0.4"
-converterGson = "2.9.0"
-datastorePreferences = "1.1.1"
+converterGson = "2.11.0"
+datastorePreferences = "1.1.3"
 datastorePreferencesVersion = "1.1.1"
-haze = "1.3.1"
-hazeMaterials = "1.3.1"
-hiltAndroid = "2.51.1"
-hiltCompiler = "2.51.1"
+haze = "1.5.0"
+hazeMaterials = "1.5.0"
+hiltAndroid = "2.55"
+hiltCompiler = "2.55"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.9.3"
-composeBom = "2024.04.01"
+activityCompose = "1.10.1"
+composeBom = "2025.03.00"
 lifecycleViewmodelCompose = "2.8.7"
-materialIconsExtended = "1.7.6"
+materialIconsExtended = "1.7.8"
 media3Exoplayer = "1.5.1"
-navigationCompose = "2.8.5"
+navigationCompose = "2.8.9"
 navigationComposeVersion = "2.8.6"
 palette = "1.0.0"
 reorderable = "2.4.3"
-retrofit = "2.9.0"
+retrofit = "2.11.0"
 roomRuntime = "2.6.1"
 material3AdaptiveNavigationSuiteAndroid = "1.3.1"
+roomVersion = "2.6.1"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
@@ -70,6 +71,8 @@ navigation-compose = { module = "androidx.navigation:navigation-compose", versio
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-material3-adaptive-navigation-suite-android = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite-android", version.ref = "material3AdaptiveNavigationSuiteAndroid" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

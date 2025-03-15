@@ -53,19 +53,18 @@ android {
 dependencies {
 
   implementation(libs.androidx.material3.adaptive.navigation.suite.android)
-  val room_version = "2.6.1"
 
   implementation(libs.androidx.navigation.compose)
 
   implementation(libs.navigation.compose)
 
-  implementation("androidx.room:room-runtime:$room_version")
+  implementation(libs.androidx.room.runtime)
   implementation(libs.haze)
   implementation(libs.haze.materials)
 
-  ksp("androidx.room:room-compiler:$room_version")
+  ksp(libs.room.compiler)
 
-  implementation("androidx.room:room-ktx:$room_version")
+  implementation(libs.room.ktx)
 
   implementation(
     "com.fasterxml.jackson.module",
@@ -76,17 +75,17 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
-  implementation("androidx.compose.material3:material3:1.4.0-alpha09")
+  implementation("androidx.compose.material3:material3:1.4.0-alpha10")
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
-  implementation("androidx.window:window:1.4.0-beta02")
+  implementation("androidx.window:window:1.4.0-rc01")
 
-  implementation("androidx.compose.material3.adaptive:adaptive:1.1.0-rc01")
-  implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0-rc01")
-  implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0-rc01")
+  implementation("androidx.compose.material3.adaptive:adaptive:1.1.0")
+  implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0")
+  implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0")
 
-  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha09")
+  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha10")
 
   implementation(libs.reorderable)
 
