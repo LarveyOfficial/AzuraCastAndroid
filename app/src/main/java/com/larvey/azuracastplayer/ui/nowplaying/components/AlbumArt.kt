@@ -8,6 +8,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,10 +16,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.getDrawable
 import com.bumptech.glide.integration.compose.CrossFade
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
+import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.fixHttps
 
@@ -54,6 +59,37 @@ fun NowPlayingAlbumArt(
           .clip(RoundedCornerShape(16.dp)),
         contentDescription = "${playerState.mediaMetadata.albumTitle}",
         transition = CrossFade,
+        failure =
+          if (isSystemInDarkTheme()) {
+            placeholder(
+              drawable = getDrawable(
+                LocalContext.current,
+                R.drawable.image_loading_failed_dark
+              )
+            )
+          } else {
+            placeholder(
+              drawable = getDrawable(
+                LocalContext.current,
+                R.drawable.image_loading_failed
+              )
+            )
+          },
+        loading = if (isSystemInDarkTheme()) {
+          placeholder(
+            drawable = getDrawable(
+              LocalContext.current,
+              R.drawable.loading_image_dark
+            )
+          )
+        } else {
+          placeholder(
+            drawable = getDrawable(
+              LocalContext.current,
+              R.drawable.loading_image
+            )
+          )
+        },
         contentScale = ContentScale.FillBounds
       )
     }
@@ -74,6 +110,37 @@ fun OtherAlbumArt(
         .clip(RoundedCornerShape(16.dp)),
       contentDescription = "Album Art",
       transition = CrossFade,
+      failure =
+        if (isSystemInDarkTheme()) {
+          placeholder(
+            drawable = getDrawable(
+              LocalContext.current,
+              R.drawable.image_loading_failed_dark
+            )
+          )
+        } else {
+          placeholder(
+            drawable = getDrawable(
+              LocalContext.current,
+              R.drawable.image_loading_failed
+            )
+          )
+        },
+      loading = if (isSystemInDarkTheme()) {
+        placeholder(
+          drawable = getDrawable(
+            LocalContext.current,
+            R.drawable.loading_image_dark
+          )
+        )
+      } else {
+        placeholder(
+          drawable = getDrawable(
+            LocalContext.current,
+            R.drawable.loading_image
+          )
+        )
+      },
       contentScale = ContentScale.FillBounds
     )
   }

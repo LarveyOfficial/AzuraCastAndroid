@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,14 +76,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.core.content.ContextCompat.getDrawable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import com.larvey.azuracastplayer.utils.fixHttps
 import kotlinx.coroutines.delay
@@ -403,7 +407,38 @@ fun Discovery(
                         modifier = Modifier
                           .aspectRatio(1f)
                           .fillMaxSize(),
-                        contentScale = ContentScale.FillBounds
+                        contentScale = ContentScale.FillBounds,
+                        failure =
+                          if (isSystemInDarkTheme()) {
+                            placeholder(
+                              drawable = getDrawable(
+                                LocalContext.current,
+                                R.drawable.image_loading_failed_dark
+                              )
+                            )
+                          } else {
+                            placeholder(
+                              drawable = getDrawable(
+                                LocalContext.current,
+                                R.drawable.image_loading_failed
+                              )
+                            )
+                          },
+                        loading = if (isSystemInDarkTheme()) {
+                          placeholder(
+                            drawable = getDrawable(
+                              LocalContext.current,
+                              R.drawable.loading_image_dark
+                            )
+                          )
+                        } else {
+                          placeholder(
+                            drawable = getDrawable(
+                              LocalContext.current,
+                              R.drawable.loading_image
+                            )
+                          )
+                        },
                       ) {
                         it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                       }

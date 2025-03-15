@@ -11,6 +11,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,21 +50,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.getDrawable
 import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
+import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelete
@@ -153,12 +155,37 @@ fun StationGridEntry(
         GlideImage(
           model = stationData?.nowPlaying?.song?.art.toString().fixHttps(),
           contentDescription = "${stationData?.station?.name}",
-          failure = placeholder(
-            ColorPainter(Color.DarkGray)
-          ),
-          loading = placeholder(
-            ColorPainter(Color.DarkGray)
-          ),
+          failure =
+            if (isSystemInDarkTheme()) {
+              placeholder(
+                drawable = getDrawable(
+                  LocalContext.current,
+                  R.drawable.image_loading_failed_dark
+                )
+              )
+            } else {
+              placeholder(
+                drawable = getDrawable(
+                  LocalContext.current,
+                  R.drawable.image_loading_failed
+                )
+              )
+            },
+          loading = if (isSystemInDarkTheme()) {
+            placeholder(
+              drawable = getDrawable(
+                LocalContext.current,
+                R.drawable.loading_image_dark
+              )
+            )
+          } else {
+            placeholder(
+              drawable = getDrawable(
+                LocalContext.current,
+                R.drawable.loading_image
+              )
+            )
+          },
           modifier = with(scope) {
             Modifier
               .size(174.dp)
@@ -291,7 +318,7 @@ fun StationGridEntry(
           style = MaterialTheme.typography.bodySmallEmphasized
         )
         Text(
-          text = "${stationData?.nowPlaying?.song?.title}",
+          text = stationData?.nowPlaying?.song?.title ?: "¯\\_(ツ)_/¯",
           maxLines = 1,
           style = MaterialTheme.typography.bodySmallEmphasized,
           modifier = Modifier
