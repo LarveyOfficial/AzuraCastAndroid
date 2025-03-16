@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.ui.mainActivity.addStations
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -9,26 +8,30 @@ import androidx.compose.animation.core.Spring.StiffnessLow
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,16 +56,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.getDrawable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
+import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.fixHttps
 import kotlinx.coroutines.launch
 
@@ -74,7 +89,9 @@ data class AddableStation(
 
 @OptIn(
   ExperimentalMaterial3Api::class,
-  ExperimentalComposeUiApi::class
+  ExperimentalComposeUiApi::class,
+  ExperimentalGlideComposeApi::class,
+  ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
 fun AddStationSheet(
@@ -90,6 +107,8 @@ fun AddStationSheet(
   val context = LocalContext.current
 
   var checkedStations by remember { mutableStateOf(emptyList<AddableStation>()) }
+
+  var colorScheme = MaterialTheme.colorScheme
 
   var radioURL by remember { mutableStateOf("") }
   val formatedURL = remember { mutableStateOf("") }
@@ -118,14 +137,7 @@ fun AddStationSheet(
     },
     sheetState = sheetState,
     dragHandle = {},
-    contentWindowInsets = {
-      WindowInsets(
-        0,
-        0,
-        0,
-        0
-      )
-    },
+    sheetGesturesEnabled = addStationViewModel.stationHostData.isEmpty(),
     modifier = Modifier
       .fillMaxSize(),
     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -134,12 +146,6 @@ fun AddStationSheet(
     val focusManager = LocalFocusManager.current
     Scaffold(
       containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-      contentWindowInsets = WindowInsets(
-        0,
-        0,
-        0,
-        0
-      ),
       topBar = {
         TopAppBar(
           navigationIcon = {
@@ -195,7 +201,7 @@ fun AddStationSheet(
             }
           ) {
             Icon(
-              imageVector = Icons.Rounded.Add,
+              imageVector = Icons.Rounded.Check,
               contentDescription = "Add"
             )
           }
@@ -209,7 +215,11 @@ fun AddStationSheet(
       ) {
         Text(
           "Type the URL of the Radio Station you'd like to add below to get started!",
-          style = MaterialTheme.typography.bodySmall
+          style = MaterialTheme.typography.bodySmall,
+          modifier = Modifier.padding(
+            top = 16.dp,
+            bottom = 4.dp
+          )
         )
         OutlinedTextField(
           modifier = Modifier
@@ -251,7 +261,7 @@ fun AddStationSheet(
         ) {
           Text("Search")
         }
-        AnimatedVisibility(!addStationViewModel.stationHostData.isEmpty()) {
+        AnimatedVisibility(addStationViewModel.stationHostData.isNotEmpty()) {
           Column {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             AnimatedContent(
@@ -267,7 +277,7 @@ fun AddStationSheet(
                     ).contains(mount.format)
                   }.isEmpty()
                 }
-                LazyColumn {
+                LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 180.dp)) {
                   itemsIndexed(mounts) { _, item ->
                     val supportedMounts = item.station.mounts.filterNot { mount ->
                       listOf(
@@ -276,78 +286,165 @@ fun AddStationSheet(
                         "ogg"
                       ).contains(mount.format)
                     }
-
-                    Log.d(
-                      "DEBUG-ADD",
-                      supportedMounts.toString()
-                    )
-
-                    ElevatedCard(
-                      colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                      ),
-                      modifier = Modifier
-                        .fillMaxWidth()
-                        .size(46.dp)
-                        .padding(
-                          2.dp
-                        ),
-                      onClick = {
-                        if (mounts.isNotEmpty()) {
-                          checkedStations = if (checkedStations.contains(
-                              AddableStation(
-                                item.station.name,
-                                item.station.shortcode,
-                                supportedMounts[0].url.fixHttps()
+                    Column(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                      Box {
+                        GlideImage(
+                          model = item.nowPlaying.song.art.toString().fixHttps(),
+                          modifier = Modifier
+                            .size(174.dp)
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(
+                              true,
+                              onClick = {
+                                if (mounts.isNotEmpty()) {
+                                  checkedStations = if (checkedStations.contains(
+                                      AddableStation(
+                                        item.station.name,
+                                        item.station.shortcode,
+                                        supportedMounts[0].url.fixHttps()
+                                      )
+                                    )
+                                  ) {
+                                    checkedStations.minus(
+                                      AddableStation(
+                                        item.station.name,
+                                        item.station.shortcode,
+                                        supportedMounts[0].url.fixHttps()
+                                      )
+                                    )
+                                  } else {
+                                    checkedStations.plus(
+                                      AddableStation(
+                                        item.station.name,
+                                        item.station.shortcode,
+                                        supportedMounts[0].url.fixHttps()
+                                      )
+                                    )
+                                  }
+                                } else {
+                                  Toast.makeText(
+                                    context,
+                                    "No compatible mounts available for this station",
+                                    Toast.LENGTH_LONG
+                                  ).show()
+                                  addStationViewModel.stationHostData.clear()
+                                  addStationViewModel.isSearchInvalid.value = true
+                                }
+                              })
+                            .conditional(
+                              checkedStations.contains(
+                                AddableStation(
+                                  item.station.name,
+                                  item.station.shortcode,
+                                  supportedMounts[0].url.fixHttps()
+                                )
                               )
-                            )
-                          ) {
-                            checkedStations.minus(
-                              AddableStation(
-                                item.station.name,
-                                item.station.shortcode,
-                                supportedMounts[0].url.fixHttps()
+                            ) {
+                              drawWithContent {
+                                drawContent()
+                                drawRect(
+                                  Brush.radialGradient(
+                                    listOf(
+                                      Color.Transparent,
+                                      colorScheme.primary
+                                    ),
+                                    radius = 500f
+                                  )
+                                )
+                                drawCircle(
+                                  colorScheme.primaryContainer,
+                                  radius = 72f
+                                )
+                              }
+                            },
+                          contentDescription = item.station.name,
+                          failure =
+                            if (isSystemInDarkTheme()) {
+                              placeholder(
+                                drawable = getDrawable(
+                                  LocalContext.current,
+                                  R.drawable.image_loading_failed_dark
+                                )
+                              )
+                            } else {
+                              placeholder(
+                                drawable = getDrawable(
+                                  LocalContext.current,
+                                  R.drawable.image_loading_failed
+                                )
+                              )
+                            },
+                          loading = if (isSystemInDarkTheme()) {
+                            placeholder(
+                              drawable = getDrawable(
+                                LocalContext.current,
+                                R.drawable.loading_image_dark
                               )
                             )
                           } else {
-                            checkedStations.plus(
-                              AddableStation(
-                                item.station.name,
-                                item.station.shortcode,
-                                supportedMounts[0].url.fixHttps()
+                            placeholder(
+                              drawable = getDrawable(
+                                LocalContext.current,
+                                R.drawable.loading_image
                               )
                             )
-                          }
-                        } else {
-                          Toast.makeText(
-                            context,
-                            "No compatible mounts available for this station",
-                            Toast.LENGTH_LONG
-                          ).show()
-                        }
-                      }
-                    ) {
-                      Row(
-                        modifier = Modifier
-                          .padding(start = 8.dp)
-                          .fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                      ) {
-                        Checkbox(
-                          checked = checkedStations.contains(
+                          },
+                          contentScale = ContentScale.FillBounds
+                        )
+                        if (checkedStations.contains(
                             AddableStation(
                               item.station.name,
                               item.station.shortcode,
                               supportedMounts[0].url.fixHttps()
                             )
-                          ),
-                          onCheckedChange = null
-                        )
+                          )
+                        ) {
+                          Icon(
+                            modifier = Modifier
+                              .align(Alignment.Center)
+                              .size(64.dp),
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = "Add",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                          )
+                        }
+                      }
+                      Column(
+                        Modifier
+                          .fillMaxWidth()
+                          .padding(bottom = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                      ) {
                         Text(
-                          item.station.name,
-                          modifier = Modifier.padding(8.dp)
+                          text = item.station.name,
+                          style = MaterialTheme.typography.titleMedium,
+                          maxLines = 1,
+                          modifier = Modifier
+                            .widthIn(max = 164.dp)
+                            .basicMarquee(iterations = Int.MAX_VALUE),
+                          fontWeight = FontWeight.Bold
                         )
+                        Row(
+                          modifier = Modifier.widthIn(max = 164.dp),
+                          verticalAlignment = Alignment.CenterVertically
+                        ) {
+                          Text(
+                            text = "Playing: ",
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmallEmphasized
+                          )
+                          Text(
+                            text = item.nowPlaying.song.title,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmallEmphasized,
+                            modifier = Modifier
+                              .basicMarquee(iterations = Int.MAX_VALUE)
+                          )
+                        }
                       }
 
                     }
