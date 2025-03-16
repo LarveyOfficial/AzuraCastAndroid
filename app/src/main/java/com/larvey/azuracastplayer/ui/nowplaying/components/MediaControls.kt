@@ -32,7 +32,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TimePickerDialogDefaults
 import androidx.compose.material3.rememberTimePickerState
@@ -185,7 +185,7 @@ fun MediaControls(
           dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
           modeToggleButton = {},
         ) {
-          TimeInput(timePickerState)
+          TimePicker(timePickerState)
         }
       } else {
         BasicAlertDialog(
