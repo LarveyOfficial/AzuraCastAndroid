@@ -842,14 +842,6 @@ class MusicPlayerService : MediaLibraryService() {
         )
       )
     }
-
-
-    override fun onDisconnected(
-      session: MediaSession,
-      controller: MediaSession.ControllerInfo
-    ) {
-      session.player.stop()
-    }
   }
 
 
