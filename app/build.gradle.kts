@@ -75,6 +75,9 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
+
+  implementation("jp.wasabeef:glide-transformations:4.3.0")
+
   implementation("androidx.compose.material3:material3:1.4.0-alpha10")
 
   implementation("com.github.bumptech.glide:compose:1.0.0-beta01")

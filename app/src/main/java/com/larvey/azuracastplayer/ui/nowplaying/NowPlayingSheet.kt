@@ -18,7 +18,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +59,7 @@ import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
+import com.larvey.azuracastplayer.utils.BlurImageBackground
 import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
 import kotlinx.coroutines.CancellationException
@@ -212,11 +212,10 @@ fun NowPlayingSheet(
               )
             )
           }
-          .conditional(Build.VERSION.SDK_INT <= 28) {
-            background(Color.DarkGray)
-          }
-
       ) {
+        if (Build.VERSION.SDK_INT <= 28) {
+          BlurImageBackground(playerState = nowPlayingViewModel.sharedMediaController.playerState.value)
+        }
         Scaffold(
           modifier = Modifier
             .fillMaxSize()
