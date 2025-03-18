@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.nowplaying
 
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -15,6 +16,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -107,7 +109,7 @@ fun NowPlayingPane(
     Box(
       modifier = Modifier
         .fillMaxSize()
-        .conditional(colorList != null) {
+        .conditional(colorList != null && Build.VERSION.SDK_INT >= 29) {
           meshGradient(
             resolutionX = 16,
             resolutionY = 16,
@@ -129,6 +131,9 @@ fun NowPlayingPane(
                 // @formatter:on
             )
           )
+        }
+        .conditional(Build.VERSION.SDK_INT <= 28) {
+          background(Color.DarkGray)
         }
 
     ) {

@@ -1,5 +1,6 @@
 package com.larvey.azuracastplayer.ui.nowplaying
 
+import android.os.Build
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
@@ -17,6 +18,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,7 +189,7 @@ fun NowPlayingSheet(
         modifier = Modifier
           .fillMaxSize()
           .clip(RoundedCornerShape(if (getRoundedCornerRadius() > 0.dp) 24.dp else 0.dp))
-          .conditional(colorList != null) {
+          .conditional(colorList != null && Build.VERSION.SDK_INT >= 29) {
             meshGradient(
               resolutionX = 16,
               resolutionY = 16,
@@ -209,6 +211,9 @@ fun NowPlayingSheet(
               // @formatter:on
               )
             )
+          }
+          .conditional(Build.VERSION.SDK_INT <= 28) {
+            background(Color.DarkGray)
           }
 
       ) {

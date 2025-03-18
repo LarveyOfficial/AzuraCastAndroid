@@ -12,10 +12,10 @@ android {
 
   defaultConfig {
     applicationId = "com.larvey.azuracastplayer"
-    minSdk = 29
+    minSdk = 26
     targetSdk = 35
-    versionCode = 60
-    versionName = "beta-1.7"
+    versionCode = 61
+    versionName = "beta-1.8"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
