@@ -52,7 +52,7 @@ fun NowPlayingAlbumArt(
             boundsTransform = BoundsTransform { initialBounds, targetBounds ->
               spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessLow
+                stiffness = 600f
               )
             }
           )

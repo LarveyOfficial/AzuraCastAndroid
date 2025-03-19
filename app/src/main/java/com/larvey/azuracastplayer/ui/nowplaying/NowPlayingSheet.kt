@@ -154,10 +154,7 @@ fun NowPlayingSheet(
         enabled = true
       ) {
         if (navController.currentDestination?.route == "queue") {
-          navController.popBackStack(
-            route = "nowPlaying",
-            inclusive = false
-          )
+          navController.navigateUp()
         } else {
           scope.launch {
             sheetState.hide()
@@ -227,10 +224,7 @@ fun NowPlayingSheet(
                 if (navController.currentDestination?.route == "nowPlaying") {
                   navController.navigate("queue")
                 } else {
-                  navController.popBackStack(
-                    route = "nowPlaying",
-                    inclusive = false
-                  )
+                  navController.navigateUp()
                 }
               },
               sheetState = sheetState,
@@ -259,7 +253,7 @@ fun NowPlayingSheet(
                 scaleOut(
                   animationSpec = spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessLow
+                    stiffness = 600f
                   ),
                   transformOrigin = TransformOrigin(
                     0.25f,
@@ -272,7 +266,7 @@ fun NowPlayingSheet(
                   targetOffsetX = { width -> -width },
                   animationSpec = spring(
                     dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
+                    stiffness = 600f
                   )
                 ) + fadeOut()
               },
@@ -281,7 +275,7 @@ fun NowPlayingSheet(
                   initialOffsetX = { width -> -width },
                   animationSpec = spring(
                     dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
+                    stiffness = 600f
                   )
                 ) + fadeIn()
               }
@@ -319,10 +313,7 @@ fun NowPlayingSheet(
                     if (navController.currentDestination?.route == "nowPlaying") {
                       navController.navigate("queue")
                     } else {
-                      navController.popBackStack(
-                        route = "nowPlaying",
-                        inclusive = false
-                      )
+                      navController.navigateUp()
                     }
                   },
                   sharedTransitionScope = this@SharedTransitionLayout,
