@@ -90,12 +90,16 @@ fun ProgressBar(
 
       val position = currentPosition.toDuration(DurationUnit.MILLISECONDS)
 
-      val durationString = duration.toComponents { minutes, seconds, _ ->
-        if (position.inWholeHours > 0 || duration.inWholeHours > 0) {
+      val durationString = duration.toComponents { hours, minutes, seconds, _ ->
+        if (position.inWholeHours > 0 || hours > 0) {
+          var maxHours = hours
+          if (hours > 99) {
+            maxHours = 99
+          }
           String.format(
             Locale.getDefault(),
             "%02d:%02d:%02d",
-            duration.inWholeHours,
+            maxHours,
             minutes,
             seconds
           )
@@ -108,12 +112,16 @@ fun ProgressBar(
           )
         }
       }
-      val positionString = position.toComponents { minutes, seconds, _ ->
-        if (position.inWholeHours > 0 || duration.inWholeHours > 0) {
+      val positionString = position.toComponents { hours, minutes, seconds, _ ->
+        if (hours > 0 || duration.inWholeHours > 0) {
+          var maxHours = hours
+          if (hours > 99) {
+            maxHours = 99
+          }
           String.format(
             Locale.getDefault(),
             "%02d:%02d:%02d",
-            position.inWholeHours,
+            maxHours,
             minutes,
             seconds
           )
