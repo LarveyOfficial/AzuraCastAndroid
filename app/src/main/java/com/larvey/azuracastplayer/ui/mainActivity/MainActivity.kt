@@ -540,10 +540,12 @@ class MainActivity : ComponentActivity() {
             navigator.scaffoldValue,
             anchors = listOf(
               PaneExpansionAnchor.Proportion(0f),
+              PaneExpansionAnchor.Proportion(0.40f),
               PaneExpansionAnchor.Proportion(0.50f),
               PaneExpansionAnchor.Proportion(0.60f),
-              PaneExpansionAnchor.Proportion(0.65f)
-            )
+              PaneExpansionAnchor.Proportion(0.70f)
+            ),
+            initialAnchoredIndex = 4 // This doesn't work :3
           ),
           paneExpansionDragHandle = { state ->
             val interactionSource =
