@@ -19,6 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.AzuraCastPlayer"
+        android:usesCleartextTraffic="true"
         tools:targetApi="35">
 
         <meta-data

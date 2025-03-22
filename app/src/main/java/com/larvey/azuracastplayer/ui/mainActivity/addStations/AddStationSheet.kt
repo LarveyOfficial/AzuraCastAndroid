@@ -65,16 +65,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getDrawable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.utils.conditional
@@ -90,7 +91,6 @@ data class AddableStation(
 @OptIn(
   ExperimentalMaterial3Api::class,
   ExperimentalComposeUiApi::class,
-  ExperimentalGlideComposeApi::class,
   ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
@@ -291,8 +291,30 @@ fun AddStationSheet(
                       horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                       Box {
-                        GlideImage(
-                          model = item.nowPlaying.song.art.toString().fixHttps(),
+                        AsyncImage(
+                          model = ImageRequest.Builder(LocalContext.current)
+                            .data(item.nowPlaying.song.art.toString().fixHttps())
+                            .crossfade(true)
+                            .placeholderMemoryCacheKey(
+                              item.nowPlaying.song.art.toString()
+                                .fixHttps()
+                            )
+                            .placeholder(
+                              if (isSystemInDarkTheme()) {
+                                R.drawable.loading_image_dark
+                              } else {
+                                R.drawable.loading_image
+                              }
+                            )
+                            .diskCacheKey(item.nowPlaying.song.art.toString().fixHttps())
+                            .build(),
+                          contentDescription = item.station.name,
+                          contentScale = ContentScale.FillBounds,
+                          error = if (isSystemInDarkTheme()) {
+                            painterResource(R.drawable.image_loading_failed_dark)
+                          } else {
+                            painterResource(R.drawable.image_loading_failed)
+                          },
                           modifier = Modifier
                             .size(174.dp)
                             .aspectRatio(1f)
@@ -357,43 +379,10 @@ fun AddStationSheet(
                                 )
                                 drawCircle(
                                   colorScheme.primaryContainer,
-                                  radius = 72f
+                                  radius = 95f
                                 )
                               }
-                            },
-                          contentDescription = item.station.name,
-                          failure =
-                            if (isSystemInDarkTheme()) {
-                              placeholder(
-                                drawable = getDrawable(
-                                  LocalContext.current,
-                                  R.drawable.image_loading_failed_dark
-                                )
-                              )
-                            } else {
-                              placeholder(
-                                drawable = getDrawable(
-                                  LocalContext.current,
-                                  R.drawable.image_loading_failed
-                                )
-                              )
-                            },
-                          loading = if (isSystemInDarkTheme()) {
-                            placeholder(
-                              drawable = getDrawable(
-                                LocalContext.current,
-                                R.drawable.loading_image_dark
-                              )
-                            )
-                          } else {
-                            placeholder(
-                              drawable = getDrawable(
-                                LocalContext.current,
-                                R.drawable.loading_image
-                              )
-                            )
-                          },
-                          contentScale = ContentScale.FillBounds
+                            }
                         )
                         if (checkedStations.contains(
                             AddableStation(
@@ -409,7 +398,7 @@ fun AddStationSheet(
                               .size(64.dp),
                             imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = "Add",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = MaterialTheme.colorScheme.onPrimary
                           )
                         }
                       }

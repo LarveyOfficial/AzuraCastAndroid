@@ -56,15 +56,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getDrawable
 import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
@@ -81,7 +82,6 @@ import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
   ExperimentalMaterial3ExpressiveApi::class,
-  ExperimentalGlideComposeApi::class,
   ExperimentalComposeUiApi::class,
   ExperimentalFoundationApi::class,
   ExperimentalHazeMaterialsApi::class
@@ -152,39 +152,28 @@ fun StationGridEntry(
         }
     ) {
       Box {
-        GlideImage(
-          model = stationData?.nowPlaying?.song?.art.toString().fixHttps(),
-          contentDescription = "${stationData?.station?.name}",
-          failure =
-            if (isSystemInDarkTheme()) {
-              placeholder(
-                drawable = getDrawable(
-                  LocalContext.current,
-                  R.drawable.image_loading_failed_dark
-                )
-              )
-            } else {
-              placeholder(
-                drawable = getDrawable(
-                  LocalContext.current,
-                  R.drawable.image_loading_failed
-                )
-              )
-            },
-          loading = if (isSystemInDarkTheme()) {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
+        AsyncImage(
+          model = ImageRequest.Builder(LocalContext.current)
+            .data(stationData?.nowPlaying?.song?.art.toString().fixHttps())
+            .crossfade(true)
+            .placeholderMemoryCacheKey(
+              stationData?.nowPlaying?.song?.art.toString()
+                .fixHttps()
+            )
+            .placeholder(
+              if (isSystemInDarkTheme()) {
                 R.drawable.loading_image_dark
-              )
-            )
-          } else {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
+              } else {
                 R.drawable.loading_image
-              )
+              }
             )
+            .diskCacheKey(stationData?.nowPlaying?.song?.art.toString().fixHttps())
+            .build(),
+          contentDescription = "${stationData?.station?.name}",
+          error = if (isSystemInDarkTheme()) {
+            painterResource(R.drawable.image_loading_failed_dark)
+          } else {
+            painterResource(R.drawable.image_loading_failed)
           },
           modifier = with(scope) {
             Modifier
@@ -247,7 +236,6 @@ fun StationGridEntry(
           },
           contentScale = ContentScale.FillBounds
         )
-        //      }
         if (stationData?.listeners?.current != null && !editingList.value) {
           Box(
             modifier = Modifier

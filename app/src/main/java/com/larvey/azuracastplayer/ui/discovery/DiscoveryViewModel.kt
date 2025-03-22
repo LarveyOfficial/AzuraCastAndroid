@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.discovery
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateMapOf
@@ -9,7 +10,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaLibraryService
 import androidx.palette.graphics.Palette
-import com.bumptech.glide.Glide
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.larvey.azuracastplayer.classes.data.DiscoveryJSON
 import com.larvey.azuracastplayer.classes.data.DiscoveryStation
 import com.larvey.azuracastplayer.classes.data.SavedStation
@@ -42,12 +47,19 @@ class DiscoveryViewModel @Inject constructor(
         for (station in discoveryJSON.value?.featuredStations?.stations!!) {
           this.async(Dispatchers.IO) {
             try {
-              Glide.with(application).asBitmap().load(
-                station.imageMediaUrl
-              ).submit().get().let { bitmap ->
-                featuredPalettes[station.imageMediaUrl] = Palette.from(
-                  bitmap
-                ).generate().vibrantSwatch
+              val loader = ImageLoader(application as Context)
+              val request = ImageRequest.Builder(application as Context)
+                .allowHardware(false)
+                .placeholderMemoryCacheKey(station.imageMediaUrl.fixHttps())
+                .diskCacheKey(station.imageMediaUrl.fixHttps())
+                .data(
+                  station.imageMediaUrl.fixHttps()
+                ).build()
+              loader.execute(request).let {
+                if (it is SuccessResult) {
+                  featuredPalettes[station.imageMediaUrl] = Palette.from(it.image.toBitmap())
+                    .generate().vibrantSwatch
+                }
               }
             } catch (e: Exception) {
               Log.e(

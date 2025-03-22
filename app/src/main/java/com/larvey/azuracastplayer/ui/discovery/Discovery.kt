@@ -77,15 +77,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.core.content.ContextCompat.getDrawable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
-import com.bumptech.glide.load.engine.DiskCacheStrategy
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import com.larvey.azuracastplayer.utils.fixHttps
@@ -95,7 +95,6 @@ import java.net.URL
 import kotlin.math.absoluteValue
 
 @OptIn(
-  ExperimentalGlideComposeApi::class,
   ExperimentalMaterial3AdaptiveApi::class,
   ExperimentalMaterial3ExpressiveApi::class
 )
@@ -251,9 +250,14 @@ fun Discovery(
 
                   Box {
                     Column {
-                      GlideImage(
-                        model = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl,
-                        contentDescription = "Station Artwork",
+                      AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                          .data(discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl?.fixHttps())
+                          .crossfade(true)
+                          .placeholderMemoryCacheKey(discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl?.fixHttps())
+                          .diskCacheKey(discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.imageMediaUrl?.fixHttps())
+                          .build(),
+                        contentDescription = discoveryViewModel.discoveryJSON.value?.featuredStations?.stations?.get(station)?.friendlyName,
                         modifier = Modifier
                           .requiredWidthIn(min = 1.dp)
                           .requiredHeightIn(
@@ -263,15 +267,13 @@ fun Discovery(
                           .fillMaxWidth()
                           .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentScale = ContentScale.Crop,
-                        failure = placeholder(
-                          ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                        loading = placeholder(
-                          ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
-                        ),
-                      ) {
-                        it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                      }
+                        error = if (isSystemInDarkTheme()) {
+                          painterResource(R.drawable.image_loading_failed_dark)
+                        } else {
+                          painterResource(R.drawable.image_loading_failed)
+                        },
+                        placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
+                      )
                       Box(
                         modifier = Modifier
                           .height(25.dp)
@@ -398,50 +400,31 @@ fun Discovery(
                         }
                       }
                     ) {
-                      GlideImage(
-                        model = station.imageMediaUrl.replaceFirst(
-                          "http://",
-                          "https://"
-                        ),
-                        contentDescription = "Station Artwork",
+                      AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                          .data(station.imageMediaUrl.fixHttps())
+                          .crossfade(true)
+                          .placeholderMemoryCacheKey(station.imageMediaUrl.fixHttps())
+                          .placeholder(
+                            if (isSystemInDarkTheme()) {
+                              R.drawable.loading_image_dark
+                            } else {
+                              R.drawable.loading_image
+                            }
+                          )
+                          .diskCacheKey(station.imageMediaUrl.fixHttps())
+                          .build(),
+                        contentDescription = station.friendlyName,
                         modifier = Modifier
                           .aspectRatio(1f)
                           .fillMaxSize(),
                         contentScale = ContentScale.FillBounds,
-                        failure =
-                          if (isSystemInDarkTheme()) {
-                            placeholder(
-                              drawable = getDrawable(
-                                LocalContext.current,
-                                R.drawable.image_loading_failed_dark
-                              )
-                            )
-                          } else {
-                            placeholder(
-                              drawable = getDrawable(
-                                LocalContext.current,
-                                R.drawable.image_loading_failed
-                              )
-                            )
-                          },
-                        loading = if (isSystemInDarkTheme()) {
-                          placeholder(
-                            drawable = getDrawable(
-                              LocalContext.current,
-                              R.drawable.loading_image_dark
-                            )
-                          )
+                        error = if (isSystemInDarkTheme()) {
+                          painterResource(R.drawable.image_loading_failed_dark)
                         } else {
-                          placeholder(
-                            drawable = getDrawable(
-                              LocalContext.current,
-                              R.drawable.loading_image
-                            )
-                          )
+                          painterResource(R.drawable.image_loading_failed)
                         },
-                      ) {
-                        it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                      }
+                      )
                     }
                     Text(
                       station.friendlyName,
@@ -500,15 +483,30 @@ fun Discovery(
                             .heightIn(max = 256.dp)
                             .padding(bottom = 16.dp)
                         ) {
-                          GlideImage(
-                            model = animatedStation?.imageMediaUrl,
-                            contentDescription = "Station Artwork",
+                          AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                              .data(animatedStation?.imageMediaUrl?.fixHttps())
+                              .crossfade(true)
+                              .placeholderMemoryCacheKey(animatedStation?.imageMediaUrl?.fixHttps())
+                              .placeholder(
+                                if (isSystemInDarkTheme()) {
+                                  R.drawable.loading_image_dark
+                                } else {
+                                  R.drawable.loading_image
+                                }
+                              )
+                              .diskCacheKey(animatedStation?.imageMediaUrl?.fixHttps())
+                              .build(),
+                            contentDescription = animatedStation?.friendlyName,
                             modifier = Modifier
                               .fillMaxWidth(),
-                            contentScale = ContentScale.FillWidth
-                          ) {
-                            it.diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                          }
+                            contentScale = ContentScale.FillWidth,
+                            error = if (isSystemInDarkTheme()) {
+                              painterResource(R.drawable.image_loading_failed_dark)
+                            } else {
+                              painterResource(R.drawable.image_loading_failed)
+                            },
+                          )
                         }
                         Text(
                           animatedStation?.friendlyName ?: " ",

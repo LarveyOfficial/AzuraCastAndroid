@@ -58,15 +58,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getDrawable
 import androidx.core.view.HapticFeedbackConstantsCompat
 import androidx.core.view.ViewCompat
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
@@ -77,7 +78,6 @@ import com.larvey.azuracastplayer.utils.fixHttps
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @OptIn(
-  ExperimentalGlideComposeApi::class,
   ExperimentalFoundationApi::class,
   ExperimentalComposeUiApi::class
 )
@@ -179,45 +179,34 @@ fun StationListEntry(
         .fillMaxWidth(),
       verticalAlignment = Alignment.CenterVertically
     ) { // Row
-      GlideImage(
-        model = stationData?.nowPlaying?.song?.art.toString().fixHttps(),
+      AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+          .data(stationData?.nowPlaying?.song?.art.toString().fixHttps())
+          .crossfade(true)
+          .placeholderMemoryCacheKey(
+            stationData?.nowPlaying?.song?.art.toString()
+              .fixHttps()
+          )
+          .placeholder(
+            if (isSystemInDarkTheme()) {
+              R.drawable.loading_image_dark
+            } else {
+              R.drawable.loading_image
+            }
+          )
+          .diskCacheKey(stationData?.nowPlaying?.song?.art.toString().fixHttps())
+          .build(),
         contentDescription = "${stationData?.station?.name}",
+        contentScale = ContentScale.FillBounds,
+        error = if (isSystemInDarkTheme()) {
+          painterResource(R.drawable.image_loading_failed_dark)
+        } else {
+          painterResource(R.drawable.image_loading_failed)
+        },
         modifier = Modifier
           .size(64.dp)
           .aspectRatio(1f)
           .clip(RoundedCornerShape(8.dp)),
-        failure =
-          if (isSystemInDarkTheme()) {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
-                R.drawable.image_loading_failed_dark
-              )
-            )
-          } else {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
-                R.drawable.image_loading_failed
-              )
-            )
-          },
-        loading = if (isSystemInDarkTheme()) {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.loading_image_dark
-            )
-          )
-        } else {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.loading_image
-            )
-          )
-        },
-        contentScale = ContentScale.FillBounds
       )
       Spacer(modifier = Modifier.width(8.dp))
       Column(

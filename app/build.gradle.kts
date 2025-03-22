@@ -75,12 +75,13 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
+  implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+  implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
 
-  implementation("jp.wasabeef:glide-transformations:4.3.0")
+
+  implementation("com.github.android:renderscript-intrinsics-replacement-toolkit:b6363490c3")
 
   implementation("androidx.compose.material3:material3:1.4.0-alpha10")
-
-  implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
 
   implementation("androidx.window:window:1.4.0-rc01")
 

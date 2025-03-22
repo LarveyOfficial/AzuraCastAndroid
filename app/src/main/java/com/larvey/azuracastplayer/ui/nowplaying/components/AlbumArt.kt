@@ -17,19 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.getDrawable
-import com.bumptech.glide.integration.compose.CrossFade
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.fixHttps
 
 @OptIn(
   ExperimentalSharedTransitionApi::class,
-  ExperimentalGlideComposeApi::class,
   ExperimentalAnimationSpecApi::class
 )
 @Composable
@@ -41,13 +40,32 @@ fun NowPlayingAlbumArt(
 ) {
   AnimatedContent(playerState.mediaMetadata.artworkUri.toString()) { url ->
     with(sharedTransitionScope) {
-      GlideImage(
-        model = url,
+      AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+          .data(url.fixHttps())
+          .crossfade(true)
+          .placeholderMemoryCacheKey(url.fixHttps())
+          .placeholder(
+            if (isSystemInDarkTheme()) {
+              R.drawable.loading_image_dark
+            } else {
+              R.drawable.loading_image
+            }
+          )
+          .diskCacheKey(url.fixHttps())
+          .build(),
+        contentDescription = "${playerState.mediaMetadata.albumTitle}",
+        contentScale = ContentScale.FillBounds,
+        error = if (isSystemInDarkTheme()) {
+          painterResource(R.drawable.image_loading_failed_dark)
+        } else {
+          painterResource(R.drawable.image_loading_failed)
+        },
         modifier = modifier
           .padding(12.dp)
           .aspectRatio(1f)
           .sharedElement(
-            rememberSharedContentState(key = "album art"),
+            rememberSharedContentState(key = url.fixHttps()),
             animatedVisibilityScope = animatedVisibilityScope,
             boundsTransform = BoundsTransform { initialBounds, targetBounds ->
               spring(
@@ -56,92 +74,42 @@ fun NowPlayingAlbumArt(
               )
             }
           )
-          .clip(RoundedCornerShape(16.dp)),
-        contentDescription = "${playerState.mediaMetadata.albumTitle}",
-        transition = CrossFade,
-        failure =
-          if (isSystemInDarkTheme()) {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
-                R.drawable.image_loading_failed_dark
-              )
-            )
-          } else {
-            placeholder(
-              drawable = getDrawable(
-                LocalContext.current,
-                R.drawable.image_loading_failed
-              )
-            )
-          },
-        loading = if (isSystemInDarkTheme()) {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.loading_image_dark
-            )
-          )
-        } else {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.loading_image
-            )
-          )
-        },
-        contentScale = ContentScale.FillBounds
+          .clip(RoundedCornerShape(16.dp))
       )
     }
   }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun OtherAlbumArt(
   artURL: String
 ) {
   AnimatedContent(artURL) { url ->
-    GlideImage(
-      model = url.fixHttps(),
+    AsyncImage(
+      model = ImageRequest.Builder(LocalContext.current)
+        .data(url.fixHttps())
+        .crossfade(true)
+        .placeholderMemoryCacheKey(url.fixHttps())
+        .placeholder(
+          if (isSystemInDarkTheme()) {
+            R.drawable.loading_image_dark
+          } else {
+            R.drawable.loading_image
+          }
+        )
+        .diskCacheKey(url.fixHttps())
+        .build(),
+      contentDescription = "Album Art",
+      contentScale = ContentScale.FillBounds,
+      error = if (isSystemInDarkTheme()) {
+        painterResource(R.drawable.image_loading_failed_dark)
+      } else {
+        painterResource(R.drawable.image_loading_failed)
+      },
       modifier = Modifier
         .padding(horizontal = 12.dp)
         .aspectRatio(1f)
         .clip(RoundedCornerShape(16.dp)),
-      contentDescription = "Album Art",
-      transition = CrossFade,
-      failure =
-        if (isSystemInDarkTheme()) {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.image_loading_failed_dark
-            )
-          )
-        } else {
-          placeholder(
-            drawable = getDrawable(
-              LocalContext.current,
-              R.drawable.image_loading_failed
-            )
-          )
-        },
-      loading = if (isSystemInDarkTheme()) {
-        placeholder(
-          drawable = getDrawable(
-            LocalContext.current,
-            R.drawable.loading_image_dark
-          )
-        )
-      } else {
-        placeholder(
-          drawable = getDrawable(
-            LocalContext.current,
-            R.drawable.loading_image
-          )
-        )
-      },
-      contentScale = ContentScale.FillBounds
     )
   }
 }

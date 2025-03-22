@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.ui.mainActivity
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
@@ -11,11 +12,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaLibraryService
 import androidx.palette.graphics.Palette
-import com.bumptech.glide.Glide
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
+import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.weightedRandomColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -78,14 +84,30 @@ class MainActivityViewModel @Inject constructor(
       if (sharedMediaController.playerState.value?.mediaMetadata?.artworkUri != null) {
         this.async(Dispatchers.IO) {
           try {
-            Glide.with(application).asBitmap().load(
-              sharedMediaController.playerState.value?.mediaMetadata?.artworkUri.toString()
-            ).submit()
-              .get()
-              .let { bitmap ->
-                palette.value = Palette.from(bitmap).maximumColorCount(32).generate()
+            val loader = ImageLoader(application as Context)
+            val request = ImageRequest.Builder(application as Context)
+              .allowHardware(false)
+              .placeholderMemoryCacheKey(
+                sharedMediaController.playerState.value?.mediaMetadata?.artworkUri.toString()
+                  .fixHttps()
+              )
+              .diskCacheKey(
+                sharedMediaController.playerState.value?.mediaMetadata?.artworkUri.toString()
+                  .fixHttps()
+              )
+              .data(
+                sharedMediaController.playerState.value?.mediaMetadata?.artworkUri.toString()
+                  .fixHttps()
+              ).build()
+            loader.execute(request).let {
+              if (it is SuccessResult) {
+                palette.value = Palette.from(it.image.toBitmap())
+                  .maximumColorCount(32)
+                  .generate()
                 updateColorList(defaultColor)
               }
+            }
+
           } catch (e: Exception) {
           }
         }

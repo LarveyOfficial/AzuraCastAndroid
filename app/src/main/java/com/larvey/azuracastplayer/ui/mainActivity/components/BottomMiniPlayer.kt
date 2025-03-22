@@ -38,21 +38,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.palette.graphics.Palette
-import com.bumptech.glide.integration.compose.CrossFade
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
+import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.correctedVibrantColor
+import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.updateTime
 
 @OptIn(
-  ExperimentalGlideComposeApi::class,
   ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
@@ -111,14 +115,30 @@ fun MiniPlayer(
           .weight(1f)
       ) {
         AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
-          GlideImage(
-            model = it,
+          AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+              .data(it.fixHttps())
+              .crossfade(true)
+              .placeholderMemoryCacheKey(it.fixHttps())
+              .placeholder(
+                if (isSystemInDarkTheme()) {
+                  R.drawable.loading_image_dark
+                } else {
+                  R.drawable.loading_image
+                }
+              )
+              .diskCacheKey(it.fixHttps())
+              .build(),
             contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
+            error = if (isSystemInDarkTheme()) {
+              painterResource(R.drawable.image_loading_failed_dark)
+            } else {
+              painterResource(R.drawable.image_loading_failed)
+            },
             modifier = Modifier
               .fillMaxHeight()
               .padding(vertical = 6.dp)
               .clip(RoundedCornerShape(8.dp)),
-            transition = CrossFade
           )
         }
         Spacer(modifier = Modifier.size(8.dp))
