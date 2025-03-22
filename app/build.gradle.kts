@@ -14,8 +14,8 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 26
     targetSdk = 35
-    versionCode = 62
-    versionName = "beta-1.8b"
+    versionCode = 63
+    versionName = "beta-1.9"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
