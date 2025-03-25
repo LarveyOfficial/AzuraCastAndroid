@@ -21,13 +21,13 @@ Listen to all your favorite AzuraCast stations in one place!
 <div align="left">
 
 * Keep all of your favorite AzuraCast Radio stations in one place!
-* See live metadata and song duration/progress via the use of the AzuraCast API*
+* See live metadata and song duration/progress via the use of the [AzuraCast NowPlaying Static API](https://www.azuracast.com/docs/developers/now-playing-data/#static-now-playing-json-file)*
 * Listen to your radio stations on the road with Android Auto support
 * Discover new radio stations via utilization of the Discovery page!
 * Enjoy your radio stations on all of your Android devices thanks to the [Material 3 Adaptive library](https://developer.android.com/jetpack/androidx/releases/compose-material3-adaptive)
 
 
-\**Station must support the utilization of the AzuraCast API, if a station does not provide use of the standard API, the app will try its best* 
+\**If a station does not allow access to this API, the app will try its best. This API is enabled by default by AzuraCast stations so unless a station specifically disables access to the API, the station should work just fine* 
 
 </div>
 
