@@ -1,9 +1,42 @@
 <div align="center">
 <a href="https://play.google.com/store/apps/details?id=com.larvey.azuracastplayer" target="_blank" rel="noopener noreferrer">
-<img src="https://github.com/user-attachments/assets/2ddfb7fe-b73c-4dab-9365-6ff9083d2f08">
+<img src="https://github.com/user-attachments/assets/4b2cf6af-988a-46df-bc38-2f1886b3e13d">
 </a>
 
 # AzuraCast Radio
 
 ### Native Android Application for <a href="https://www.azuracast.com/" target="_blank" rel="noopener noreferrer">AzuraCast</a> radio stations
 Listen to all your favorite AzuraCast stations in one place!
+
+[![GitHub License](https://img.shields.io/github/license/LarveyOfficial/AzuraCastAndroid)](https://github.com/LarveyOfficial/AzuraCastAndroid/blob/main/LICENSE)
+
+## Downloads
+
+[![GitHub Release](https://img.shields.io/github/v/release/LarveyOfficial/AzuraCastAndroid)](https://github.com/LarveyOfficial/AzuraCastAndroid/releases/latest)
+
+<a href="https://play.google.com/store/apps/details?id=com.larvey.azuracastplayer" target="_blank" rel="noopener noreferrer"> ![GetItOnGooglePlay_Badge_Web_color_English](https://github.com/user-attachments/assets/a3451f92-a88f-48e8-afad-23fe7b7422c7) </a>
+
+## Features
+
+<div align="left">
+
+* Keep all of your favorite AzuraCast Radio stations in one place!
+* See live metadata and song duration/progress via the use of the AzuraCast API*
+* Listen to your radio stations on the road with Android Auto support
+* Discover new radio stations via utilization of the Discovery page!
+* Enjoy your radio stations on all of your Android devices thanks to the [Material 3 Adaptive library](https://developer.android.com/jetpack/androidx/releases/compose-material3-adaptive)
+
+
+\**Station must support the utilization of the AzuraCast API, if a station does not provide use of the standard API, the app will try its best* 
+
+</div>
+
+## Contributing
+
+Pull requests and critiques are always welcome!
+
+Before reporting any issues, ensure that the issue hasn't already been reported [here](https://github.com/LarveyOfficial/AzuraCastAndroid/issues)
+
+## Disclaimer
+
+This project does not have any official affiliation with the [AzuraCast Project](https://www.azuracast.com/). This is an **unofficial app** simply made due to interest in AzuraCast. Any issues for this app should **not** be directed towards the AzuraCast team. Thank you!
