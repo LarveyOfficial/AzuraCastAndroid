@@ -69,12 +69,12 @@ fun LegacyMediaBackground() {
     ) {
       Icon(
         imageVector = Icons.Rounded.Layers,
-        contentDescription = "Legacy Background",
+        contentDescription = "Legacy Backgrounds",
         tint = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(end = 8.dp)
       )
       Text(
-        "Legacy Media Background",
+        "Legacy Media Backgrounds",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.weight(1f)
