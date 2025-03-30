@@ -31,6 +31,20 @@ class SettingsViewModel(private val userPreferences: UserPreferences) : ViewMode
       initialValue = true
     )
 
+  val androidAutoLayout: StateFlow<AndroidAutoLayouts> =
+    userPreferences.androidAutoLayoutFlow.map { it }.stateIn(
+      scope = viewModelScope,
+      started = SharingStarted.WhileSubscribed(5_000),
+      initialValue = AndroidAutoLayouts.GRID
+    )
+
+  val legacyMediaBackground: StateFlow<Boolean> =
+    userPreferences.legacyMediaBackgroundFlow.map { it }.stateIn(
+      scope = viewModelScope,
+      started = SharingStarted.WhileSubscribed(5_000),
+      initialValue = false
+    )
+
   fun toggleGridView() {
     gridView.value?.let {
       userPreferences.setGridView(
@@ -50,6 +64,20 @@ class SettingsViewModel(private val userPreferences: UserPreferences) : ViewMode
   fun updateThemeType(themeType: ThemeTypes) {
     userPreferences.setThemeType(
       themeType,
+      viewModelScope
+    )
+  }
+
+  fun updateAndroidAutoLayout(androidAutoLayout: AndroidAutoLayouts) {
+    userPreferences.setAndroidAutoLayout(
+      androidAutoLayout,
+      viewModelScope
+    )
+  }
+
+  fun toggleLegacyMediaBackground() {
+    userPreferences.setLegacyMediaBackground(
+      !legacyMediaBackground.value,
       viewModelScope
     )
   }

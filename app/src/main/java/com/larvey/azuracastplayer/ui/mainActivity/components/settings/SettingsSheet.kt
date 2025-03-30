@@ -1,16 +1,22 @@
 package com.larvey.azuracastplayer.ui.mainActivity.components.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,7 +30,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun SettingsSheet(drawerState: DrawerState) {
 
@@ -59,8 +68,28 @@ fun SettingsSheet(drawerState: DrawerState) {
       )
     }
   ) { innerPadding ->
-    Column(modifier = Modifier.padding(innerPadding)) {
+    Column(
+      modifier = Modifier
+        .padding(innerPadding)
+        .verticalScroll(rememberScrollState())
+    ) {
       ThemePicker()
+      AndroidAutoDropdown()
+      if (Build.VERSION.SDK_INT > 28) {
+        LegacyMediaBackground()
+      }
+      LinearWavyProgressIndicator(
+        progress = { 1f },
+        wavelength = 48.dp,
+        amplitude = { 1f },
+        waveSpeed = 0.dp,
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 24.dp)
+          .padding(vertical = 16.dp)
+      )
+      AboutDropdown()
+      ContactMeDropdown()
     }
   }
 }

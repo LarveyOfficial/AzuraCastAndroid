@@ -26,6 +26,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel
+import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
 import com.larvey.azuracastplayer.ui.nowplaying.components.AnimatedBackgroundColor
 import com.larvey.azuracastplayer.ui.nowplaying.components.BlurImageBackground
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
@@ -52,6 +56,8 @@ fun NowPlayingPane(
   palette: MutableState<Palette?>?,
   colorList: MutableState<List<Color>>?
 ) {
+  val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
+  val legacyBackground by settingsModel.legacyMediaBackground.collectAsState()
 
   val nowPlayingViewModel: NowPlayingViewModel = viewModel()
 
@@ -80,7 +86,7 @@ fun NowPlayingPane(
       modifier = Modifier
         .fillMaxSize()
     ) {
-      if (Build.VERSION.SDK_INT <= 28) {
+      if (Build.VERSION.SDK_INT <= 28 || legacyBackground) {
         BlurImageBackground(playerState = nowPlayingViewModel.sharedMediaController.playerState.value)
       } else {
         AnimatedBackgroundColor(colorList)
