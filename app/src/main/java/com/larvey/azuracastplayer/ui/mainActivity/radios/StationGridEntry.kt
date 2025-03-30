@@ -11,7 +11,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +72,7 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.ConfirmStationDelet
 import com.larvey.azuracastplayer.ui.mainActivity.components.EditStation
 import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.isDark
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
@@ -161,7 +161,7 @@ fun StationGridEntry(
                 .fixHttps()
             )
             .placeholder(
-              if (isSystemInDarkTheme()) {
+              if (MaterialTheme.colorScheme.isDark()) {
                 R.drawable.loading_image_dark
               } else {
                 R.drawable.loading_image
@@ -170,7 +170,7 @@ fun StationGridEntry(
             .diskCacheKey(stationData?.nowPlaying?.song?.art.toString().fixHttps())
             .build(),
           contentDescription = "${stationData?.station?.name}",
-          error = if (isSystemInDarkTheme()) {
+          error = if (MaterialTheme.colorScheme.isDark()) {
             painterResource(R.drawable.image_loading_failed_dark)
           } else {
             painterResource(R.drawable.image_loading_failed)

@@ -1,7 +1,6 @@
 package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import coil3.request.transformations
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.BlurTransformation
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.isDark
 
 
 //Backgrounds for android SDK 28 and older
@@ -66,14 +66,14 @@ fun BlurImageBackground(playerState: PlayerState?) {
     contentDescription = "Album Art",
     contentScale = ContentScale.Crop,
     colorFilter = ColorFilter.colorMatrix(ColorMatrix(colorMatrix)),
-    error = if (isSystemInDarkTheme()) {
+    error = if (MaterialTheme.colorScheme.isDark()) {
       ColorPainter(MaterialTheme.colorScheme.surfaceContainer)
     } else {
       ColorPainter(Color.DarkGray)
     },
     modifier = Modifier
       .fillMaxSize()
-      .background(if (isSystemInDarkTheme()) MaterialTheme.colorScheme.surfaceContainer else Color.DarkGray),
+      .background(if (MaterialTheme.colorScheme.isDark()) MaterialTheme.colorScheme.surfaceContainer else Color.DarkGray),
   )
 
 }

@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,6 +53,7 @@ import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.utils.correctedVibrantColor
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.isDark
 import com.larvey.azuracastplayer.utils.updateTime
 
 @OptIn(
@@ -95,7 +95,7 @@ fun MiniPlayer(
 
   val dominantColor = correctedVibrantColor(
     palette,
-    isSystemInDarkTheme()
+    MaterialTheme.colorScheme.isDark()
   ) ?: MaterialTheme.colorScheme.primary
 
   Surface(
@@ -121,7 +121,7 @@ fun MiniPlayer(
               .crossfade(true)
               .placeholderMemoryCacheKey(it.fixHttps())
               .placeholder(
-                if (isSystemInDarkTheme()) {
+                if (MaterialTheme.colorScheme.isDark()) {
                   R.drawable.loading_image_dark
                 } else {
                   R.drawable.loading_image
@@ -130,7 +130,7 @@ fun MiniPlayer(
               .diskCacheKey(it.fixHttps())
               .build(),
             contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
-            error = if (isSystemInDarkTheme()) {
+            error = if (MaterialTheme.colorScheme.isDark()) {
               painterResource(R.drawable.image_loading_failed_dark)
             } else {
               painterResource(R.drawable.image_loading_failed)

@@ -10,7 +10,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -80,6 +79,7 @@ import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.launch
 
 data class AddableStation(
@@ -300,7 +300,7 @@ fun AddStationSheet(
                                 .fixHttps()
                             )
                             .placeholder(
-                              if (isSystemInDarkTheme()) {
+                              if (MaterialTheme.colorScheme.isDark()) {
                                 R.drawable.loading_image_dark
                               } else {
                                 R.drawable.loading_image
@@ -310,7 +310,7 @@ fun AddStationSheet(
                             .build(),
                           contentDescription = item.station.name,
                           contentScale = ContentScale.FillBounds,
-                          error = if (isSystemInDarkTheme()) {
+                          error = if (MaterialTheme.colorScheme.isDark()) {
                             painterResource(R.drawable.image_loading_failed_dark)
                           } else {
                             painterResource(R.drawable.image_loading_failed)

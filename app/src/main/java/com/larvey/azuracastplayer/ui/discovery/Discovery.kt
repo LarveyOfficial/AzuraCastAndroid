@@ -16,7 +16,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +88,7 @@ import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URL
@@ -267,7 +267,7 @@ fun Discovery(
                           .fillMaxWidth()
                           .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentScale = ContentScale.Crop,
-                        error = if (isSystemInDarkTheme()) {
+                        error = if (MaterialTheme.colorScheme.isDark()) {
                           painterResource(R.drawable.image_loading_failed_dark)
                         } else {
                           painterResource(R.drawable.image_loading_failed)
@@ -406,7 +406,7 @@ fun Discovery(
                           .crossfade(true)
                           .placeholderMemoryCacheKey(station.imageMediaUrl.fixHttps())
                           .placeholder(
-                            if (isSystemInDarkTheme()) {
+                            if (MaterialTheme.colorScheme.isDark()) {
                               R.drawable.loading_image_dark
                             } else {
                               R.drawable.loading_image
@@ -419,7 +419,7 @@ fun Discovery(
                           .aspectRatio(1f)
                           .fillMaxSize(),
                         contentScale = ContentScale.FillBounds,
-                        error = if (isSystemInDarkTheme()) {
+                        error = if (MaterialTheme.colorScheme.isDark()) {
                           painterResource(R.drawable.image_loading_failed_dark)
                         } else {
                           painterResource(R.drawable.image_loading_failed)
@@ -489,7 +489,7 @@ fun Discovery(
                               .crossfade(true)
                               .placeholderMemoryCacheKey(animatedStation?.imageMediaUrl?.fixHttps())
                               .placeholder(
-                                if (isSystemInDarkTheme()) {
+                                if (MaterialTheme.colorScheme.isDark()) {
                                   R.drawable.loading_image_dark
                                 } else {
                                   R.drawable.loading_image
@@ -501,7 +501,7 @@ fun Discovery(
                             modifier = Modifier
                               .fillMaxWidth(),
                             contentScale = ContentScale.FillWidth,
-                            error = if (isSystemInDarkTheme()) {
+                            error = if (MaterialTheme.colorScheme.isDark()) {
                               painterResource(R.drawable.image_loading_failed_dark)
                             } else {
                               painterResource(R.drawable.image_loading_failed)

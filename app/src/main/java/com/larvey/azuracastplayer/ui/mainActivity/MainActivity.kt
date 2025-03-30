@@ -23,10 +23,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
@@ -34,7 +35,9 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -42,6 +45,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -59,6 +64,7 @@ import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -83,12 +89,15 @@ import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
+import com.larvey.azuracastplayer.ui.mainActivity.components.settings.SettingsSheet
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
+import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
 import com.larvey.azuracastplayer.utils.correctedVibrantColor
 import com.larvey.azuracastplayer.utils.getOnVibrantColor
+import com.larvey.azuracastplayer.utils.isDark
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -213,7 +222,7 @@ class MainActivity : ComponentActivity() {
         val animatedFabColor = animateColorAsState(
           targetValue = correctedVibrantColor(
             mainActivityViewModel?.palette,
-            isSystemInDarkTheme()
+            MaterialTheme.colorScheme.isDark()
           ) ?: MaterialTheme.colorScheme.primaryContainer,
           label = "Fab Color"
         )
@@ -225,6 +234,8 @@ class MainActivity : ComponentActivity() {
           label = "Fab Icon Color"
         )
         //endregion
+
+        val settingsDrawer = rememberDrawerState(DrawerValue.Closed)
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
 
@@ -265,303 +276,349 @@ class MainActivity : ComponentActivity() {
           currentDestination = AppDestinations.STATIONS
         }
 
-        SupportingPaneScaffold(
-          modifier = Modifier.background(MaterialTheme.colorScheme.background),
-          directive = navigator.scaffoldDirective,
-          value = navigator.scaffoldValue,
-          mainPane = {
-            AnimatedPane(modifier = Modifier.fillMaxSize()) {
-              NavigationSuiteScaffold(
-                navigationSuiteItems = {
-                  AppDestinations.entries.forEach {
-                    item(
-                      icon = {
-                        Icon(
-                          it.icon,
-                          contentDescription = it.label,
-                        )
-                      },
-                      label = {
-                        Text(
-                          it.label,
-                          maxLines = 1
-                        )
-                      },
-                      selected = it == currentDestination,
-                      onClick = {
-                        if (!isWide) {
-                          currentDestination = it
-                        } else {
-                          if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
-                            currentDestination = it
-                            scope.launch {
-                              delay(1000)
-                              discoveryViewingStation.value = false
-                            }
-                          } else {
-                            currentDestination = it
-                          }
-                        }
-                      }
-                    )
-                  }
-                },
-                navigationSuiteColors = NavigationSuiteDefaults.colors(
-                  navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                )
-              ) {
-                Scaffold(
-                  topBar = {
-                    TopAppBar(
-                      colors = topAppBarColors(
-                        containerColor = topBarContainerColor,
-                        titleContentColor = topBarTitleColor,
-                      ),
-                      title = {
-                        Text(
-                          currentDestination.title,
-                          maxLines = 1
-                        )
-                      },
-                      actions = {
-                        AnimatedVisibility(
-                          radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS,
-                          exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
-                          enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 })
-                        ) {
-                          IconButton(
-                            onClick = {
-                              settingsModel.toggleGridView()
-                            }
-                          ) {
-                            Icon(
-                              imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                              contentDescription = "Add"
-                            )
-                          }
-                        }
-                      }
-                    )
-                  },
-                  floatingActionButton = {
-                    AnimatedVisibility(
-                      visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value && currentDestination == AppDestinations.STATIONS,
-                      exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
-                        fullWidth * 2 * if (isWide) {
-                          -1
-                        } else {
-                          1
-                        }
-                      }),
-                      enter = slideInHorizontally(
-                        initialOffsetX = { fullWidth ->
-                          fullWidth * 2 * if (isWide) {
-                            -1
-                          } else {
-                            1
-                          }
-                        },
-                        animationSpec = tween(delayMillis = 320)
-                      )
-                    ) {
-                      FloatingActionButton(
-                        onClick = {
-                          showAddDialog.value = true
-                        },
-                        containerColor = animatedFabColor.value
-                      ) {
-                        Icon(
-                          Icons.Rounded.Add,
-                          contentDescription = "Add",
-                          tint = animatedFabIconTint.value
-                        )
-                      }
-                    }
-                    AnimatedVisibility(
-                      visible = editingList.value,
-                      exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
-                        fullWidth * 2 * if (isWide) {
-                          -1
-                        } else {
-                          1
-                        }
-                      }),
-                      enter = slideInHorizontally(initialOffsetX = { fullWidth ->
-                        fullWidth * 2 * if (isWide) {
-                          -1
-                        } else {
-                          1
-                        }
-                      }),
-                    ) {
-                      FloatingActionButton(
-                        onClick = {
-                          confirmEdit.value = true
-                        },
-                        containerColor = MaterialTheme.colorScheme.tertiary
-                      ) {
-                        Icon(
-                          Icons.Rounded.Check,
-                          contentDescription = "Add",
-                          tint = MaterialTheme.colorScheme.onTertiary
-                        )
-                      }
-                    }
-                  },
-                  floatingActionButtonPosition = if (isWide) {
-                    FabPosition.Start
-                  } else {
-                    FabPosition.End
-                  },
-                  bottomBar = {
-                    AnimatedVisibility(
-                      visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded),
-                      enter = slideInVertically(
-                        initialOffsetY = { fullHeight -> fullHeight * 2 },
-                        animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
-                      ),
-                      exit = if (isWide) ExitTransition.None else slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
-                    ) {
-                      BottomAppBar(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                      ) {
-                        MiniPlayer(
-                          playerState = playerState,
-                          showNowPlaying = {
-                            showNowPlayingSheet.value = true
-                          },
-                          nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
-                          pause = {
-                            mediaController?.pause()
-                          },
-                          play = {
-                            mediaController?.play()
-                          },
-                          palette = mainActivityViewModel?.palette,
-                        )
-                      }
-                    }
-                  }) { innerPadding ->
-                  AnimatedVisibility(
-                    radioListMode != null,
-                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }),
-                    exit = ExitTransition.None
-                  ) {
-                    AnimatedContent(
-                      currentDestination,
-                      label = "Current Location",
-                      transitionSpec = {
-                        if (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0) {
-                          if (targetState.ordinal > initialState.ordinal) {
-                            slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }) togetherWith slideOutVertically(
-                              targetOffsetY = { fullHeight -> -fullHeight * 2 }
-                            )
-                          } else {
-                            slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }) togetherWith slideOutVertically(
-                              targetOffsetY = { fullHeight -> fullHeight * 2 }
-                            )
-                          }
-                        } else {
-                          if (targetState.ordinal > initialState.ordinal) {
-                            slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }) togetherWith slideOutHorizontally(
-                              targetOffsetX = { fullWidth -> -fullWidth * 2 }
-                            )
-                          } else {
-                            slideInHorizontally(initialOffsetX = { fullWidth -> -fullWidth * 2 }) togetherWith slideOutHorizontally(
-                              targetOffsetX = { fullWidth -> fullWidth * 2 }
-                            )
-                          }
-                        }
-                      }
-                    ) { destination ->
-                      when (destination) {
-                        AppDestinations.STATIONS -> {
-                          MyRadios(
-                            innerPadding = innerPadding,
-                            deleteRadio = { station ->
-                              mainActivityViewModel?.deleteStation(station)
-                            },
-                            editRadio = { newStation ->
-                              mainActivityViewModel?.editStation(newStation)
-                            },
-                            editingList = editingList,
-                            confirmEdit = confirmEdit,
-                            editAllStations = { stations ->
-                              scope.launch {
-                                mainActivityViewModel?.editAllStations(stations)
-                              }
-                            },
-                            lazyListState = lazyListState,
-                            lazyGridState = lazyGridState
-                          )
-                        }
+        BackHandler(settingsDrawer.isOpen) {
+          scope.launch {
+            settingsDrawer.close()
+          }
+        }
 
-                        AppDestinations.DISCOVER -> {
-                          Discovery(
-                            innerPadding,
-                            discoveryViewingStation,
-                            isWide
-                          )
-                        }
-
-                        //                        AppDestinations.FAVORITES -> {
-                        //                          Box(
-                        //                            modifier = Modifier
-                        //                              .fillMaxSize()
-                        //                          )
-                        //                        }
-                      }
-                    }
-                  }
+        ReverseLayoutDirection {
+          ModalNavigationDrawer(
+            drawerState = settingsDrawer,
+            gesturesEnabled = settingsDrawer.isOpen,
+            drawerContent = {
+              ReverseLayoutDirection {
+                ModalDrawerSheet(
+                  drawerState = settingsDrawer,
+                  drawerShape = RoundedCornerShape(16.dp),
+                  windowInsets = WindowInsets(0.dp)
+                ) {
+                  SettingsSheet(settingsDrawer)
                 }
               }
             }
-          },
-          supportingPane = {
-            AnimatedVisibility(
-              visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value,
-              enter = slideInHorizontally(
-                initialOffsetX = { fullWidth -> fullWidth * 2 }
-              ),
-              exit = slideOutHorizontally(
-                targetOffsetX = { fullWidth -> fullWidth * 2 },
-                animationSpec = tween(durationMillis = 250)
-              )
-            ) {
-              AnimatedPane(modifier = Modifier.fillMaxSize()) {
-                NowPlayingPane(
-                  palette = mainActivityViewModel?.palette,
-                  colorList = mainActivityViewModel?.colorList
-                )
-              }
-            }
-          },
-          paneExpansionState = rememberPaneExpansionState(
-            navigator.scaffoldValue,
-            anchors = listOf(
-              PaneExpansionAnchor.Proportion(0f),
-              PaneExpansionAnchor.Proportion(0.40f),
-              PaneExpansionAnchor.Proportion(0.50f),
-              PaneExpansionAnchor.Proportion(0.60f),
-              PaneExpansionAnchor.Proportion(0.70f)
-            ),
-            initialAnchoredIndex = 4 // This doesn't work :3
-          ),
-          paneExpansionDragHandle = { state ->
-            val interactionSource =
-              remember { MutableInteractionSource() }
-            VerticalDragHandle(
-              modifier =
-                Modifier.paneExpansionDraggable(
-                  state,
-                  LocalMinimumInteractiveComponentSize.current,
-                  interactionSource,
-                  semanticsProperties = {}
+          ) {
+            ReverseLayoutDirection {
+              SupportingPaneScaffold(
+                modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                directive = navigator.scaffoldDirective,
+                value = navigator.scaffoldValue,
+                mainPane = {
+                  AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                    NavigationSuiteScaffold(
+                      navigationSuiteItems = {
+                        AppDestinations.entries.forEach {
+                          item(
+                            icon = {
+                              Icon(
+                                it.icon,
+                                contentDescription = it.label,
+                              )
+                            },
+                            label = {
+                              Text(
+                                it.label,
+                                maxLines = 1
+                              )
+                            },
+                            selected = it == currentDestination,
+                            onClick = {
+                              if (!isWide) {
+                                currentDestination = it
+                              } else {
+                                if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+                                  currentDestination = it
+                                  scope.launch {
+                                    delay(1000)
+                                    discoveryViewingStation.value = false
+                                  }
+                                } else {
+                                  currentDestination = it
+                                }
+                              }
+                            }
+                          )
+                        }
+                      },
+                      navigationSuiteColors = NavigationSuiteDefaults.colors(
+                        navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                      )
+                    ) {
+                      Scaffold(
+                        topBar = {
+                          TopAppBar(
+                            colors = topAppBarColors(
+                              containerColor = topBarContainerColor,
+                              titleContentColor = topBarTitleColor,
+                            ),
+                            title = {
+                              Text(
+                                currentDestination.title,
+                                maxLines = 1
+                              )
+                            },
+                            actions = {
+                              AnimatedVisibility(
+                                radioListMode != null && !editingList.value && currentDestination == AppDestinations.STATIONS,
+                                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 })
+                              ) {
+                                IconButton(
+                                  onClick = {
+                                    settingsModel.toggleGridView()
+                                  }
+                                ) {
+                                  Icon(
+                                    imageVector = if (radioListMode == true) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                                    contentDescription = "Switch View"
+                                  )
+                                }
+                              }
+                              AnimatedVisibility(
+                                currentDestination == AppDestinations.STATIONS && !editingList.value,
+                                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth * 2 }),
+                                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 })
+                              ) {
+                                IconButton(
+                                  onClick = {
+                                    scope.launch {
+                                      settingsDrawer.open()
+                                    }
+                                  }
+                                ) {
+                                  Icon(
+                                    imageVector = Icons.Rounded.Settings,
+                                    contentDescription = "Settings"
+                                  )
+                                }
+                              }
+                            }
+                          )
+                        },
+                        floatingActionButton = {
+                          AnimatedVisibility(
+                            visible = ((!lazyGridState.canScrollBackward && radioListMode == true) || (!lazyListState.canScrollBackward) && radioListMode == false) && !editingList.value && currentDestination == AppDestinations.STATIONS,
+                            exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
+                              fullWidth * 2 * if (isWide) {
+                                -1
+                              } else {
+                                1
+                              }
+                            }),
+                            enter = slideInHorizontally(
+                              initialOffsetX = { fullWidth ->
+                                fullWidth * 2 * if (isWide) {
+                                  -1
+                                } else {
+                                  1
+                                }
+                              },
+                              animationSpec = tween(delayMillis = 320)
+                            )
+                          ) {
+                            FloatingActionButton(
+                              onClick = {
+                                showAddDialog.value = true
+                              },
+                              containerColor = animatedFabColor.value
+                            ) {
+                              Icon(
+                                Icons.Rounded.Add,
+                                contentDescription = "Add",
+                                tint = animatedFabIconTint.value
+                              )
+                            }
+                          }
+                          AnimatedVisibility(
+                            visible = editingList.value,
+                            exit = slideOutHorizontally(targetOffsetX = { fullWidth ->
+                              fullWidth * 2 * if (isWide) {
+                                -1
+                              } else {
+                                1
+                              }
+                            }),
+                            enter = slideInHorizontally(initialOffsetX = { fullWidth ->
+                              fullWidth * 2 * if (isWide) {
+                                -1
+                              } else {
+                                1
+                              }
+                            }),
+                          ) {
+                            FloatingActionButton(
+                              onClick = {
+                                confirmEdit.value = true
+                              },
+                              containerColor = MaterialTheme.colorScheme.tertiary
+                            ) {
+                              Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = "Add",
+                                tint = MaterialTheme.colorScheme.onTertiary
+                              )
+                            }
+                          }
+                        },
+                        floatingActionButtonPosition = if (isWide) {
+                          FabPosition.Start
+                        } else {
+                          FabPosition.End
+                        },
+                        bottomBar = {
+                          AnimatedVisibility(
+                            visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded),
+                            enter = slideInVertically(
+                              initialOffsetY = { fullHeight -> fullHeight * 2 },
+                              animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
+                            ),
+                            exit = if (isWide) ExitTransition.None else slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
+                          ) {
+                            BottomAppBar(
+                              containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ) {
+                              MiniPlayer(
+                                playerState = playerState,
+                                showNowPlaying = {
+                                  showNowPlayingSheet.value = true
+                                },
+                                nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
+                                pause = {
+                                  mediaController?.pause()
+                                },
+                                play = {
+                                  mediaController?.play()
+                                },
+                                palette = mainActivityViewModel?.palette,
+                              )
+                            }
+                          }
+                        }) { innerPadding ->
+                        AnimatedVisibility(
+                          radioListMode != null,
+                          enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }),
+                          exit = ExitTransition.None
+                        ) {
+                          AnimatedContent(
+                            currentDestination,
+                            label = "Current Location",
+                            transitionSpec = {
+                              if (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0) {
+                                if (targetState.ordinal > initialState.ordinal) {
+                                  slideInVertically(initialOffsetY = { fullHeight -> fullHeight * 2 }) togetherWith slideOutVertically(
+                                    targetOffsetY = { fullHeight -> -fullHeight * 2 }
+                                  )
+                                } else {
+                                  slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }) togetherWith slideOutVertically(
+                                    targetOffsetY = { fullHeight -> fullHeight * 2 }
+                                  )
+                                }
+                              } else {
+                                if (targetState.ordinal > initialState.ordinal) {
+                                  slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth * 2 }) togetherWith slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> -fullWidth * 2 }
+                                  )
+                                } else {
+                                  slideInHorizontally(initialOffsetX = { fullWidth -> -fullWidth * 2 }) togetherWith slideOutHorizontally(
+                                    targetOffsetX = { fullWidth -> fullWidth * 2 }
+                                  )
+                                }
+                              }
+                            }
+                          ) { destination ->
+                            when (destination) {
+                              AppDestinations.STATIONS -> {
+                                MyRadios(
+                                  innerPadding = innerPadding,
+                                  deleteRadio = { station ->
+                                    mainActivityViewModel?.deleteStation(station)
+                                  },
+                                  editRadio = { newStation ->
+                                    mainActivityViewModel?.editStation(newStation)
+                                  },
+                                  editingList = editingList,
+                                  confirmEdit = confirmEdit,
+                                  editAllStations = { stations ->
+                                    scope.launch {
+                                      mainActivityViewModel?.editAllStations(stations)
+                                    }
+                                  },
+                                  lazyListState = lazyListState,
+                                  lazyGridState = lazyGridState
+                                )
+                              }
+
+                              AppDestinations.DISCOVER -> {
+                                Discovery(
+                                  innerPadding,
+                                  discoveryViewingStation,
+                                  isWide
+                                )
+                              }
+
+                              //                        AppDestinations.FAVORITES -> {
+                              //                          Box(
+                              //                            modifier = Modifier
+                              //                              .fillMaxSize()
+                              //                          )
+                              //                        }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                supportingPane = {
+                  AnimatedVisibility(
+                    visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value,
+                    enter = slideInHorizontally(
+                      initialOffsetX = { fullWidth -> fullWidth * 2 }
+                    ),
+                    exit = slideOutHorizontally(
+                      targetOffsetX = { fullWidth -> fullWidth * 2 },
+                      animationSpec = tween(durationMillis = 250)
+                    )
+                  ) {
+                    AnimatedPane(modifier = Modifier.fillMaxSize()) {
+                      NowPlayingPane(
+                        palette = mainActivityViewModel?.palette,
+                        colorList = mainActivityViewModel?.colorList
+                      )
+                    }
+                  }
+                },
+                paneExpansionState = rememberPaneExpansionState(
+                  navigator.scaffoldValue,
+                  anchors = listOf(
+                    PaneExpansionAnchor.Proportion(0f),
+                    PaneExpansionAnchor.Proportion(0.40f),
+                    PaneExpansionAnchor.Proportion(0.50f),
+                    PaneExpansionAnchor.Proportion(0.60f),
+                    PaneExpansionAnchor.Proportion(0.70f)
+                  ),
+                  initialAnchoredIndex = 4 // This doesn't work :3
                 ),
-              interactionSource = interactionSource
-            )
+                paneExpansionDragHandle = { state ->
+                  val interactionSource =
+                    remember { MutableInteractionSource() }
+                  VerticalDragHandle(
+                    modifier =
+                      Modifier.paneExpansionDraggable(
+                        state,
+                        LocalMinimumInteractiveComponentSize.current,
+                        interactionSource,
+                        semanticsProperties = {}
+                      ),
+                    interactionSource = interactionSource
+                  )
+                }
+              )
+            }
+
           }
-        )
+        }
+
         when {
           showAddDialog.value -> {
             AddStationSheet(

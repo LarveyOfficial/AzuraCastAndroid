@@ -17,6 +17,20 @@ class SettingsViewModel(private val userPreferences: UserPreferences) : ViewMode
     initialValue = null
   )
 
+  val themeType: StateFlow<ThemeTypes> =
+    userPreferences.themeTypeFlow.map { it }.stateIn(
+      scope = viewModelScope,
+      started = SharingStarted.WhileSubscribed(5_000),
+      initialValue = ThemeTypes.SYSTEM
+    )
+
+  val isDynamic: StateFlow<Boolean> =
+    userPreferences.isDynamicThemeFlow.map { it }.stateIn(
+      scope = viewModelScope,
+      started = SharingStarted.WhileSubscribed(5_000),
+      initialValue = true
+    )
+
   fun toggleGridView() {
     gridView.value?.let {
       userPreferences.setGridView(
@@ -24,6 +38,20 @@ class SettingsViewModel(private val userPreferences: UserPreferences) : ViewMode
         viewModelScope
       )
     }
+  }
+
+  fun toggleDynamicTheme() {
+    userPreferences.setDynamicTheme(
+      !isDynamic.value,
+      viewModelScope
+    )
+  }
+
+  fun updateThemeType(themeType: ThemeTypes) {
+    userPreferences.setThemeType(
+      themeType,
+      viewModelScope
+    )
   }
 
   object SettingsModelProvider {
