@@ -76,7 +76,8 @@ fun SettingsSheet(drawerState: DrawerState) {
         .verticalScroll(rememberScrollState())
     ) {
       ThemePicker()
-      AndroidAutoDropdown()
+      //      AndroidAutoDropdown()
+      Spacer(modifier = Modifier.height(12.dp))
       if (Build.VERSION.SDK_INT > 28) {
         LegacyMediaBackground()
         Spacer(modifier = Modifier.height(16.dp))

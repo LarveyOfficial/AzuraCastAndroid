@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -561,20 +560,20 @@ class MusicPlayerService : MediaLibraryService() {
 
       val gridStyleChildren = Bundle()
 
+      val listStyleChildren = Bundle()
+
       gridStyleChildren.putInt(
         MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
         MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
       )
 
+      listStyleChildren.putInt(
+        MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+        MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
+      )
+
       when (parentId) {
         "/" -> {
-          //        var gridView: Boolean
-          //        runBlocking {
-          //          gridView = dataStore.data.map {
-          //            it[booleanPreferencesKey(IS_GRID_VIEW)] ?: false
-          //          }.first()
-          //        }
-
           val metaDataStations = MediaMetadata.Builder()
             .setIsBrowsable(true)
             .setIsPlayable(false)
@@ -820,7 +819,7 @@ class MusicPlayerService : MediaLibraryService() {
             .setTitle(item.name)
             .setArtist(item.url)
             .setMediaType(MEDIA_TYPE_RADIO_STATION)
-            .setArtworkUri(Uri.parse("https://${item.url}/api/station/${item.shortcode}/art/-1"))
+            .setArtworkUri("https://${item.url}/api/station/${item.shortcode}/art/-1".toUri())
             .setDurationMs(1)
             .setIsBrowsable(false)
             .setIsPlayable(true)
