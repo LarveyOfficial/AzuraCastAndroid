@@ -91,8 +91,8 @@ import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
-import com.larvey.azuracastplayer.ui.mainActivity.components.settings.SettingsSheet
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
+import com.larvey.azuracastplayer.ui.mainActivity.settings.SettingsSheet
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme

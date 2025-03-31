@@ -35,18 +35,22 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryJSON
 import com.larvey.azuracastplayer.classes.data.DiscoveryStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
+import com.larvey.azuracastplayer.db.settings.AndroidAutoLayouts
 import com.larvey.azuracastplayer.session.sleepTimer.AndroidAlarmScheduler
 import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.resourceToUri
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.net.URL
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -558,8 +562,15 @@ class MusicPlayerService : MediaLibraryService() {
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
 
-      val gridStyleChildren = Bundle()
+      val userPreferences = (application as AppSetup).userPreferences
 
+      lateinit var savedChildrenStyle: AndroidAutoLayouts
+
+      runBlocking { // This is evil but it must be done 💀 (thanks legacy APIs)
+        savedChildrenStyle = userPreferences.androidAutoLayoutFlow.first()
+      }
+
+      val gridStyleChildren = Bundle()
       val listStyleChildren = Bundle()
 
       gridStyleChildren.putInt(
@@ -572,13 +583,19 @@ class MusicPlayerService : MediaLibraryService() {
         MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
       )
 
+      val childrenStyle = if (savedChildrenStyle == AndroidAutoLayouts.GRID) {
+        gridStyleChildren
+      } else {
+        listStyleChildren
+      }
+
       when (parentId) {
         "/" -> {
           val metaDataStations = MediaMetadata.Builder()
             .setIsBrowsable(true)
             .setIsPlayable(false)
             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-            .setExtras(gridStyleChildren)
+            .setExtras(childrenStyle)
             .setTitle("My Stations")
             .setArtworkUri(
               resourceToUri(
@@ -591,7 +608,7 @@ class MusicPlayerService : MediaLibraryService() {
             .setIsBrowsable(true)
             .setIsPlayable(false)
             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-            .setExtras(gridStyleChildren)
+            .setExtras(childrenStyle)
             .setTitle("Discover")
             .setArtworkUri(
               resourceToUri(
@@ -660,7 +677,7 @@ class MusicPlayerService : MediaLibraryService() {
                 .setIsBrowsable(true)
                 .setIsPlayable(false)
                 .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-                .setExtras(gridStyleChildren)
+                .setExtras(childrenStyle)
                 .build()
             ).build()
 
@@ -684,7 +701,7 @@ class MusicPlayerService : MediaLibraryService() {
                     .setIsBrowsable(true)
                     .setIsPlayable(false)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
-                    .setExtras(gridStyleChildren)
+                    .setExtras(childrenStyle)
                     .build()
                 )
                 .build()

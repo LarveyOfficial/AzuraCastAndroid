@@ -1,5 +1,6 @@
-package com.larvey.azuracastplayer.ui.mainActivity.components.settings
+package com.larvey.azuracastplayer.ui.mainActivity.settings.components
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -15,15 +16,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ViewList
-import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.BrightnessAuto
+import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.NightsStay
+import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -40,17 +44,18 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.larvey.azuracastplayer.db.settings.AndroidAutoLayouts
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel
 import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelProvider
+import com.larvey.azuracastplayer.db.settings.ThemeTypes
 import kotlinx.coroutines.launch
 
 @Composable
-fun AndroidAutoDropdown() {
-  var expanded by remember { mutableStateOf(false) }
-  val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
-  val androidAutoLayout by settingsModel.androidAutoLayout.collectAsState()
+fun ThemePicker() {
   val scope = rememberCoroutineScope()
+  val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
+  val isDynamic by settingsModel.isDynamic.collectAsState()
+  val themeType by settingsModel.themeType.collectAsState()
+  var expanded by remember { mutableStateOf(false) }
 
   Card(
     modifier = Modifier
@@ -61,7 +66,7 @@ fun AndroidAutoDropdown() {
           easing = LinearOutSlowInEasing
         )
       )
-      .padding(12.dp),
+      .padding(horizontal = 12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     shape = RoundedCornerShape(12.dp),
   ) {
@@ -78,13 +83,13 @@ fun AndroidAutoDropdown() {
       horizontalArrangement = Arrangement.Center
     ) {
       Icon(
-        imageVector = Icons.Outlined.DirectionsCar,
-        contentDescription = "Android Auto Layout",
+        imageVector = Icons.Outlined.Brush,
+        contentDescription = "Theme Picker",
         modifier = Modifier.padding(end = 8.dp),
         tint = MaterialTheme.colorScheme.primary
       )
       Text(
-        text = "Android Auto Layout",
+        text = "Theme",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.weight(1f)
@@ -113,10 +118,10 @@ fun AndroidAutoDropdown() {
               .fillMaxWidth()
               .height(42.dp)
               .selectable(
-                selected = (androidAutoLayout == AndroidAutoLayouts.GRID),
+                selected = (themeType == ThemeTypes.SYSTEM),
                 onClick = {
                   scope.launch {
-                    settingsModel.updateAndroidAutoLayout(AndroidAutoLayouts.GRID)
+                    settingsModel.updateThemeType(ThemeTypes.SYSTEM)
                   }
                 },
                 role = Role.RadioButton
@@ -125,17 +130,17 @@ fun AndroidAutoDropdown() {
             verticalAlignment = Alignment.CenterVertically
           ) {
             Icon(
-              imageVector = Icons.Rounded.GridView,
-              contentDescription = "Grid",
+              imageVector = Icons.Rounded.BrightnessAuto,
+              contentDescription = "Default Theme Icon",
               tint = MaterialTheme.colorScheme.primary,
               modifier = Modifier.padding(end = 8.dp)
             )
             Text(
-              "Grid",
+              "Default",
               Modifier.weight(1f)
             )
             RadioButton(
-              selected = androidAutoLayout == AndroidAutoLayouts.GRID,
+              selected = themeType == ThemeTypes.SYSTEM,
               onClick = null
             )
           }
@@ -152,10 +157,10 @@ fun AndroidAutoDropdown() {
               .fillMaxWidth()
               .height(42.dp)
               .selectable(
-                selected = (androidAutoLayout == AndroidAutoLayouts.LIST),
+                selected = (themeType == ThemeTypes.LIGHT),
                 onClick = {
                   scope.launch {
-                    settingsModel.updateAndroidAutoLayout(AndroidAutoLayouts.LIST)
+                    settingsModel.updateThemeType(ThemeTypes.LIGHT)
                   }
                 },
                 role = Role.RadioButton
@@ -164,19 +169,95 @@ fun AndroidAutoDropdown() {
             verticalAlignment = Alignment.CenterVertically
           ) {
             Icon(
-              imageVector = Icons.AutoMirrored.Rounded.ViewList,
-              contentDescription = "List",
+              imageVector = Icons.Rounded.WbSunny,
+              contentDescription = "Light Theme Icon",
               tint = MaterialTheme.colorScheme.primary,
               modifier = Modifier.padding(end = 8.dp)
             )
             Text(
-              "List",
+              "Light",
               Modifier.weight(1f)
             )
             RadioButton(
-              selected = androidAutoLayout == AndroidAutoLayouts.LIST,
+              selected = themeType == ThemeTypes.LIGHT,
               onClick = null
             )
+          }
+        }
+        Card(
+          modifier = Modifier
+            .padding(
+              horizontal = 8.dp,
+              vertical = 4.dp
+            )
+            .padding(bottom = 4.dp),
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+        ) {
+          Row(
+            Modifier
+              .fillMaxWidth()
+              .height(42.dp)
+              .selectable(
+                selected = (themeType == ThemeTypes.DARK),
+                onClick = { scope.launch { settingsModel.updateThemeType(ThemeTypes.DARK) } },
+                role = Role.RadioButton
+              )
+              .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              imageVector = Icons.Rounded.NightsStay,
+              contentDescription = "Night Theme Icon",
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.padding(end = 8.dp)
+            )
+            Text(
+              "Dark",
+              Modifier.weight(1f)
+            )
+            RadioButton(
+              selected = themeType == ThemeTypes.DARK,
+              onClick = null
+            )
+          }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          Card(
+            modifier = Modifier
+              .padding(
+                horizontal = 8.dp,
+                vertical = 4.dp
+              )
+              .padding(bottom = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+          ) {
+            Row(
+              Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .selectable(
+                  selected = (isDynamic),
+                  onClick = { scope.launch { settingsModel.toggleDynamicTheme() } },
+                  role = Role.Switch
+                )
+                .padding(horizontal = 10.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(
+                imageVector = Icons.Rounded.ColorLens,
+                contentDescription = "Dynamic Color Icon",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 8.dp)
+              )
+              Text(
+                "Dynamic Color",
+                Modifier.weight(1f)
+              )
+              Switch(
+                checked = isDynamic,
+                onCheckedChange = null
+              )
+            }
           }
         }
       }

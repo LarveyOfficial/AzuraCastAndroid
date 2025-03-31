@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.ui.mainActivity.components.settings
+package com.larvey.azuracastplayer.ui.mainActivity.settings
 
 import android.os.Build
 import androidx.compose.foundation.layout.Box
@@ -29,6 +29,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.larvey.azuracastplayer.ui.mainActivity.settings.components.AboutDropdown
+import com.larvey.azuracastplayer.ui.mainActivity.settings.components.AndroidAutoDropdown
+import com.larvey.azuracastplayer.ui.mainActivity.settings.components.ContactMeDropdown
+import com.larvey.azuracastplayer.ui.mainActivity.settings.components.LegacyMediaBackground
+import com.larvey.azuracastplayer.ui.mainActivity.settings.components.ThemePicker
 import kotlinx.coroutines.launch
 
 
@@ -76,8 +81,7 @@ fun SettingsSheet(drawerState: DrawerState) {
         .verticalScroll(rememberScrollState())
     ) {
       ThemePicker()
-      //      AndroidAutoDropdown()
-      Spacer(modifier = Modifier.height(12.dp))
+      AndroidAutoDropdown()
       if (Build.VERSION.SDK_INT > 28) {
         LegacyMediaBackground()
         Spacer(modifier = Modifier.height(16.dp))

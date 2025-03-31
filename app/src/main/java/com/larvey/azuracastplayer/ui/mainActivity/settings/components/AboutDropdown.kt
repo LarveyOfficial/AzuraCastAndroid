@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.ui.mainActivity.components.settings
+package com.larvey.azuracastplayer.ui.mainActivity.settings.components
 
 import android.content.Intent
 import android.os.Build

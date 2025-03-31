@@ -74,9 +74,9 @@ fun NowPlayingHistory(
           horizontal = 8.dp,
           vertical = 4.dp
         )
-        .padding(top = 4.dp)
+        .padding(top = 2.dp)
         .clip(RoundedCornerShape(16.dp)),
-      color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+      color = Color.White.copy(alpha = 0.2f),
     )
     Column(
       modifier = Modifier

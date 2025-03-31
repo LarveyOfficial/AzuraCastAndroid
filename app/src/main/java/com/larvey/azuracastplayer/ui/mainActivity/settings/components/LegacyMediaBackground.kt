@@ -1,4 +1,4 @@
-package com.larvey.azuracastplayer.ui.mainActivity.components.settings
+package com.larvey.azuracastplayer.ui.mainActivity.settings.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
