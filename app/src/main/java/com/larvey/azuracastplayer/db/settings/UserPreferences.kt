@@ -30,11 +30,11 @@ class UserPreferences(private val dataStore: DataStore<Preferences>) {
   }
 
   val isGridViewFlow: Flow<Boolean> = dataStore.data.map { preferences ->
-    preferences[isGridView] == true
+    preferences[isGridView] != false
   }
 
   val isDynamicThemeFlow: Flow<Boolean> = dataStore.data.map { preferences ->
-    preferences[isDynamicTheme] == true
+    preferences[isDynamicTheme] != false
   }
 
   val themeTypeFlow: Flow<ThemeTypes> = dataStore.data.map { preferences ->

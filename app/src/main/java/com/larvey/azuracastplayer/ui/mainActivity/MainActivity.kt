@@ -6,6 +6,8 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
+import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
@@ -161,9 +163,34 @@ class MainActivity : ComponentActivity() {
       navigationBarStyle = SystemBarStyle.light(
         Color.TRANSPARENT,
         Color.TRANSPARENT
+      ),
+      statusBarStyle = SystemBarStyle.light(
+        Color.TRANSPARENT,
+        Color.TRANSPARENT
       )
     )
     setContent {
+      var isLoading by remember { mutableStateOf(false) }
+
+      LaunchedEffect(Unit) {
+        delay(50)
+        isLoading = true
+      }
+
+      val content: View = findViewById(android.R.id.content)
+      content.viewTreeObserver.addOnPreDrawListener(
+        object : ViewTreeObserver.OnPreDrawListener {
+          override fun onPreDraw(): Boolean {
+            return if (isLoading) {
+              content.viewTreeObserver.removeOnPreDrawListener(this)
+              true
+            } else {
+              false
+            }
+          }
+        }
+      )
+
       AzuraCastPlayerTheme {
         mainActivityViewModel = viewModel()
         mediaController = rememberManagedMediaController().value

@@ -139,7 +139,7 @@ fun NowPlayingSheet(
         }
       }
 
-      PredictiveBackHandler(navController.currentDestination?.route == "nowPlaying") { progress: Flow<BackEventCompat> ->
+      PredictiveBackHandler(true) { progress: Flow<BackEventCompat> ->
         try {
           progress.collect { backEvent ->
             sheetSize = 1f - (0.15f * backEvent.progress)
