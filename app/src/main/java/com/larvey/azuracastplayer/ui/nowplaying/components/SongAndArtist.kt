@@ -23,7 +23,8 @@ fun SongAndArtist(
   modifier: Modifier = Modifier,
   songName: String,
   artistName: String,
-  small: Boolean
+  small: Boolean,
+  color: Color = Color.White
 ) {
   Column(modifier = modifier.padding(horizontal = if (small) 4.dp else 16.dp)) {
     Text(
@@ -43,7 +44,7 @@ fun SongAndArtist(
       ),
       fontWeight = FontWeight.Bold,
       maxLines = 1,
-      color = Color.White
+      color = color
     )
 
     Spacer(modifier = Modifier.size(4.dp))
@@ -65,7 +66,7 @@ fun SongAndArtist(
           label = "Artist Name"
         ).value
       ),
-      color = Color.White
+      color = color
     )
   }
 }

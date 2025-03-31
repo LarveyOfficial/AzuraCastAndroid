@@ -89,6 +89,7 @@ import coil3.request.crossfade
 import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
+import com.larvey.azuracastplayer.ui.discovery.components.DiscoveryDetails
 import com.larvey.azuracastplayer.ui.nowplaying.components.OtherAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 import com.larvey.azuracastplayer.utils.fixHttps
@@ -175,6 +176,9 @@ fun Discovery(
       }
     } else {
       timedBoolean.value = discoveryViewingStation.value
+      if (!discoveryViewingStation.value && navigator.canNavigateBack()) {
+        navigator.navigateBack()
+      }
     }
   }
 
@@ -470,212 +474,16 @@ fun Discovery(
                 .find { it.publicPlayerUrl == stationPublicUrl }
 
               AnimatedContent(station) { animatedStation ->
-
                 animatedStation?.let {
-
                   val url = animatedStation.publicPlayerUrl.toUri().host
 
                   discoveryViewModel.getStationData(
                     url.toString(),
                     animatedStation.shortCode
                   )
-                }
 
+                  DiscoveryDetails(animatedStation, innerPadding, discoveryViewModel)
 
-                Box(
-                  Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                ) {
-                  LazyColumn {
-                    item {
-                      Column(
-                        Modifier
-                          .padding(horizontal = 16.dp)
-                      ) {
-                        Card(
-                          modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 256.dp)
-                            .padding(bottom = 16.dp)
-                        ) {
-                          AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                              .data(animatedStation?.imageMediaUrl?.fixHttps())
-                              .crossfade(true)
-                              .placeholderMemoryCacheKey(animatedStation?.imageMediaUrl?.fixHttps())
-                              .placeholder(
-                                if (MaterialTheme.colorScheme.isDark()) {
-                                  R.drawable.loading_image_dark
-                                } else {
-                                  R.drawable.loading_image
-                                }
-                              )
-                              .diskCacheKey(animatedStation?.imageMediaUrl?.fixHttps())
-                              .build(),
-                            contentDescription = animatedStation?.friendlyName,
-                            modifier = Modifier
-                              .fillMaxWidth(),
-                            contentScale = ContentScale.FillWidth,
-                            error = if (MaterialTheme.colorScheme.isDark()) {
-                              painterResource(R.drawable.image_loading_failed_dark)
-                            } else {
-                              painterResource(R.drawable.image_loading_failed)
-                            },
-                          )
-                        }
-                        Text(
-                          animatedStation?.friendlyName ?: " ",
-                          style = MaterialTheme.typography.titleLarge,
-                          modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        if (animatedStation?.description != "") {
-                          Text(
-                            animatedStation?.description ?: " ",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                          )
-                        }
-                        Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          verticalAlignment = Alignment.CenterVertically,
-                          horizontalArrangement = Arrangement.SpaceEvenly,
-                        ) {
-                          Button(
-                            onClick = {
-                              discoveryViewModel.setPlaybackSource(
-                                url = URL(animatedStation?.publicPlayerUrl).host
-                                  ?: "",
-                                mountURI = animatedStation?.preferredMount?.fixHttps()
-                                  ?: "",
-                                shortCode = animatedStation?.shortCode ?: ""
-                              )
-                            }
-                          ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                              Icon(
-                                Icons.Rounded.PlayArrow,
-                                contentDescription = "Play"
-                              )
-                              Text("Play Station")
-                            }
-                          }
-                          Button(
-                            onClick = {
-                              if (animatedStation != null) {
-                                discoveryViewModel.addStation(animatedStation)
-                              }
-                            },
-                            enabled = discoveryViewModel.savedStationsDB.savedStations.value?.none { it.shortcode == animatedStation?.shortCode } != false
-                          ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                              Icon(
-                                Icons.Rounded.Add,
-                                contentDescription = "Add"
-                              )
-                              Text("Save Station")
-                            }
-                          }
-                        }
-                        Spacer(modifier = Modifier.size(16.dp))
-
-                        val data = discoveryViewModel.nowPlayingData.staticDataMap[Pair(
-                          animatedStation?.publicPlayerUrl?.toUri()?.host.toString(),
-                          animatedStation?.shortCode
-                        )]
-
-                        AnimatedVisibility(data != null) {
-                          Column {
-                            data?.let {
-                              HorizontalDivider()
-                              Text(
-                                "Now Playing",
-                                modifier = Modifier.padding(
-                                  start = 8.dp,
-                                  top = 8.dp,
-                                  bottom = 4.dp
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White
-                              )
-                              Row(
-                                modifier = Modifier
-                                  .padding(bottom = 8.dp)
-                                  .fillMaxWidth()
-                                  .height(67.5.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                              ) {
-                                OtherAlbumArt(data.nowPlaying.song.art)
-                                SongAndArtist(
-                                  songName = data.nowPlaying.song.title,
-                                  artistName = data.nowPlaying.song.artist,
-                                  small = true
-                                )
-                              }
-                              data.playingNext?.let {
-                                Text(
-                                  "Up Next",
-                                  modifier = Modifier.padding(
-                                    start = 8.dp,
-                                    top = 8.dp,
-                                    bottom = 4.dp
-                                  ),
-                                  style = MaterialTheme.typography.labelMedium,
-                                  color = Color.White
-                                )
-                                Row(
-                                  modifier = Modifier
-                                    .padding(bottom = 8.dp)
-                                    .fillMaxWidth()
-                                    .height(67.5.dp),
-                                  verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                  OtherAlbumArt(data.playingNext.song.art)
-                                  SongAndArtist(
-                                    songName = data.playingNext.song.title,
-                                    artistName = data.playingNext.song.artist,
-                                    small = true
-                                  )
-                                }
-                              }
-                              Text(
-                                "Song History",
-                                modifier = Modifier.padding(
-                                  start = 8.dp,
-                                  top = 8.dp,
-                                  bottom = 4.dp
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White
-                              )
-                              Column(
-                                modifier = Modifier.padding(bottom = 4.dp)
-                              ) {
-                                data.songHistory.forEach { item ->
-                                  Row(
-                                    modifier = Modifier
-                                      .padding(bottom = 8.dp)
-                                      .fillMaxWidth()
-                                      .height(67.5.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                  ) {
-                                    OtherAlbumArt(item.song.art)
-                                    SongAndArtist(
-                                      songName = item.song.title,
-                                      artistName = item.song.artist,
-                                      small = true
-                                    )
-                                  }
-                                }
-                              }
-                            }
-                          }
-
-                        }
-                      }
-                    }
-                    item { Spacer(Modifier.size(animatedPadding)) }
-                  }
                 }
               }
             }

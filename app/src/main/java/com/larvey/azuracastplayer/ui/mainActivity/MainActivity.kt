@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
@@ -352,6 +353,7 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                               if (!isWide) {
                                 currentDestination = it
+                                discoveryViewingStation.value = false
                               } else {
                                 if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
                                   currentDestination = it
@@ -416,6 +418,22 @@ class MainActivity : ComponentActivity() {
                                   Icon(
                                     imageVector = Icons.Rounded.Settings,
                                     contentDescription = "Settings"
+                                  )
+                                }
+                              }
+                            },
+                            navigationIcon = {
+                              if (!isWide && currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+                                IconButton(
+                                  onClick = {
+                                    scope.launch {
+                                      discoveryViewingStation.value = false
+                                    }
+                                  }
+                                ) {
+                                  Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = "Arrow Back"
                                   )
                                 }
                               }
