@@ -48,6 +48,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -80,6 +81,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -87,6 +89,8 @@ import coil3.request.crossfade
 import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
+import com.larvey.azuracastplayer.ui.nowplaying.components.OtherAlbumArt
+import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.delay
@@ -466,6 +470,18 @@ fun Discovery(
                 .find { it.publicPlayerUrl == stationPublicUrl }
 
               AnimatedContent(station) { animatedStation ->
+
+                animatedStation?.let {
+
+                  val url = animatedStation.publicPlayerUrl.toUri().host
+
+                  discoveryViewModel.getStationData(
+                    url.toString(),
+                    animatedStation.shortCode
+                  )
+                }
+
+
                 Box(
                   Modifier
                     .fillMaxSize()
@@ -562,6 +578,100 @@ fun Discovery(
                           }
                         }
                         Spacer(modifier = Modifier.size(16.dp))
+
+                        val data = discoveryViewModel.nowPlayingData.staticDataMap[Pair(
+                          animatedStation?.publicPlayerUrl?.toUri()?.host.toString(),
+                          animatedStation?.shortCode
+                        )]
+
+                        AnimatedVisibility(data != null) {
+                          Column {
+                            data?.let {
+                              HorizontalDivider()
+                              Text(
+                                "Now Playing",
+                                modifier = Modifier.padding(
+                                  start = 8.dp,
+                                  top = 8.dp,
+                                  bottom = 4.dp
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White
+                              )
+                              Row(
+                                modifier = Modifier
+                                  .padding(bottom = 8.dp)
+                                  .fillMaxWidth()
+                                  .height(67.5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                              ) {
+                                OtherAlbumArt(data.nowPlaying.song.art)
+                                SongAndArtist(
+                                  songName = data.nowPlaying.song.title,
+                                  artistName = data.nowPlaying.song.artist,
+                                  small = true
+                                )
+                              }
+                              data.playingNext?.let {
+                                Text(
+                                  "Up Next",
+                                  modifier = Modifier.padding(
+                                    start = 8.dp,
+                                    top = 8.dp,
+                                    bottom = 4.dp
+                                  ),
+                                  style = MaterialTheme.typography.labelMedium,
+                                  color = Color.White
+                                )
+                                Row(
+                                  modifier = Modifier
+                                    .padding(bottom = 8.dp)
+                                    .fillMaxWidth()
+                                    .height(67.5.dp),
+                                  verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                  OtherAlbumArt(data.playingNext.song.art)
+                                  SongAndArtist(
+                                    songName = data.playingNext.song.title,
+                                    artistName = data.playingNext.song.artist,
+                                    small = true
+                                  )
+                                }
+                              }
+                              Text(
+                                "Song History",
+                                modifier = Modifier.padding(
+                                  start = 8.dp,
+                                  top = 8.dp,
+                                  bottom = 4.dp
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White
+                              )
+                              Column(
+                                modifier = Modifier.padding(bottom = 4.dp)
+                              ) {
+                                data.songHistory.forEach { item ->
+                                  Row(
+                                    modifier = Modifier
+                                      .padding(bottom = 8.dp)
+                                      .fillMaxWidth()
+                                      .height(67.5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                  ) {
+                                    OtherAlbumArt(item.song.art)
+                                    SongAndArtist(
+                                      songName = item.song.title,
+                                      artistName = item.song.artist,
+                                      small = true
+                                    )
+                                  }
+                                }
+                              }
+                            }
+                          }
+
+                        }
                       }
                     }
                     item { Spacer(Modifier.size(animatedPadding)) }

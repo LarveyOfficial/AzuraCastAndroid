@@ -73,6 +73,13 @@ class DiscoveryViewModel @Inject constructor(
     }
   }
 
+  fun getStationData(url: String, shortCode: String) {
+    nowPlayingData.getStationInformation(
+      url,
+      shortCode
+    )
+  }
+
   fun setPlaybackSource(
     url: String, mountURI: String, shortCode: String
   ) {
