@@ -49,8 +49,11 @@ import com.larvey.azuracastplayer.ui.mainActivity.MainActivity
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.resourceToUri
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import java.net.URL
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -70,6 +73,9 @@ class MusicPlayerService : MediaLibraryService() {
   @Inject
   lateinit var discoveryJSON: MutableState<DiscoveryJSON?>
 
+  lateinit var savedChildrenStyle: AndroidAutoLayouts
+
+
   var mediaSession: MediaLibrarySession? = null
 
   private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -85,6 +91,14 @@ class MusicPlayerService : MediaLibraryService() {
   @OptIn(UnstableApi::class)
   override fun onCreate() {
     super.onCreate()
+
+    val userPreferences = (application as AppSetup).userPreferences
+
+    val job = SupervisorJob()
+    val scope = CoroutineScope(Dispatchers.IO + job)
+
+    scope.launch { savedChildrenStyle = userPreferences.androidAutoLayoutFlow.first() }
+
 
     val isSleeping = sharedMediaController.isSleeping
 
@@ -561,14 +575,6 @@ class MusicPlayerService : MediaLibraryService() {
       pageSize: Int,
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-
-      val userPreferences = (application as AppSetup).userPreferences
-
-      lateinit var savedChildrenStyle: AndroidAutoLayouts
-
-      runBlocking { // This is evil but it must be done 💀 (thanks legacy APIs)
-        savedChildrenStyle = userPreferences.androidAutoLayoutFlow.first()
-      }
 
       val gridStyleChildren = Bundle()
       val listStyleChildren = Bundle()

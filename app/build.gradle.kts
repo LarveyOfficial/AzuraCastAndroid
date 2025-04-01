@@ -81,7 +81,7 @@ dependencies {
 
   implementation("com.github.android:renderscript-intrinsics-replacement-toolkit:b6363490c3")
 
-  implementation("androidx.compose.material3:material3:1.4.0-alpha10")
+  implementation("androidx.compose.material3:material3:1.4.0-alpha11")
 
   implementation("androidx.window:window:1.4.0-rc01")
 
@@ -89,7 +89,7 @@ dependencies {
   implementation("androidx.compose.material3.adaptive:adaptive-layout:1.1.0")
   implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.1.0")
 
-  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha10")
+  implementation("androidx.compose.material3:material3-window-size-class:1.4.0-alpha11")
 
   implementation(libs.reorderable)
 

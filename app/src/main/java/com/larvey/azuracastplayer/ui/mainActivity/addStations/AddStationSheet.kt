@@ -79,6 +79,7 @@ import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.utils.conditional
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
 import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.launch
 
@@ -141,6 +142,7 @@ fun AddStationSheet(
     modifier = Modifier
       .fillMaxSize(),
     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    shape = RoundedCornerShape(getRoundedCornerRadius())
   ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
