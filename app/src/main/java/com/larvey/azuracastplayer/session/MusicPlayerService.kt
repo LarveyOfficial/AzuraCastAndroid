@@ -576,6 +576,13 @@ class MusicPlayerService : MediaLibraryService() {
       params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
 
+      val userPreferences = (application as AppSetup).userPreferences
+
+      val job = SupervisorJob()
+      val scope = CoroutineScope(Dispatchers.IO + job)
+
+      scope.launch { savedChildrenStyle = userPreferences.androidAutoLayoutFlow.first() }
+
       val gridStyleChildren = Bundle()
       val listStyleChildren = Bundle()
 
