@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -42,14 +41,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -90,13 +83,10 @@ import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryCategory
 import com.larvey.azuracastplayer.ui.discovery.components.DiscoveryDetails
-import com.larvey.azuracastplayer.ui.nowplaying.components.OtherAlbumArt
-import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.net.URL
 import kotlin.math.absoluteValue
 
 @OptIn(
@@ -137,6 +127,7 @@ fun Discovery(
   BackHandler(navigator.canNavigateBack()) {
     scope.launch {
       navigator.navigateBack()
+      discoveryViewingStation.value = false
     }
   }
 
@@ -482,7 +473,11 @@ fun Discovery(
                     animatedStation.shortCode
                   )
 
-                  DiscoveryDetails(animatedStation, innerPadding, discoveryViewModel)
+                  DiscoveryDetails(
+                    animatedStation,
+                    innerPadding,
+                    discoveryViewModel
+                  )
 
                 }
               }
