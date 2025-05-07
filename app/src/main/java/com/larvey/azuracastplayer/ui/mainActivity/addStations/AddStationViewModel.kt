@@ -1,15 +1,17 @@
 package com.larvey.azuracastplayer.ui.mainActivity.addStations
 
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.larvey.azuracastplayer.api.findHostsStations
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import kotlinx.coroutines.launch
-import java.net.URL
+import okhttp3.internal.format
 
 class AddStationViewModel : ViewModel() {
   var stationHostData = mutableStateMapOf<String, List<StationJSON>>()
@@ -38,7 +40,12 @@ class AddStationViewModel : ViewModel() {
         "https://$radioURL"
       }
     try {
-      formatedURL.value = URL(formatedURL.value).host
+      if (formatedURL.value.toUri().port.toString() != "-1") {
+        formatedURL.value = "${formatedURL.value.toUri().host.toString()}:${formatedURL.value.toUri().port}"
+      } else {
+        formatedURL.value = formatedURL.value.toUri().host.toString()
+      }
+
       if (Patterns.WEB_URL.matcher(formatedURL.value).matches()) {
         searchStationHost(formatedURL.value)
       } else {
