@@ -77,10 +77,11 @@ dependencies {
 
   implementation("io.coil-kt.coil3:coil-compose:3.1.0")
   implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
-
+  implementation("androidx.appcompat:appcompat:1.7.0")
 
   implementation("com.github.android:renderscript-intrinsics-replacement-toolkit:b6363490c3")
 
+  implementation("com.google.android.gms:play-services-cast-framework:21.4.0")
   implementation("androidx.compose.material3:material3:1.4.0-alpha11")
 
   implementation("androidx.window:window:1.4.0-rc01")

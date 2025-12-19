@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Public
@@ -89,6 +90,7 @@ import com.larvey.azuracastplayer.db.settings.SettingsViewModel.SettingsModelPro
 import com.larvey.azuracastplayer.session.rememberManagedMediaController
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
+import com.larvey.azuracastplayer.ui.cast.CastBottomSheet
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
@@ -246,6 +248,8 @@ class MainActivity : ComponentActivity() {
         val confirmEdit = remember { mutableStateOf(false) }
         //endregion
 
+        val showCastSheet = remember { mutableStateOf(false) }
+
         //region Animated Add Button Colors
         val animatedFabColor = animateColorAsState(
           targetValue = correctedVibrantColor(
@@ -402,6 +406,14 @@ class MainActivity : ComponentActivity() {
                                     contentDescription = "Switch View"
                                   )
                                 }
+                              }
+                              IconButton(
+                                onClick = { showCastSheet.value = true }
+                              ) {
+                                Icon(
+                                  imageVector = Icons.Rounded.Cast, // Or CastConnected if you check state
+                                  contentDescription = "Cast"
+                                )
                               }
                               AnimatedVisibility(
                                 currentDestination == AppDestinations.STATIONS && !editingList.value,
@@ -662,6 +674,12 @@ class MainActivity : ComponentActivity() {
             }
 
           }
+        }
+
+        if (showCastSheet.value) {
+          CastBottomSheet(
+            onDismiss = { showCastSheet.value = false }
+          )
         }
 
         when {

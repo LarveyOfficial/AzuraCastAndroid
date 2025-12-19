@@ -9,6 +9,12 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.net.Uri
+import com.google.android.gms.cast.MediaInfo
+import com.google.android.gms.cast.MediaMetadata as CastMediaMetadata
+import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.common.images.WebImage
+import com.google.android.gms.cast.MediaLoadRequestData
 import androidx.annotation.OptIn
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -117,6 +123,13 @@ class MusicPlayerService : MediaLibraryService() {
       )
     }
 
+    var castContext: CastContext? = null
+    try {
+        castContext = CastContext.getSharedInstance(this)
+    } catch (e: Exception) {
+      Log.e("CastIntegration", "Could not initialize CastContext", e)
+    }
+
     val player = object : ForwardingPlayer(
       ExoPlayer.Builder(this).setAudioAttributes(
         AudioAttributes.DEFAULT,
@@ -162,6 +175,44 @@ class MusicPlayerService : MediaLibraryService() {
             nowPlaying.nowPlayingShortCode.value,
             player
           )
+        }
+        try {
+          val currentSession = castContext?.sessionManager?.currentCastSession
+          if (currentSession != null && currentSession.isConnected) {
+            val remoteMediaClient = currentSession.remoteMediaClient
+
+            // Map Media3 Metadata to Cast Metadata
+            val castMetadata = CastMediaMetadata(CastMediaMetadata.MEDIA_TYPE_MUSIC_TRACK)
+            mediaMetadata.title?.let { castMetadata.putString(CastMediaMetadata.KEY_TITLE, it.toString()) }
+            mediaMetadata.artist?.let { castMetadata.putString(CastMediaMetadata.KEY_ARTIST, it.toString()) }
+            mediaMetadata.artworkUri?.let { castMetadata.addImage(WebImage(it)) }
+
+            // Build MediaInfo
+            val streamUrl = nowPlaying.nowPlayingMount.value.ifEmpty {
+              ""
+            }
+
+            if (streamUrl.isNotEmpty()) {
+              val mediaInfo = MediaInfo.Builder(streamUrl)
+                .setStreamType(MediaInfo.STREAM_TYPE_LIVE)
+                .setContentType("audio/mpeg")
+                .setMetadata(castMetadata)
+                .build()
+
+              val loadRequest = MediaLoadRequestData.Builder()
+                .setMediaInfo(mediaInfo)
+                .setAutoplay(true)
+                .build()
+
+              // Update the remote player
+              // Note: 'load' might restart the stream. For seamless metadata updates on
+              // live radio without cutting audio, the receiver app usually handles it.
+              // However, calling load() ensures the UI on TV is accurate.
+              remoteMediaClient?.load(loadRequest)
+            }
+          }
+        } catch (e: Exception) {
+          Log.e("CastIntegration", "Error updating cast metadata", e)
         }
       }
 
