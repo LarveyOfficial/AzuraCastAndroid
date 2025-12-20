@@ -33,8 +33,6 @@ class CastViewModel(application: Application) : AndroidViewModel(application) {
         override fun onRouteAdded(router: MediaRouter, route: MediaRouter.RouteInfo) = updateRoutes()
         override fun onRouteRemoved(router: MediaRouter, route: MediaRouter.RouteInfo) = updateRoutes()
         override fun onRouteChanged(router: MediaRouter, route: MediaRouter.RouteInfo) = updateRoutes()
-        override fun onRouteSelected(router: MediaRouter, route: MediaRouter.RouteInfo) = updateRoutes()
-        override fun onRouteUnselected(router: MediaRouter, route: MediaRouter.RouteInfo) = updateRoutes()
     }
 
     // Call this when the sheet opens

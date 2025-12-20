@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +38,7 @@ import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.ui.cast.CastBottomSheet
 import com.larvey.azuracastplayer.utils.updateTime
 
 @OptIn(
@@ -59,6 +62,8 @@ fun NowPlayingBottomBar(
 
   var currentProgress by remember { mutableFloatStateOf(0f) }
   var currentPosition by remember { mutableLongStateOf(0) }
+
+  val showCastSheet = remember { mutableStateOf(false) }
 
   val progressAnimation by animateFloatAsState(
     targetValue = currentProgress,
@@ -115,17 +120,16 @@ fun NowPlayingBottomBar(
           .weight(0.5f),
         horizontalArrangement = Arrangement.Center
       ) {
-        //        IconButton(
-        //          enabled = false,
-        //          onClick = {}
-        //        ) {
-        //          Icon(
-        //            imageVector = Icons.Rounded.FavoriteBorder,
-        //            contentDescription = "Favorite",
-        //            modifier = Modifier.size(48.dp),
-        //            tint = Color.White
-        //          )
-        //        }
+        IconButton(
+          onClick = { showCastSheet.value = true }
+        ) {
+          Icon(
+            imageVector = Icons.Rounded.Cast, // Or CastConnected if you check state
+            contentDescription = "Cast",
+            modifier = Modifier.size(32.dp),
+            tint = Color.White
+          )
+        }
         Spacer(modifier = Modifier.weight(1f))
         IconButton(
           enabled = true,
@@ -143,6 +147,11 @@ fun NowPlayingBottomBar(
       }
     }
 
+  }
+  if (showCastSheet.value) {
+    CastBottomSheet(
+      onDismiss = { showCastSheet.value = false }
+    )
   }
 }
 
