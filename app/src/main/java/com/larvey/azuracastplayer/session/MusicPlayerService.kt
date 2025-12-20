@@ -86,10 +86,6 @@ class MusicPlayerService : MediaLibraryService() {
 
   private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-      Log.d(
-        "DEBUG",
-        "Yo, I got the msg"
-      )
       mediaSession?.player?.stop()
     }
   }
@@ -137,11 +133,61 @@ class MusicPlayerService : MediaLibraryService() {
       ).build()
     ) {
       override fun play() {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          super.volume = 0f
+          val remoteMediaClient = currentSession.remoteMediaClient
+
+          // Map Media3 Metadata to Cast Metadata
+          val castMetadata = CastMediaMetadata(CastMediaMetadata.MEDIA_TYPE_MUSIC_TRACK)
+          mediaMetadata.title?.let { castMetadata.putString(CastMediaMetadata.KEY_TITLE, it.toString()) }
+          mediaMetadata.artist?.let { castMetadata.putString(CastMediaMetadata.KEY_ARTIST, it.toString()) }
+          mediaMetadata.artworkUri?.let { castMetadata.addImage(WebImage(it)) }
+
+          // Build MediaInfo
+          val streamUrl = nowPlaying.nowPlayingMount.value.ifEmpty {
+            ""
+          }
+
+          if (streamUrl.isNotEmpty()) {
+            val mediaInfo = MediaInfo.Builder(streamUrl)
+              .setStreamType(MediaInfo.STREAM_TYPE_LIVE)
+              .setContentType("audio/mpeg")
+              .setMetadata(castMetadata)
+              .build()
+
+            val loadRequest = MediaLoadRequestData.Builder()
+              .setMediaInfo(mediaInfo)
+              .setAutoplay(true)
+              .build()
+
+            // Update the remote player
+            // Note: 'load' might restart the stream. For seamless metadata updates on
+            // live radio without cutting audio, the receiver app usually handles it.
+            // However, calling load() ensures the UI on TV is accurate.
+            remoteMediaClient?.load(loadRequest)
+          }
+        } else {
+          super.volume = 1.0f
+        }
         super.play()
         super.seekToDefaultPosition()
       }
 
+      override fun pause() {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          currentSession.remoteMediaClient?.pause()
+        }
+        super.pause()
+      }
+
+
       override fun stop() {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          currentSession.remoteMediaClient?.stop()
+        }
         super.stop()
         nowPlaying.nowPlayingShortCode.value = ""
         nowPlaying.nowPlayingMount.value = ""
@@ -166,10 +212,6 @@ class MusicPlayerService : MediaLibraryService() {
     player.addListener(object : Player.Listener {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
         if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
-          Log.d(
-            "DEBUG-FUNKEY",
-            nowPlaying.nowPlayingURL.value
-          )
           nowPlaying.setMediaMetadata(
             nowPlaying.nowPlayingURL.value,
             nowPlaying.nowPlayingShortCode.value,
@@ -208,6 +250,7 @@ class MusicPlayerService : MediaLibraryService() {
               // Note: 'load' might restart the stream. For seamless metadata updates on
               // live radio without cutting audio, the receiver app usually handles it.
               // However, calling load() ensures the UI on TV is accurate.
+              player.volume = 0f
               remoteMediaClient?.load(loadRequest)
             }
           }
