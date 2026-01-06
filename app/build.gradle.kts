@@ -8,14 +8,14 @@ plugins {
 
 android {
   namespace = "com.larvey.azuracastplayer"
-  compileSdk = 35
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 26
-    targetSdk = 35
-    versionCode = 70
-    versionName = "v1.0.1"
+    targetSdk = 36
+    versionCode = 72
+    versionName = "v1.0.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -78,8 +78,8 @@ dependencies {
   implementation("io.coil-kt.coil3:coil-compose:3.1.0")
   implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
 
-
-  implementation("com.github.android:renderscript-intrinsics-replacement-toolkit:b6363490c3")
+//  implementation("com.github.android:renderscript-intrinsics-replacement-toolkit:b6363490c3")
+  implementation(files("libs/renderscript-toolkit-release.aar"))
 
   implementation("androidx.compose.material3:material3:1.4.0-alpha11")
 
