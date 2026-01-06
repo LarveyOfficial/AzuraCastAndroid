@@ -38,6 +38,9 @@ import androidx.media3.session.MediaSession.ConnectionResult
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
+import com.google.android.gms.cast.MediaQueueItem
+import com.google.android.gms.cast.framework.CastSession
+import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -60,6 +63,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import androidx.media3.common.DeviceInfo
+import java.util.concurrent.CopyOnWriteArraySet
 import java.net.URL
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -119,9 +125,61 @@ class MusicPlayerService : MediaLibraryService() {
       )
     }
 
+    fun loadRemoteMedia(session: CastSession) {
+      val targetShortCode = nowPlaying.nowPlayingShortCode.value
+      var stationName = "AzuraCast Radio"
+      var artworkUri: Uri? = null
+
+      // 1. Lookup Station Name & Art
+      val savedStation = savedStationsDB.savedStations.value?.find { it.shortcode == targetShortCode }
+      if (savedStation != null) {
+        stationName = savedStation.name
+        artworkUri = "https://${savedStation.url}/api/station/${savedStation.shortcode}/art/-1".toUri()
+      } else {
+        var discoveryStation: DiscoveryStation? = null
+        discoveryJSON.value?.let { json ->
+          discoveryStation = json.featuredStations.stations.find { it.shortCode == targetShortCode }
+          if (discoveryStation == null) {
+            discoveryStation = json.discoveryStations.flatMap { it.stations }
+              .find { it.shortCode == targetShortCode }
+          }
+        }
+        if (discoveryStation != null) {
+          stationName = discoveryStation.friendlyName
+          artworkUri = discoveryStation.imageMediaUrl.toUri()
+        }
+      }
+
+      // 2. Build Cast Metadata
+      val castMetadata = CastMediaMetadata(CastMediaMetadata.MEDIA_TYPE_MUSIC_TRACK)
+      castMetadata.putString(CastMediaMetadata.KEY_TITLE, "AzuraCast Radio")
+      castMetadata.putString(CastMediaMetadata.KEY_ARTIST, stationName)
+      artworkUri?.let { castMetadata.addImage(WebImage(it)) }
+
+      // 3. Load to Receiver
+      val streamUrl = nowPlaying.nowPlayingMount.value.ifEmpty { "" }
+      if (streamUrl.isNotEmpty()) {
+        val mediaInfo = MediaInfo.Builder(streamUrl)
+          .setStreamType(MediaInfo.STREAM_TYPE_LIVE)
+          .setContentType("audio/mpeg")
+          .setMetadata(castMetadata)
+          .build()
+
+        val loadRequest = MediaLoadRequestData.Builder()
+          .setMediaInfo(mediaInfo)
+          .setAutoplay(true)
+          .build()
+
+        session.remoteMediaClient?.load(loadRequest)
+      }
+    }
+
+
+
     var castContext: CastContext? = null
     try {
         castContext = CastContext.getSharedInstance(this)
+
     } catch (e: Exception) {
       Log.e("CastIntegration", "Could not initialize CastContext", e)
     }
@@ -132,41 +190,84 @@ class MusicPlayerService : MediaLibraryService() {
         true
       ).build()
     ) {
+      private val listeners = CopyOnWriteArraySet<Player.Listener>()
+
+      override fun addListener(listener: Player.Listener) {
+        listeners.add(listener)
+        super.addListener(listener)
+      }
+
+      override fun removeListener(listener: Player.Listener) {
+        listeners.remove(listener)
+        super.removeListener(listener)
+      }
+
+      // Helper to refresh UI when switching between Cast/Phone
+      fun updateCastState() {
+        val info = this.deviceInfo
+        // Notify listeners that device info (Local vs Remote) changed
+        listeners.forEach { it.onDeviceInfoChanged(info) }
+        // Notify listeners that volume changed
+        listeners.forEach { it.onDeviceVolumeChanged(this.deviceVolume, this.isDeviceMuted) }
+      }
+
+      // 1. Tell Android we are a "Remote" device (enables Cast Volume UI)
+      override fun getDeviceInfo(): DeviceInfo {
+        val isCasting = castContext?.sessionManager?.currentCastSession?.isConnected == true
+        if (isCasting) {
+          // PLAYBACK_TYPE_REMOTE = 1
+          // minVolume = 0, maxVolume = 20
+          return DeviceInfo(DeviceInfo.PLAYBACK_TYPE_REMOTE, 0, 20)
+        }
+        return super.getDeviceInfo()
+      }
+
+      // 2. FIXED: Use 'fun getDeviceVolume()' instead of 'val deviceVolume'
+      override fun getDeviceVolume(): Int {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          val castVol = currentSession.volume // 0.0 to 1.0
+          return (castVol * 20).toInt()
+        }
+        return super.getDeviceVolume()
+      }
+
+      // 3. FIXED: Use 'fun isDeviceMuted()' instead of 'val isDeviceMuted'
+      override fun isDeviceMuted(): Boolean {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          return currentSession.isMute
+        }
+        return super.isDeviceMuted()
+      }
+
+      // 4. Set Volume (Converted from 0-20 back to 0.0-1.0)
+      override fun setDeviceVolume(volume: Int, flags: Int) {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          val newVol = (volume / 20.0).coerceIn(0.0, 1.0)
+          currentSession.volume = newVol
+          updateCastState() // Refresh UI
+        } else {
+          super.setDeviceVolume(volume, flags)
+        }
+      }
+
+      // 5. Set Muted
+      override fun setDeviceMuted(muted: Boolean, flags: Int) {
+        val currentSession = castContext?.sessionManager?.currentCastSession
+        if (currentSession != null && currentSession.isConnected) {
+          currentSession.isMute = muted
+          updateCastState()
+        } else {
+          super.setDeviceMuted(muted, flags)
+        }
+      }
       override fun play() {
         val currentSession = castContext?.sessionManager?.currentCastSession
         if (currentSession != null && currentSession.isConnected) {
           super.volume = 0f
-          val remoteMediaClient = currentSession.remoteMediaClient
-
-          // Map Media3 Metadata to Cast Metadata
-          val castMetadata = CastMediaMetadata(CastMediaMetadata.MEDIA_TYPE_MUSIC_TRACK)
-          mediaMetadata.title?.let { castMetadata.putString(CastMediaMetadata.KEY_TITLE, it.toString()) }
-          mediaMetadata.artist?.let { castMetadata.putString(CastMediaMetadata.KEY_ARTIST, it.toString()) }
-          mediaMetadata.artworkUri?.let { castMetadata.addImage(WebImage(it)) }
-
-          // Build MediaInfo
-          val streamUrl = nowPlaying.nowPlayingMount.value.ifEmpty {
-            ""
-          }
-
-          if (streamUrl.isNotEmpty()) {
-            val mediaInfo = MediaInfo.Builder(streamUrl)
-              .setStreamType(MediaInfo.STREAM_TYPE_LIVE)
-              .setContentType("audio/mpeg")
-              .setMetadata(castMetadata)
-              .build()
-
-            val loadRequest = MediaLoadRequestData.Builder()
-              .setMediaInfo(mediaInfo)
-              .setAutoplay(true)
-              .build()
-
-            // Update the remote player
-            // Note: 'load' might restart the stream. For seamless metadata updates on
-            // live radio without cutting audio, the receiver app usually handles it.
-            // However, calling load() ensures the UI on TV is accurate.
-            remoteMediaClient?.load(loadRequest)
-          }
+          loadRemoteMedia(currentSession)
         } else {
           super.volume = 1.0f
         }
@@ -209,6 +310,44 @@ class MusicPlayerService : MediaLibraryService() {
       }
     }
 
+    val sessionManagerListener = object : SessionManagerListener<CastSession> {
+      override fun onSessionStarted(session: CastSession, sessionId: String) {
+        // If we are already playing locally, transfer to Cast
+        if (mediaSession?.player?.isPlaying == true) {
+          mediaSession?.player?.volume = 0f
+          loadRemoteMedia(session)
+        }
+        player.updateCastState()
+      }
+
+      override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
+        if (mediaSession?.player?.isPlaying == true) {
+          mediaSession?.player?.volume = 0f
+          loadRemoteMedia(session)
+        }
+        player.updateCastState()
+      }
+
+      override fun onSessionEnded(session: CastSession, error: Int) {
+        // Restore local volume when disconnected
+        mediaSession?.player?.volume = 1.0f
+        player.updateCastState()
+      }
+
+      // Required overrides (leave empty)
+      override fun onSessionStarting(session: CastSession) {}
+      override fun onSessionStartFailed(session: CastSession, error: Int) {}
+      override fun onSessionEnding(session: CastSession) {}
+      override fun onSessionResuming(session: CastSession, sessionId: String) {}
+      override fun onSessionResumeFailed(session: CastSession, error: Int) {}
+      override fun onSessionSuspended(session: CastSession, reason: Int) {}
+    }
+
+    castContext?.sessionManager?.addSessionManagerListener(
+      sessionManagerListener,
+      CastSession::class.java
+    )
+
     player.addListener(object : Player.Listener {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
         if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
@@ -217,45 +356,6 @@ class MusicPlayerService : MediaLibraryService() {
             nowPlaying.nowPlayingShortCode.value,
             player
           )
-        }
-        try {
-          val currentSession = castContext?.sessionManager?.currentCastSession
-          if (currentSession != null && currentSession.isConnected) {
-            val remoteMediaClient = currentSession.remoteMediaClient
-
-            // Map Media3 Metadata to Cast Metadata
-            val castMetadata = CastMediaMetadata(CastMediaMetadata.MEDIA_TYPE_MUSIC_TRACK)
-            mediaMetadata.title?.let { castMetadata.putString(CastMediaMetadata.KEY_TITLE, it.toString()) }
-            mediaMetadata.artist?.let { castMetadata.putString(CastMediaMetadata.KEY_ARTIST, it.toString()) }
-            mediaMetadata.artworkUri?.let { castMetadata.addImage(WebImage(it)) }
-
-            // Build MediaInfo
-            val streamUrl = nowPlaying.nowPlayingMount.value.ifEmpty {
-              ""
-            }
-
-            if (streamUrl.isNotEmpty()) {
-              val mediaInfo = MediaInfo.Builder(streamUrl)
-                .setStreamType(MediaInfo.STREAM_TYPE_LIVE)
-                .setContentType("audio/mpeg")
-                .setMetadata(castMetadata)
-                .build()
-
-              val loadRequest = MediaLoadRequestData.Builder()
-                .setMediaInfo(mediaInfo)
-                .setAutoplay(true)
-                .build()
-
-              // Update the remote player
-              // Note: 'load' might restart the stream. For seamless metadata updates on
-              // live radio without cutting audio, the receiver app usually handles it.
-              // However, calling load() ensures the UI on TV is accurate.
-              player.volume = 0f
-              remoteMediaClient?.load(loadRequest)
-            }
-          }
-        } catch (e: Exception) {
-          Log.e("CastIntegration", "Error updating cast metadata", e)
         }
       }
 
