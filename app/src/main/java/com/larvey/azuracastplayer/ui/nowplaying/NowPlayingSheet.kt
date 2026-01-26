@@ -106,10 +106,7 @@ fun NowPlayingSheet(
         },
       containerColor = Color.Transparent,
       sheetState = sheetState,
-      shape = RoundedCornerShape(
-        topStart = getRoundedCornerRadius(),
-        topEnd = getRoundedCornerRadius()
-      ),
+      shape = RoundedCornerShape(getRoundedCornerRadius()),
       onDismissRequest = {
         hideNowPlaying()
       },
@@ -165,10 +162,7 @@ fun NowPlayingSheet(
         modifier = Modifier
           .fillMaxSize()
           .clip(
-            RoundedCornerShape(
-              topStart = getRoundedCornerRadius(),
-              topEnd = getRoundedCornerRadius()
-            )
+            RoundedCornerShape(getRoundedCornerRadius())
           )
       ) {
         if (Build.VERSION.SDK_INT <= 28 || legacyBackground) {
