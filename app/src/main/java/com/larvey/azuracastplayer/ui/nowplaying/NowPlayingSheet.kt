@@ -106,7 +106,10 @@ fun NowPlayingSheet(
         },
       containerColor = Color.Transparent,
       sheetState = sheetState,
-      shape = RoundedCornerShape(getRoundedCornerRadius()),
+      shape = RoundedCornerShape(
+        topStart = getRoundedCornerRadius(),
+        topEnd = getRoundedCornerRadius()
+      ),
       onDismissRequest = {
         hideNowPlaying()
       },
@@ -161,7 +164,12 @@ fun NowPlayingSheet(
       Box(
         modifier = Modifier
           .fillMaxSize()
-          .clip(RoundedCornerShape(getRoundedCornerRadius()))
+          .clip(
+            RoundedCornerShape(
+              topStart = getRoundedCornerRadius(),
+              topEnd = getRoundedCornerRadius()
+            )
+          )
       ) {
         if (Build.VERSION.SDK_INT <= 28 || legacyBackground) {
           BlurImageBackground(playerState = nowPlayingViewModel.sharedMediaController.playerState.value)

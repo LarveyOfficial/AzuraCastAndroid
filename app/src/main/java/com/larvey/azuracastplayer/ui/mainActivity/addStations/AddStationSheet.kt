@@ -142,7 +142,10 @@ fun AddStationSheet(
     modifier = Modifier
       .fillMaxSize(),
     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-    shape = RoundedCornerShape(getRoundedCornerRadius())
+    shape = RoundedCornerShape(
+      topStart = getRoundedCornerRadius(),
+      topEnd = getRoundedCornerRadius()
+    )
   ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
