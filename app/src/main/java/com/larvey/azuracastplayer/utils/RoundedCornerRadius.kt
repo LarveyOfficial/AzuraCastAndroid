@@ -16,9 +16,11 @@ fun getRoundedCornerRadius(): Dp {
     val roundedCorner = windowInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)
     val radiusPx = roundedCorner?.radius ?: 0
     val density = LocalDensity.current
-    return with(density) {
+    val rounding = with(density) {
       radiusPx.toDp().value.toInt().dp
     }
+    val adjustedValue = rounding - (rounding.value * 0.1f).dp
+    return adjustedValue
   }
   return 0.dp
 }
