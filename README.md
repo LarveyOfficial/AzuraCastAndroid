@@ -40,3 +40,7 @@ Before reporting any issues, ensure that the issue hasn't already been reported 
 ## Disclaimer
 
 This project does not have any official affiliation with the [AzuraCast Project](https://www.azuracast.com/). This is an **unofficial app** simply made due to interest in AzuraCast. Any issues for this app should **not** be directed towards the AzuraCast team. Thank you!
+
+## iOS/iPadOS
+
+Looking for an iOS alternative? Checkout the sister iOS app on the [AppStore](https://apps.apple.com/us/app/azuracast-radio/id6740510724)
