@@ -14,16 +14,39 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 26
     targetSdk = 36
-    versionCode = 75
-    versionName = "v1.0.3b"
+    // versionCode must strictly increase for the Play Store. In CI it is derived
+    // from the workflow run number (+ a base so it never drops below the last
+    // published 75); local builds fall back to the base.
+    versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 75
+    // versionName is managed by release-please — it is bumped in the release PR.
+    // Do not edit the version string by hand, and keep the trailing comment.
+    versionName = "1.1.0" // x-release-please-version
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  signingConfigs {
+    create("release") {
+      // Populated from GitHub Secrets in CI (see .github/workflows/release-please.yml).
+      // When the keystore env var is absent (e.g. local builds) the release build
+      // stays unsigned and this config is not attached (see buildTypes.release below).
+      System.getenv("SIGNING_KEYSTORE_PATH")?.let { keystorePath ->
+        storeFile = file(keystorePath)
+        storeType = "PKCS12"
+        storePassword = System.getenv("SIGNING_KEYSTORE_PASSWORD")
+        keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+        keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+      }
+    }
   }
 
   buildTypes {
     release {
       isMinifyEnabled = true
       isShrinkResources = true
+      if (System.getenv("SIGNING_KEYSTORE_PATH") != null) {
+        signingConfig = signingConfigs.getByName("release")
+      }
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
         "proguard-rules.pro"
