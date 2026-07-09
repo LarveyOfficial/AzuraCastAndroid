@@ -20,7 +20,7 @@ android {
     versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 75
     // versionName is managed by release-please — it is bumped in the release PR.
     // Do not edit the version string by hand, and keep the trailing comment.
-    versionName = "1.1.0" // x-release-please-version
+    versionName = "1.2.0" // x-release-please-version
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
