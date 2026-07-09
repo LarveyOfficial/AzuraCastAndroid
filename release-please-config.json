@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-v-in-tag": true,
+  "include-component-in-tag": false,
+  "bump-minor-pre-major": false,
+  "bump-patch-for-minor-pre-major": false,
+  "draft": false,
+  "prerelease": false,
+  "packages": {
+    ".": {
+      "package-name": "azuracast-radio",
+      "changelog-path": "CHANGELOG.md",
+      "bootstrap-sha": "fce73a6865365800b3eab55a7558a0af2cfd43c1",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "app/build.gradle.kts"
+        }
+      ]
+    }
+  }
+}
