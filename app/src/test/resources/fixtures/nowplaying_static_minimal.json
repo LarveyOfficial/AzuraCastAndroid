@@ -1,0 +1,45 @@
+{
+  "station": {
+    "id": 2,
+    "name": "Minimal Radio",
+    "shortcode": "minimal",
+    "description": "",
+    "mounts": [
+      {
+        "id": 20,
+        "name": "Stream",
+        "url": "http://minimal.example.com/listen",
+        "bitrate": null,
+        "format": null,
+        "path": "/listen",
+        "is_default": true
+      }
+    ],
+    "hls_enabled": false,
+    "hls_url": null
+  },
+  "listeners": {
+    "total": 0,
+    "unique": 0,
+    "current": 0
+  },
+  "now_playing": {
+    "played_at": 1751990400,
+    "duration": 180.0,
+    "song": {
+      "id": "min001",
+      "art": "http://minimal.example.com/api/station/2/art/-1",
+      "text": "Unknown - Untitled",
+      "artist": "Unknown",
+      "title": "Untitled",
+      "album": "",
+      "genre": "",
+      "isrc": null
+    },
+    "elapsed": 0,
+    "remaining": 180
+  },
+  "playing_next": null,
+  "song_history": [],
+  "is_online": false
+}
