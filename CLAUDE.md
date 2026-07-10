@@ -297,14 +297,16 @@ Theme ([ui/theme/](app/src/main/java/com/larvey/azuracastplayer/ui/theme/)): Mat
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please) driven by [Conventional Commits](https://www.conventionalcommits.org/). **`main` is protected (merge via PR only)**, which fits release-please — it works entirely through PRs and never pushes to `main` directly.
 
-Every PR into `main` runs [PR Checks](.github/workflows/pr-check.yml): `assembleDebug` **and** `assembleRelease` (release is unsigned on PRs — no signing env — but still runs R8/minify + resource shrinking so missing ProGuard keep rules fail the PR, not the release), plus `lintDebug` and unit tests. Set the **`build`** job as a required status check in branch protection.
+Non-`main` branches are protected by a **ruleset** (require PR, signed commits, no force-push/deletion) plus **required status checks**. [PR Checks](.github/workflows/pr-check.yml) run as **four separate checks** — `Unit Tests`, `Lint`, `Debug Build`, `Release Build` — each its own job (so failures are attributable at a glance). All four are gated on `github.event.pull_request.draft == false`, so **draft PRs run nothing** until marked ready for review. The `Debug Build` job uploads the debug APK as a run artifact (`app-debug-apk`) and posts/updates a sticky PR comment linking to it. `Release Build` builds `assembleRelease` unsigned (no signing env on PRs) but still runs R8/minify + resource shrinking, so missing ProGuard keep rules fail the PR. **The ruleset's required status checks must list all four job names** (`Unit Tests`, `Lint`, `Debug Build`, `Release Build`) — not the old single `build`.
 
 ### How it flows
 1. You merge PRs into `main` using Conventional Commit messages (`feat:`, `fix:`, `feat!:`/`BREAKING CHANGE:`, plus `docs:`/`chore:`/`refactor:`… which don't trigger releases).
-2. The [Release Please workflow](.github/workflows/release-please.yml) keeps an open **release PR** that accumulates a `CHANGELOG.md` and the next SemVer bump (`fix`→patch, `feat`→minor, breaking→major).
-3. Merging that release PR creates a git tag (`vX.Y.Z`) and a **GitHub Release**, then a second CI job (`release-artifacts`) builds the signed **APK + AAB** and:
+2. The [Release Please workflow](.github/workflows/release-please.yml) keeps an open **release PR** that accumulates a `CHANGELOG.md` and the next SemVer bump (`fix`→patch, `feat`→minor, breaking→major). It also reacts to **every** push to `main`:
+   - **Non-release merge** (`release_created == false`) → the `prerelease` job builds the signed release APK and refreshes a single rolling **`nightly` pre-release** pointing at the latest commit (GitHub never marks a pre-release "Latest", so a stable release always outranks it).
+   - **Release merge** (`release_created == true`, the release PR merged) → the `release-artifacts` job runs (below) and **deletes the `nightly` pre-release** so the stable release is unambiguously newest.
+3. Merging the release PR creates a git tag (`vX.Y.Z`) and a **GitHub Release**, then `release-artifacts` builds the signed **APK + AAB** and:
    - attaches the **APK** to the public GitHub Release, and
-   - uploads the **AAB** privately to the **Play Console internal testing track** (via `r0adkll/upload-google-play`). The AAB is never attached to the public Release.
+   - uploads the **AAB** privately to the **Play Console internal testing track** (via `r0adkll/upload-google-play`). The AAB is never attached to the public Release. The `nightly` pre-release gets an APK only (no Play upload).
 
 ### Where the version lives
 - **`versionName`** in [app/build.gradle.kts](app/build.gradle.kts) is owned by release-please — it's the line tagged `// x-release-please-version`. **Never edit the version string by hand** and keep that trailing comment or the updater won't find it.
