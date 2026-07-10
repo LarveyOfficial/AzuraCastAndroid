@@ -1,0 +1,100 @@
+name: Beta Build
+
+# Opt-in beta builds. Two ways to trigger:
+#  - Merge a PR into main that carries the "beta" label.
+#  - Run this workflow manually (Actions → Beta Build → Run workflow) to queue
+#    the current state of main as a beta.
+# Each run builds a signed, beta-versioned AAB and uploads it to the Play
+# internal track as a DRAFT (nothing goes live until you publish/promote it in
+# the console), plus a sideloadable APK as a run artifact.
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Serialize so two beta builds never race on the same versionCode / track.
+concurrency:
+  group: beta-build
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    name: Beta Build
+    # Manual dispatch, OR a merged PR that carried the "beta" label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'beta'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          # Full history so `git rev-list --count` yields the true commit count.
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute beta version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Beta = a build of the UPCOMING release. Read that version from
+          # release-please's open release PR; fall back to the manifest (the
+          # last released version) when no release is pending.
+          NEXT=$(gh pr list --state open --json title,headRefName \
+            --jq '.[] | select(.headRefName | startswith("release-please")) | .title' 2>/dev/null \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+          if [ -z "$NEXT" ]; then
+            NEXT=$(python3 -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")
+          fi
+          COMMITS=$(git rev-list --count HEAD)
+          echo "version_name=${NEXT}-beta.${COMMITS}" >> "$GITHUB_OUTPUT"
+          echo "version_code=$((COMMITS + 75))" >> "$GITHUB_OUTPUT"
+          echo "Beta ${NEXT}-beta.${COMMITS} (versionCode $((COMMITS + 75)))"
+
+      - name: Decode signing keystore
+        env:
+          SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
+        run: echo "$SIGNING_KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      - name: Build signed beta APK + AAB
+        env:
+          VERSION_NAME_OVERRIDE: ${{ steps.ver.outputs.version_name }}
+          VERSION_CODE: ${{ steps.ver.outputs.version_code }}
+          SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Upload beta APK artifact (sideload copy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: azuracast-beta-${{ steps.ver.outputs.version_name }}
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload beta AAB to Play internal (draft)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.larvey.azuracastplayer
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: draft
+          releaseName: ${{ steps.ver.outputs.version_name }}

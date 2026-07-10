@@ -14,13 +14,18 @@ android {
     applicationId = "com.larvey.azuracastplayer"
     minSdk = 26
     targetSdk = 36
-    // versionCode must strictly increase for the Play Store. In CI it is derived
-    // from the workflow run number (+ a base so it never drops below the last
-    // published 75); local builds fall back to the base.
-    versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 75
+    // versionCode must strictly increase for the Play Store. CI passes VERSION_CODE
+    // computed from the main commit count (+ 75), which is workflow-independent and
+    // strictly monotonic across the release AND beta pipelines — unlike
+    // GITHUB_RUN_NUMBER, which is per-workflow and resets if a workflow is renamed.
+    // Local and PR builds fall back to 75.
+    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 75
     // versionName is managed by release-please — it is bumped in the release PR.
     // Do not edit the version string by hand, and keep the trailing comment.
     versionName = "1.2.0" // x-release-please-version
+    // Beta CI builds relabel the version (e.g. 1.3.0-beta.245) via this env
+    // override; stable and local builds keep the release-please-managed value above.
+    System.getenv("VERSION_NAME_OVERRIDE")?.takeIf { it.isNotBlank() }?.let { versionName = it }
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
