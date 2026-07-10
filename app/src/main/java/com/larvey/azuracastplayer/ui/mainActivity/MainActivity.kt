@@ -120,6 +120,7 @@ enum class AppDestinations(
     Icons.Rounded.Public,
     "Discover"
   ),
+  // Planned feature (favorites) — intentionally kept:
   //  FAVORITES(
   //    "Songs",
   //    Icons.Rounded.Favorite,
@@ -601,6 +602,7 @@ class MainActivity : ComponentActivity() {
                                 )
                               }
 
+                              // Planned feature (favorites) — intentionally kept:
                               //                        AppDestinations.FAVORITES -> {
                               //                          Box(
                               //                            modifier = Modifier

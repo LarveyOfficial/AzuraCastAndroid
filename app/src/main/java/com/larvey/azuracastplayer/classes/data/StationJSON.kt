@@ -2,6 +2,17 @@ package com.larvey.azuracastplayer.classes.data
 
 import com.google.gson.annotations.SerializedName
 
+/**
+ * AzuraCast's now-playing payload, as served by both
+ * `/api/nowplaying_static/{shortCode}.json` and `/api/nowplaying`.
+ * Schema: https://www.azuracast.com/docs/developers/now-playing-data/
+ *
+ * Gson notes: snake_case fields are mapped via [SerializedName]; `played_at`
+ * is epoch seconds; `duration`/`elapsed`/`remaining` are typed [Number]
+ * because AzuraCast may serve them fractional (Gson materializes them as its
+ * internal lazily-parsed number — use the numeric conversions). Do not rename
+ * or move these classes without updating the ProGuard keep rules.
+ */
 data class StationJSON(
   val station: Station,
   val listeners: Listeners,

@@ -1,0 +1,151 @@
+{
+  "station": {
+    "id": 1,
+    "name": "Test Radio",
+    "shortcode": "test_radio",
+    "description": "A fully-populated test station",
+    "frontend": "icecast",
+    "backend": "liquidsoap",
+    "listen_url": "https://radio.example.com/listen/test_radio/radio.mp3",
+    "url": "https://radio.example.com",
+    "public_player_url": "https://radio.example.com/public/test_radio",
+    "is_public": true,
+    "mounts": [
+      {
+        "id": 10,
+        "name": "128kbps MP3",
+        "url": "https://radio.example.com/listen/test_radio/radio.mp3",
+        "bitrate": 128,
+        "format": "mp3",
+        "path": "/radio.mp3",
+        "is_default": true,
+        "listeners": {
+          "total": 12,
+          "unique": 10,
+          "current": 12
+        }
+      },
+      {
+        "id": 11,
+        "name": "Lossless FLAC",
+        "url": "https://radio.example.com/listen/test_radio/radio.flac",
+        "bitrate": null,
+        "format": "flac",
+        "path": "/radio.flac",
+        "is_default": false,
+        "listeners": {
+          "total": 1,
+          "unique": 1,
+          "current": 1
+        }
+      },
+      {
+        "id": 12,
+        "name": "Ogg Vorbis",
+        "url": "https://radio.example.com/listen/test_radio/radio.ogg",
+        "bitrate": 192,
+        "format": "ogg",
+        "path": "/radio.ogg",
+        "is_default": false,
+        "listeners": {
+          "total": 0,
+          "unique": 0,
+          "current": 0
+        }
+      }
+    ],
+    "hls_enabled": true,
+    "hls_url": "https://radio.example.com/hls/test_radio/live.m3u8",
+    "hls_is_default": false
+  },
+  "listeners": {
+    "total": 13,
+    "unique": 11,
+    "current": 13
+  },
+  "live": {
+    "is_live": false,
+    "streamer_name": ""
+  },
+  "now_playing": {
+    "sh_id": 5001,
+    "played_at": 1751990400,
+    "duration": 245,
+    "playlist": "default",
+    "streamer": "",
+    "is_request": false,
+    "song": {
+      "id": "abc123def456",
+      "art": "http://radio.example.com/api/station/1/art/abc123def456.jpg",
+      "text": "Test Artist - Test Song",
+      "artist": "Test Artist",
+      "title": "Test Song",
+      "album": "Test Album",
+      "genre": "Electronic",
+      "isrc": "USTEST2500001",
+      "lyrics": ""
+    },
+    "elapsed": 100,
+    "remaining": 145
+  },
+  "playing_next": {
+    "cued_at": 1751990600,
+    "played_at": 1751990645,
+    "duration": 198,
+    "playlist": "default",
+    "is_request": false,
+    "song": {
+      "id": "next789",
+      "art": "https://radio.example.com/api/station/1/art/next789.jpg",
+      "text": "Next Artist - Next Song",
+      "artist": "Next Artist",
+      "title": "Next Song",
+      "album": "Next Album",
+      "genre": "House",
+      "isrc": null,
+      "lyrics": ""
+    }
+  },
+  "song_history": [
+    {
+      "sh_id": 5000,
+      "played_at": 1751990100,
+      "duration": 300,
+      "playlist": "default",
+      "streamer": "",
+      "is_request": false,
+      "song": {
+        "id": "hist001",
+        "art": "https://radio.example.com/api/station/1/art/hist001.jpg",
+        "text": "History Artist One - History Song One",
+        "artist": "History Artist One",
+        "title": "History Song One",
+        "album": "History Album",
+        "genre": "Ambient",
+        "isrc": "USTEST2400099",
+        "lyrics": ""
+      }
+    },
+    {
+      "sh_id": 4999,
+      "played_at": 1751989800,
+      "duration": 180.5,
+      "playlist": "requests",
+      "streamer": "",
+      "is_request": true,
+      "song": {
+        "id": "hist002",
+        "art": "https://radio.example.com/api/station/1/art/hist002.jpg",
+        "text": "History Artist Two - History Song Two",
+        "artist": "History Artist Two",
+        "title": "History Song Two",
+        "album": "",
+        "genre": "",
+        "isrc": null,
+        "lyrics": ""
+      }
+    }
+  ],
+  "is_online": true,
+  "cache": "static"
+}

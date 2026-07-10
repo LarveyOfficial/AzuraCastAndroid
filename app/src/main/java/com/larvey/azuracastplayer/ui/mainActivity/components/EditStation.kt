@@ -33,6 +33,9 @@ import androidx.compose.ui.window.Dialog
 import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.utils.fixHttps
+import com.larvey.azuracastplayer.utils.supportedMounts
+
+private const val TAG = "EditStation"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,13 +61,8 @@ fun EditStation(
 
   val defaultMount = stationData.station.mounts.find {
     it.url == station.defaultMount
-  } ?: stationData.station.mounts.filterNot {
-    listOf(
-      "flac",
-      "ogg",
-      "opus"
-    ).contains(it.format)
-  }.first()
+  } ?: stationData.station.mounts.supportedMounts()
+    .first() // Known sharp edge: throws if a station serves no supported mounts.
 
   val textFieldState =
     rememberTextFieldState(
@@ -118,28 +116,21 @@ fun EditStation(
             expanded = expandedDropdown,
             onDismissRequest = { expandedDropdown = false }
           ) {
-            mounts.forEach { mount ->
-              if (!listOf(
-                  "flac",
-                  "ogg",
-                  "opus"
-                ).contains(mount.format)
-              ) {
-                DropdownMenuItem(
-                  text = {
-                    Text(
-                      mount.name,
-                      style = MaterialTheme.typography.bodyLarge
-                    )
-                  },
-                  onClick = {
-                    textFieldState.setTextAndPlaceCursorAtEnd(mount.name)
-                    setMount = mount.url.fixHttps()
-                    expandedDropdown = false
-                  },
-                  contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                )
-              }
+            mounts.supportedMounts().forEach { mount ->
+              DropdownMenuItem(
+                text = {
+                  Text(
+                    mount.name,
+                    style = MaterialTheme.typography.bodyLarge
+                  )
+                },
+                onClick = {
+                  textFieldState.setTextAndPlaceCursorAtEnd(mount.name)
+                  setMount = mount.url.fixHttps()
+                  expandedDropdown = false
+                },
+                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+              )
             }
             if (hls) {
               DropdownMenuItem(
@@ -181,8 +172,8 @@ fun EditStation(
                 position = station.position
               )
               Log.d(
-                "DEBUG-EDIT",
-                newStation.toString()
+                TAG,
+                "Saving edited station: $newStation"
               )
               editStation(
                 newStation

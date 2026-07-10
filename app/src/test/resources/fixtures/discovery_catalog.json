@@ -1,0 +1,66 @@
+{
+  "lastUpdated": "2026-07-01T00:00:00Z",
+  "featuredStations": {
+    "lastUpdated": "2026-07-01T00:00:00Z",
+    "title": "Featured Stations",
+    "description": "Stations hand-picked by listeners for listeners",
+    "stations": [
+      {
+        "friendlyName": "Featured FM",
+        "shortCode": "featured_fm",
+        "imageMediaUrl": "https://cdn.example.com/featured_fm.png",
+        "publicPlayerUrl": "https://featured.example.com/public/featured_fm",
+        "preferredMount": "https://featured.example.com/listen/featured_fm/radio.mp3",
+        "description": "The flagship featured station",
+        "supportsHls": true,
+        "hlsUrl": "https://featured.example.com/hls/featured_fm/live.m3u8"
+      }
+    ]
+  },
+  "discoveryStations": [
+    {
+      "lastUpdated": "2026-07-01T00:00:00Z",
+      "title": "Chill Beats",
+      "description": "Relaxing streams",
+      "stations": [
+        {
+          "friendlyName": "Lo-Fi Lounge",
+          "shortCode": "lofi_lounge",
+          "imageMediaUrl": "https://cdn.example.com/lofi.png",
+          "publicPlayerUrl": "https://lofi.example.com:8080/public/lofi_lounge",
+          "preferredMount": "https://lofi.example.com:8080/listen/lofi_lounge/radio.mp3",
+          "description": "Beats to relax to",
+          "supportsHls": false,
+          "hlsUrl": null
+        },
+        {
+          "friendlyName": "Ambient Air",
+          "shortCode": "ambient_air",
+          "imageMediaUrl": "https://cdn.example.com/ambient.png",
+          "publicPlayerUrl": "https://ambient.example.com/public/ambient_air",
+          "preferredMount": "https://ambient.example.com/listen/ambient_air/radio.mp3",
+          "description": "Weightless soundscapes",
+          "supportsHls": false,
+          "hlsUrl": null
+        }
+      ]
+    },
+    {
+      "lastUpdated": "2026-07-01T00:00:00Z",
+      "title": "Talk & News",
+      "description": "Voices from around the world",
+      "stations": [
+        {
+          "friendlyName": "Talk Tower",
+          "shortCode": "talk_tower",
+          "imageMediaUrl": "https://cdn.example.com/talk.png",
+          "publicPlayerUrl": "https://talk.example.com/public/talk_tower",
+          "preferredMount": "https://talk.example.com/listen/talk_tower/radio.mp3",
+          "description": "All talk, all day",
+          "supportsHls": true,
+          "hlsUrl": "https://talk.example.com/hls/talk_tower/live.m3u8"
+        }
+      ]
+    }
+  ]
+}

@@ -31,6 +31,7 @@ import com.larvey.azuracastplayer.state.PlayerState
 import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import com.larvey.azuracastplayer.utils.formatPlaybackTimestamp
 
 
 @OptIn(UnstableApi::class)
@@ -90,50 +91,14 @@ fun ProgressBar(
 
       val position = currentPosition.toDuration(DurationUnit.MILLISECONDS)
 
-      val durationString = duration.toComponents { hours, minutes, seconds, _ ->
-        if (position.inWholeHours > 0 || hours > 0) {
-          var maxHours = hours
-          if (hours > 99) {
-            maxHours = 99
-          }
-          String.format(
-            Locale.getDefault(),
-            "%02d:%02d:%02d",
-            maxHours,
-            minutes,
-            seconds
-          )
-        } else {
-          String.format(
-            Locale.getDefault(),
-            "%02d:%02d",
-            minutes,
-            seconds
-          )
-        }
-      }
-      val positionString = position.toComponents { hours, minutes, seconds, _ ->
-        if (hours > 0 || duration.inWholeHours > 0) {
-          var maxHours = hours
-          if (hours > 99) {
-            maxHours = 99
-          }
-          String.format(
-            Locale.getDefault(),
-            "%02d:%02d:%02d",
-            maxHours,
-            minutes,
-            seconds
-          )
-        } else {
-          String.format(
-            Locale.getDefault(),
-            "%02d:%02d",
-            minutes,
-            seconds
-          )
-        }
-      }
+      val durationString = formatPlaybackTimestamp(
+        value = duration,
+        forceHours = position.inWholeHours > 0
+      )
+      val positionString = formatPlaybackTimestamp(
+        value = position,
+        forceHours = duration.inWholeHours > 0
+      )
       Text(
         positionString,
         maxLines = 1,

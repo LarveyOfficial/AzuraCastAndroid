@@ -1,0 +1,84 @@
+[
+  {
+    "station": {
+      "id": 1,
+      "name": "First Station",
+      "shortcode": "first",
+      "description": "Host's first station",
+      "mounts": [
+        {
+          "id": 1,
+          "name": "MP3",
+          "url": "https://host.example.com/listen/first/radio.mp3",
+          "bitrate": 128,
+          "format": "mp3",
+          "path": "/radio.mp3",
+          "is_default": true
+        }
+      ],
+      "hls_enabled": false,
+      "hls_url": null
+    },
+    "listeners": { "total": 5, "unique": 5, "current": 5 },
+    "now_playing": {
+      "played_at": 1751990000,
+      "duration": 200,
+      "song": {
+        "id": "s1",
+        "art": "https://host.example.com/api/station/1/art/s1.jpg",
+        "text": "A - One",
+        "artist": "A",
+        "title": "One",
+        "album": "Album A",
+        "genre": "Pop",
+        "isrc": null
+      },
+      "elapsed": 50,
+      "remaining": 150
+    },
+    "playing_next": null,
+    "song_history": [],
+    "is_online": true
+  },
+  {
+    "station": {
+      "id": 2,
+      "name": "Opus Only",
+      "shortcode": "opus_only",
+      "description": "A station with no app-supported mounts",
+      "mounts": [
+        {
+          "id": 2,
+          "name": "Opus",
+          "url": "https://host.example.com/listen/opus_only/radio.opus",
+          "bitrate": 96,
+          "format": "opus",
+          "path": "/radio.opus",
+          "is_default": true
+        }
+      ],
+      "hls_enabled": false,
+      "hls_url": null
+    },
+    "listeners": { "total": 0, "unique": 0, "current": 0 },
+    "now_playing": {
+      "played_at": 1751990100,
+      "duration": 240,
+      "song": {
+        "id": "s2",
+        "art": "https://host.example.com/api/station/2/art/s2.jpg",
+        "text": "B - Two",
+        "artist": "B",
+        "title": "Two",
+        "album": "Album B",
+        "genre": "Rock",
+        "isrc": null
+      },
+      "elapsed": 10,
+      "remaining": 230
+    },
+    "playing_next": null,
+    "song_history": [],
+    "is_online": true
+  }
+]

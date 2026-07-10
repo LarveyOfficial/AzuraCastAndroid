@@ -5,6 +5,16 @@ import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import kotlinx.coroutines.delay
 
+/**
+ * 1-second polling loop advancing the Now Playing progress UI.
+ *
+ * NOTE: for live (dynamic) streams this recomputes elapsed time from
+ * `played_at`, and `playerState.player.currentPosition` here goes through the
+ * client-side MediaController to the service's ForwardingPlayer override —
+ * which performs the same wall-clock derivation (see LivePositionMath). The
+ * two computations deliberately compose (the override's result is subtracted
+ * back out); do not "simplify" one side without re-deriving the other.
+ */
 @androidx.annotation.OptIn(UnstableApi::class)
 suspend fun updateTime(
   isVisible: Boolean,

@@ -79,8 +79,6 @@ dependencies {
 
   implementation(libs.androidx.navigation.compose)
 
-  implementation(libs.navigation.compose)
-
   implementation(libs.androidx.room.runtime)
   implementation(libs.haze)
   implementation(libs.haze.materials)
@@ -88,12 +86,6 @@ dependencies {
   ksp(libs.room.compiler)
 
   implementation(libs.room.ktx)
-
-  implementation(
-    "com.fasterxml.jackson.module",
-    "jackson-module-kotlin",
-    "2.11.0"
-  )
 
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
@@ -132,7 +124,6 @@ dependencies {
   implementation(libs.androidx.ui.tooling.preview)
   implementation(libs.androidx.material3)
   implementation(libs.androidx.media3.exoplayer)
-  implementation(libs.androidx.media3.ui)
   implementation(libs.androidx.media3.common)
   implementation(libs.androidx.media3.session)
   implementation(libs.androidx.datastore.preferences)
@@ -140,6 +131,9 @@ dependencies {
   implementation(libs.retrofit)
   implementation(libs.converter.gson)
   testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.mockwebserver)
+  testImplementation(libs.truth)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(platform(libs.androidx.compose.bom))

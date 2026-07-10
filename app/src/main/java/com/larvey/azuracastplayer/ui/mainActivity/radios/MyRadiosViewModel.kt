@@ -13,6 +13,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val TAG = "MyRadiosViewModel"
+
 @HiltViewModel
 class MyRadiosViewModel @Inject constructor(
   val nowPlayingData: NowPlayingData,
@@ -30,7 +32,9 @@ class MyRadiosViewModel @Inject constructor(
             item.shortcode
           )
         }
-        delay(500) // It too fast sometimes
+        // Brief delay so the refresh indicator stays visible and the
+        // metadata writes have a moment to land before it hides.
+        delay(500)
         isRefreshing.value = false
       }
     }
@@ -41,8 +45,8 @@ class MyRadiosViewModel @Inject constructor(
   ) {
     val parsedURI = mountURI.toUri()
     Log.d(
-      "DEBUG-PLAYBACK",
-      parsedURI.toString()
+      TAG,
+      "Setting playback source: $parsedURI"
     )
     nowPlayingData.setPlaybackSource(
       mountURI = parsedURI,

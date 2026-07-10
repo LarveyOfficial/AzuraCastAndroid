@@ -42,3 +42,9 @@
 -keep class com.google.gson.reflect.TypeToken
 -keep class * extends com.google.gson.reflect.TypeToken
 -keep public class * implements java.lang.reflect.Type
+# Retrofit suspend functions (official Retrofit R8 rules): R8 full mode strips
+# the Continuation generic signature and the service-method response types
+# without these — the failure only surfaces at runtime in release builds.
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-if interface * { @retrofit2.http.* public *** *(...); }
+-keep,allowoptimization,allowshrinking,allowobfuscation class <3>

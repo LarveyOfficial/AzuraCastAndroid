@@ -82,6 +82,7 @@ import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
 import com.larvey.azuracastplayer.utils.isDark
 import kotlinx.coroutines.launch
+import com.larvey.azuracastplayer.utils.supportedMounts
 
 data class AddableStation(
   val name: String,
@@ -274,23 +275,11 @@ fun AddStationSheet(
             ) { hostData ->
               if (hostData != null) {
                 val mounts = hostData.filterNot { host ->
-                  host.station.mounts.filterNot { mount ->
-                    listOf(
-                      "flac",
-                      "opus",
-                      "ogg"
-                    ).contains(mount.format)
-                  }.isEmpty()
+                  host.station.mounts.supportedMounts().isEmpty()
                 }
                 LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 180.dp)) {
                   itemsIndexed(mounts) { _, item ->
-                    val supportedMounts = item.station.mounts.filterNot { mount ->
-                      listOf(
-                        "flac",
-                        "opus",
-                        "ogg"
-                      ).contains(mount.format)
-                    }
+                    val supportedMounts = item.station.mounts.supportedMounts()
                     Column(
                       modifier = Modifier.fillMaxWidth(),
                       horizontalAlignment = Alignment.CenterHorizontally
