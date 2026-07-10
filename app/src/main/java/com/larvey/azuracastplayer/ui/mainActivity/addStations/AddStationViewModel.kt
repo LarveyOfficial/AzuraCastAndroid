@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.larvey.azuracastplayer.api.ApiResult
 import com.larvey.azuracastplayer.api.AzuraCastRepository
 import com.larvey.azuracastplayer.classes.data.StationJSON
+import com.larvey.azuracastplayer.utils.normalizeToHttpsScheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -73,12 +74,7 @@ class AddStationViewModel @Inject constructor(
     radioURL: String
   ) {
     isSearchInvalid.value = false
-    formatedURL.value =
-      if (radioURL.startsWith("http://") || radioURL.startsWith("https://")) {
-        radioURL
-      } else {
-        "https://$radioURL"
-      }
+    formatedURL.value = normalizeToHttpsScheme(radioURL)
     try {
       if (formatedURL.value.toUri().port.toString() != "-1") {
         formatedURL.value = "${formatedURL.value.toUri().host.toString()}:${formatedURL.value.toUri().port}"

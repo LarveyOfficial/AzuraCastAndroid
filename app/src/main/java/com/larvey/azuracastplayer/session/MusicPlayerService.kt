@@ -140,13 +140,16 @@ class MusicPlayerService : MediaLibraryService() {
       }
 
       override fun getCurrentPosition(): Long {
-        if (nowPlaying.staticData.value?.nowPlaying?.playedAt != null) {
-          if ((System.currentTimeMillis() / 1000) < nowPlaying.staticData.value?.nowPlaying?.playedAt!!) {
-            return (nowPlaying.staticData.value?.nowPlaying?.playedAt!!.minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic()) super.getCurrentPosition() else 0 // System Time sync issue. Trying to prevent negative time elapsed
-          }
-          return ((System.currentTimeMillis() / 1000).minus(nowPlaying.staticData.value?.nowPlaying?.playedAt!!) * 1000) - if (super.isCurrentMediaItemDynamic()) super.getCurrentPosition() else 0
-        }
-        return super.getCurrentPosition()
+        // Live radio has no meaningful player position; derive elapsed time
+        // from wall clock vs. the song's played_at (see computeLiveElapsedMs).
+        val playedAt = nowPlaying.staticData.value?.nowPlaying?.playedAt
+          ?: return super.getCurrentPosition()
+        return computeLiveElapsedMs(
+          nowMs = System.currentTimeMillis(),
+          playedAtSec = playedAt,
+          isDynamic = super.isCurrentMediaItemDynamic(),
+          rawPositionMs = super.getCurrentPosition()
+        )
       }
     }
 
@@ -322,36 +325,9 @@ class MusicPlayerService : MediaLibraryService() {
         val foundStations = mutableListOf<MediaItem>()
         var url = ""
         var shortCode = ""
-        //This is stupid but Google Assistant is stupider
-        val searchQuery = mediaItems[0].requestMetadata.searchQuery!!.lowercase()
-          .replace(
-            " ",
-            ""
-          )
-          .replace(
-            "onazuracastradio",
-            ""
-          )
-          .replace(
-            "onazurecastradio",
-            ""
-          )
-          .replace(
-            "onazuracastplayer",
-            ""
-          )
-          .replace(
-            "onazurecastplayer",
-            ""
-          )
-          .replace(
-            "onazuracast",
-            ""
-          )
-          .replace(
-            "onazurecast",
-            ""
-          )
+        // Google Assistant appends variations of "on AzuraCast" to the spoken
+        // query; strip them (see normalizeVoiceQuery) before matching.
+        val searchQuery = normalizeVoiceQuery(mediaItems[0].requestMetadata.searchQuery!!)
         savedStationsDB.savedStations.value?.let { stations ->
           stations.find { station ->
             station.name.lowercase()
@@ -453,13 +429,10 @@ class MusicPlayerService : MediaLibraryService() {
 
       var updatedMediaItems = mutableListOf<MediaItem>()
 
-      when {
-        mediaItems[0].mediaId.startsWith("SAVED_STATION-") -> {
+      when (val route = resolveMediaIdRoute(mediaItems[0].mediaId)) {
+        is MediaIdRoute.SavedStation -> {
           val item = savedStationsDB.savedStations.value?.find { savedStation ->
-            savedStation.defaultMount == mediaItems[0].mediaId.replaceFirst(
-              "SAVED_STATION-",
-              ""
-            )
+            savedStation.defaultMount == route.mount
           }
           shortCode = item?.shortcode ?: ""
           url = item?.url ?: ""
@@ -467,12 +440,12 @@ class MusicPlayerService : MediaLibraryService() {
             it.buildUpon()
               .setUri(
                 it.mediaId.replaceFirst(
-                  "SAVED_STATION-",
+                  SAVED_STATION_PREFIX,
                   ""
                 )
               ).setMediaId(
                 it.mediaId.replaceFirst(
-                  "SAVED_STATION-",
+                  SAVED_STATION_PREFIX,
                   ""
                 )
               )
@@ -481,23 +454,17 @@ class MusicPlayerService : MediaLibraryService() {
             .toMutableList()
         }
 
-        mediaItems[0].mediaId.startsWith("DISCOVERED-") -> {
+        is MediaIdRoute.Discovered -> {
           val item = mutableStateOf<DiscoveryStation?>(null)
           discoveryJSON.value?.let { json ->
             json.featuredStations.stations.find { stationData ->
-              stationData.preferredMount == mediaItems[0].mediaId.replaceFirst(
-                "DISCOVERED-",
-                ""
-              )
+              stationData.preferredMount == route.mount
             }?.let {
               item.value = it
             }
             if (item.value == null) {
               json.discoveryStations.flatMap { it.stations }.find { stationData ->
-                stationData.preferredMount == mediaItems[0].mediaId.replaceFirst(
-                  "DISCOVERED-",
-                  ""
-                )
+                stationData.preferredMount == route.mount
               }?.let {
                 item.value = it
               }
@@ -513,12 +480,12 @@ class MusicPlayerService : MediaLibraryService() {
             it.buildUpon()
               .setUri(
                 it.mediaId.replaceFirst(
-                  "DISCOVERED-",
+                  DISCOVERED_PREFIX,
                   ""
                 )
               ).setMediaId(
                 it.mediaId.replaceFirst(
-                  "DISCOVERED-",
+                  DISCOVERED_PREFIX,
                   ""
                 )
               )
@@ -528,9 +495,9 @@ class MusicPlayerService : MediaLibraryService() {
 
         }
 
-        else -> {
+        is MediaIdRoute.Direct -> {
           val item = savedStationsDB.savedStations.value?.find { savedStation ->
-            savedStation.defaultMount == mediaItems[0].mediaId
+            savedStation.defaultMount == route.mount
           }
           shortCode = item?.shortcode ?: ""
           url = item?.url ?: ""
@@ -665,7 +632,7 @@ class MusicPlayerService : MediaLibraryService() {
                 .build()
 
               val mediaItem = MediaItem.Builder()
-                .setMediaId("SAVED_STATION-${item.defaultMount}")
+                .setMediaId("$SAVED_STATION_PREFIX${item.defaultMount}")
                 .setMediaMetadata(metaData)
                 .build()
 
@@ -743,7 +710,7 @@ class MusicPlayerService : MediaLibraryService() {
               discoveryJSON.value?.let { discoveryData ->
                 discoveryData.featuredStations.stations.forEach { stationData ->
                   val station = MediaItem.Builder()
-                    .setMediaId("DISCOVERED-${stationData.preferredMount}")
+                    .setMediaId("$DISCOVERED_PREFIX${stationData.preferredMount}")
                     .setMediaMetadata(
                       MediaMetadata.Builder()
                         .setTitle(stationData.friendlyName)
@@ -776,7 +743,7 @@ class MusicPlayerService : MediaLibraryService() {
 
                 discoveryCategory.stations.forEach { stationData ->
                   val station = MediaItem.Builder()
-                    .setMediaId("DISCOVERED-${stationData.preferredMount}")
+                    .setMediaId("$DISCOVERED_PREFIX${stationData.preferredMount}")
                     .setMediaMetadata(
                       MediaMetadata.Builder()
                         .setTitle(stationData.friendlyName)

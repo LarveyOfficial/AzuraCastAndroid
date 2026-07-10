@@ -33,12 +33,14 @@ fun correctedVibrantColor(
     palette.value?.vibrantSwatch?.rgb!!,
     darkVibrant
   )
-  if (brightVibrant[2] <= 0.5f) {
-    brightVibrant[2] = 0.5f
-  }
-  if (darkVibrant[2] >= 0.7f) {
-    darkVibrant[2] = 0.7f
-  }
+  floorLightness(
+    brightVibrant,
+    0.5f
+  )
+  capLightness(
+    darkVibrant,
+    0.7f
+  )
 
   val vibrantColor = if (isSystemInDarkTheme) {
     Color(HSLToColor(brightVibrant))

@@ -21,6 +21,7 @@ import com.larvey.azuracastplayer.classes.data.SavedStation
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
+import com.larvey.azuracastplayer.utils.clampHsl
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.weightedRandomColors
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -145,40 +146,32 @@ class MainActivityViewModel @Inject constructor(
 
     val darkVibrantSwatch = palette.value?.darkVibrantSwatch?.hsl ?: defaultHSL
 
-    if (vibrantSwatch[2] > maxLuminance) {
-      vibrantSwatch[2] = maxLuminance
-    }
-    if (vibrantSwatch[1] > maxSaturation) {
-      vibrantSwatch[1] = maxSaturation
-    }
-
-    if (mutedSwatch[2] > maxLuminance) {
-      mutedSwatch[2] = maxLuminance
-    }
-    if (mutedSwatch[1] > maxSaturation) {
-      mutedSwatch[1] = maxSaturation
-    }
-
-    if (lightMutedSwatch[2] > maxLuminance) {
-      lightMutedSwatch[2] = maxLuminance
-    }
-    if (lightMutedSwatch[1] > maxSaturation) {
-      lightMutedSwatch[1] = maxSaturation
-    }
-
-    if (darkVibrantSwatch[2] > maxLuminance) {
-      darkVibrantSwatch[2] = maxLuminance
-    }
-    if (darkVibrantSwatch[1] > maxSaturation) {
-      darkVibrantSwatch[1] = maxSaturation
-    }
-
-    if (lightVibrantSwatch[2] > maxLuminance) {
-      lightVibrantSwatch[2] = maxLuminance
-    }
-    if (lightVibrantSwatch[1] > maxSaturation) {
-      lightVibrantSwatch[1] = maxSaturation
-    }
+    // Keep the mesh-gradient colors dark and muted enough for white text.
+    clampHsl(
+      vibrantSwatch,
+      maxLuminance,
+      maxSaturation
+    )
+    clampHsl(
+      mutedSwatch,
+      maxLuminance,
+      maxSaturation
+    )
+    clampHsl(
+      lightMutedSwatch,
+      maxLuminance,
+      maxSaturation
+    )
+    clampHsl(
+      darkVibrantSwatch,
+      maxLuminance,
+      maxSaturation
+    )
+    clampHsl(
+      lightVibrantSwatch,
+      maxLuminance,
+      maxSaturation
+    )
 
     val paletteColors = listOf(
       Color(
