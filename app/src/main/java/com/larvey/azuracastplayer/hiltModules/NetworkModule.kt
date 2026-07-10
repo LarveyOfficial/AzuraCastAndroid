@@ -5,6 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -32,7 +33,17 @@ object NetworkModule {
 
   @Provides
   @Singleton
-  fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder().build()
+  fun provideOkHttpClient(): OkHttpClient {
+    // The pre-repository code built a fresh OkHttpClient per call, so OkHttp's
+    // per-host dispatcher cap (default 5) never applied — N polled stations on
+    // one host ran N parallel requests. Raise the per-host cap to the global
+    // cap so consolidating onto one client doesn't queue same-host polls
+    // (users commonly save >5 stations from a single AzuraCast host).
+    val dispatcher = Dispatcher().apply { maxRequestsPerHost = maxRequests }
+    return OkHttpClient.Builder()
+      .dispatcher(dispatcher)
+      .build()
+  }
 
   @Provides
   @Singleton
