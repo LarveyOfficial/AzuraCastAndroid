@@ -280,7 +280,9 @@ Theme ([ui/theme/](app/src/main/java/com/larvey/azuracastplayer/ui/theme/)): Mat
 ## 11. Conventions & gotchas
 
 - **2-space indentation**, `kotlin.code.style=official`. Match the surrounding heavy line-wrapping style (each builder arg on its own line).
-- **No error UX / thin error handling**: API failures just log and no-op. If you add features, follow the existing null-check-and-bail pattern but consider surfacing errors.
+- **Logging convention**: file-level `private const val TAG = "<ClassName>"`; levels — `e` = user-noticeable failure (always pass the `Throwable`), `w` = recovered abnormality (e.g. player auto-retry), `i` = sparse lifecycle milestones, `d` = developer diagnostics. The repository never logs; callers log with context. No joke messages.
+- **No error UX**: API failures log (via `ApiResult` branches) and no-op — there is still no user-facing error surface beyond the add-station invalid flag. If you add features, handle both `ApiResult` branches and consider surfacing errors.
+- **Commented-out FAVORITES code** (MainActivity enum/nav branch, NowPlayingBottomBar button, MediaController ON_STOP line) is a planned feature, intentionally kept and marked — don't delete it as dead code.
 - **API layer**: add new endpoints to `AzuraCastApi` + `AzuraCastRepository` (suspend → `ApiResult`), and handle both result branches at the call site (log failures with context — the repository itself never logs). Never make the repository switch dispatchers; player-mutating callers depend on main-thread resumption.
 - **Shared mutable singletons** are load-bearing (see §2). Prefer wiring new cross-component state through `SharedMediaController` / `NowPlayingData` rather than inventing a parallel path.
 - **`fixHttps()` everywhere**: keep applying it to any station/art/mount URL you introduce, or cache keys and playback break for `http` inputs. Port-in-URL handling was a real bug fixed historically ("Fix URLs w/ port numbers").

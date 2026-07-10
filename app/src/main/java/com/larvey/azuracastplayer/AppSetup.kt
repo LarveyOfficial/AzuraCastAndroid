@@ -20,6 +20,12 @@ import java.time.LocalDateTime
 
 val Context.dataStore by preferencesDataStore("settings")
 
+/**
+ * Application entry point. Boots Hilt, cancels any sleep alarm left over from
+ * a previous process, warms the station metadata cache for every saved
+ * station, and holds the app-wide [UserPreferences] instance (created here
+ * rather than via Hilt so the DataStore delegate lives on the Application).
+ */
 @HiltAndroidApp
 class AppSetup : Application() {
   lateinit var userPreferences: UserPreferences

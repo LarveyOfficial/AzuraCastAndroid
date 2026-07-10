@@ -1,5 +1,14 @@
 package com.larvey.azuracastplayer.classes.data
 
+/**
+ * The community discovery catalog, published as static JSON at
+ * https://owcramer.github.io/AzuraCast-Discovery-API/azuracastDiscovery.json
+ * (not part of AzuraCast itself).
+ *
+ * These classes carry no @SerializedName annotations — parsing relies on
+ * exact property-name matches with the published catalog, so renaming a
+ * property breaks discovery silently. ProGuard keeps apply here too.
+ */
 data class DiscoveryJSON(
   val lastUpdated: String,
   val featuredStations: DiscoveryCategory,

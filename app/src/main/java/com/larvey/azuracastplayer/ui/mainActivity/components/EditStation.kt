@@ -35,6 +35,8 @@ import com.larvey.azuracastplayer.classes.data.StationJSON
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.supportedMounts
 
+private const val TAG = "EditStation"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditStation(
@@ -170,8 +172,8 @@ fun EditStation(
                 position = station.position
               )
               Log.d(
-                "DEBUG-EDIT",
-                newStation.toString()
+                TAG,
+                "Saving edited station: $newStation"
               )
               editStation(
                 newStation

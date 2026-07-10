@@ -41,6 +41,8 @@ fun rememberManagedMediaController(
     val observer = LifecycleEventObserver { _, event ->
       when (event) {
         Lifecycle.Event.ON_START -> controllerManager.initialize()
+        // Intentionally NOT released on ON_STOP — the controller must survive
+        // backgrounding so playback controls keep working:
         //        Lifecycle.Event.ON_STOP -> controllerManager.release()
         else -> {}
       }

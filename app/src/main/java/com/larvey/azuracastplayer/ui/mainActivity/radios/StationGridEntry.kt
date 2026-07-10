@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
-import android.util.Log
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -183,10 +182,6 @@ fun StationGridEntry(
               .conditional(editingList.value) {
                 longPressDraggableHandle(
                   onDragStarted = {
-                    Log.d(
-                      "DEBUG",
-                      "Dragging"
-                    )
                     isDragging = true
                     ViewCompat.performHapticFeedback(
                       view,
@@ -194,10 +189,6 @@ fun StationGridEntry(
                     )
                   },
                   onDragStopped = {
-                    Log.d(
-                      "DEBUG",
-                      "Stopped dragging"
-                    )
                     isDragging = false
                     ViewCompat.performHapticFeedback(
                       view,

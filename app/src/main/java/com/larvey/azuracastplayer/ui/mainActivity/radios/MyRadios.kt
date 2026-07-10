@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.ui.mainActivity.radios
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
@@ -71,10 +70,6 @@ fun MyRadios(
     var list by remember { mutableStateOf(myRadiosViewModel.savedStationsDB.savedStations.value) }
 
     LaunchedEffect(myRadiosViewModel.savedStationsDB.savedStations.value) {
-      Log.d(
-        "DEBUG",
-        "Updating List"
-      )
       list = myRadiosViewModel.savedStationsDB.savedStations.value
     }
 

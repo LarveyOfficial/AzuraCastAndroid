@@ -58,6 +58,39 @@ import java.net.URL
 import java.time.LocalDateTime
 import javax.inject.Inject
 
+private const val TAG = "MusicPlayerService"
+
+/**
+ * The app's playback service and its Android Auto integration, all in one
+ * [MediaLibraryService]. It owns the ExoPlayer (wrapped in a ForwardingPlayer
+ * that jumps to the live edge on play, clears now-playing state on stop, and
+ * derives live positions from wall clock — see [computeLiveElapsedMs]) and
+ * serves the media browser tree consumed by Android Auto, Google Assistant,
+ * and the system media browser:
+ *
+ * ```
+ * /                                  (root)
+ * ├─ Stations                        one playable item per saved station
+ * │    └─ SAVED_STATION-<mount>
+ * └─ Discover
+ *      ├─ Discover/Featured_Stations
+ *      │    └─ DISCOVERED-<mount>
+ *      └─ Discover/<Category_Title>  (spaces → "_")
+ *           └─ DISCOVERED-<mount>
+ * ```
+ *
+ * Media-id prefixes are load-bearing: [resolveMediaIdRoute] maps them back to
+ * a playback source in `onAddMediaItems`. After the saved-station list or the
+ * Auto layout changes, callers must `notifyChildrenChanged` or Auto shows
+ * stale content.
+ *
+ * `onConnect` removes every seek command (live radio is not seekable) and
+ * grants a custom STOP_RADIO command rendered as a Stop button.
+ *
+ * Teardown is deliberately hard: `onDestroy` releases the player/session and
+ * then kills the process — this resolved a historical Android Auto reconnect
+ * deadlock. Test Auto reconnection before changing anything here.
+ */
 @AndroidEntryPoint
 class MusicPlayerService : MediaLibraryService() {
 
@@ -80,9 +113,9 @@ class MusicPlayerService : MediaLibraryService() {
 
   private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-      Log.d(
-        "DEBUG",
-        "Yo, I got the msg"
+      Log.i(
+        TAG,
+        "Sleep timer fired; stopping playback"
       )
       mediaSession?.player?.stop()
     }
@@ -157,8 +190,8 @@ class MusicPlayerService : MediaLibraryService() {
       override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
         if (nowPlaying.nowPlayingURL.value != "" && nowPlaying.nowPlayingShortCode.value != "") {
           Log.d(
-            "DEBUG-FUNKEY",
-            nowPlaying.nowPlayingURL.value
+            TAG,
+            "Media metadata changed; refreshing ${nowPlaying.nowPlayingURL.value}"
           )
           nowPlaying.setMediaMetadata(
             nowPlaying.nowPlayingURL.value,
@@ -169,9 +202,10 @@ class MusicPlayerService : MediaLibraryService() {
       }
 
       override fun onPlayerError(error: PlaybackException) {
-        Log.d(
-          "DEBUG",
-          "Player Error ${error.errorCode}"
+        Log.w(
+          TAG,
+          "Playback error (code=${error.errorCode})",
+          error
         )
 
         val badConnections = listOf(
@@ -181,9 +215,9 @@ class MusicPlayerService : MediaLibraryService() {
           PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
         )
         if (error.errorCode in badConnections) {
-          Log.d(
-            "DEBUG",
-            "Connection issue, going to keep trying to play"
+          Log.i(
+            TAG,
+            "Recoverable stream error; re-preparing the player"
           )
           player.seekToDefaultPosition()
           player.prepare()
@@ -317,8 +351,8 @@ class MusicPlayerService : MediaLibraryService() {
     ): ListenableFuture<MutableList<MediaItem>> {
 
       Log.d(
-        "DEBUG-SEARCH2PLAY",
-        mediaItems[0].requestMetadata.searchQuery.toString()
+        TAG,
+        "onAddMediaItems search query: ${mediaItems[0].requestMetadata.searchQuery}"
       )
 
       if (mediaItems[0].requestMetadata.searchQuery != null) {
@@ -386,8 +420,8 @@ class MusicPlayerService : MediaLibraryService() {
           }
           item.value?.let {
             Log.d(
-              "DEBUG",
-              "I founded it"
+              TAG,
+              "Voice query matched discovery station ${it.friendlyName}"
             )
             val metaData = MediaMetadata.Builder()
               .setTitle(it.friendlyName)
@@ -858,9 +892,9 @@ class MusicPlayerService : MediaLibraryService() {
       sharedMediaController.mediaSession.value = null
       mediaSession = null
     }
-    Log.d(
-      "DEBUG-MEDIA",
-      "Good-Bye! \uD83D\uDC4B\uD83C\uDFFB"
+    Log.i(
+      TAG,
+      "Service destroyed; player and session released"
     )
     nowPlaying.nowPlayingShortCode.value = ""
     nowPlaying.nowPlayingURL.value = ""

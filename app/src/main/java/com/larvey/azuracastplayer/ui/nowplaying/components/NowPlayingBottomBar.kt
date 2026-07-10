@@ -118,6 +118,7 @@ fun NowPlayingBottomBar(
         //        IconButton(
         //          enabled = false,
         //          onClick = {}
+        // Planned feature (favorites) — intentionally kept:
         //        ) {
         //          Icon(
         //            imageVector = Icons.Rounded.FavoriteBorder,

@@ -32,6 +32,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val TAG = "MainActivityViewModel"
+
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
   val nowPlayingData: NowPlayingData,
@@ -48,10 +50,6 @@ class MainActivityViewModel @Inject constructor(
   init {
     viewModelScope.launch {
       while (!savedStationsDB.savedStations.value.isNullOrEmpty()) {
-        Log.d(
-          "DEBUG",
-          "Waiting 30 seconds to fetch data"
-        )
         updateRadioList()
         delay(30 * 1000)
       }
@@ -65,11 +63,11 @@ class MainActivityViewModel @Inject constructor(
     if (fetchData.value) {
       viewModelScope.launch {
         savedStationsDB.savedStations.value?.let { savedRadioList ->
+          Log.d(
+            TAG,
+            "Refreshing metadata for ${savedRadioList.size} saved stations"
+          )
           for (item in savedRadioList) {
-            Log.d(
-              "DEBUG",
-              "Fetching Data for ${item.name}"
-            )
             nowPlayingData.getStationInformation(
               item.url,
               item.shortcode
@@ -110,6 +108,11 @@ class MainActivityViewModel @Inject constructor(
             }
 
           } catch (e: Exception) {
+            Log.e(
+              TAG,
+              "Failed to extract palette from artwork",
+              e
+            )
           }
         }
       } else {

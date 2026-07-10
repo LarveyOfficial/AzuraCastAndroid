@@ -9,6 +9,9 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import java.time.ZoneId
 
+private const val TAG = "AndroidAlarmScheduler"
+
+/** [SleepScheduler] backed by [AlarmManager]; fires the service's SLEEP broadcast. */
 class AndroidAlarmScheduler(
   private val context: Context
 ) : SleepScheduler {
@@ -24,12 +27,9 @@ class AndroidAlarmScheduler(
     val intent = Intent("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP").apply {
       `package` = "com.larvey.azuracastplayer"
     }
-    Log.d(
-      "DEBUG",
-      "Scheduled for ${
-        item.time.atZone(ZoneId.systemDefault())
-          .toEpochSecond() * 1000
-      }, item: ${item.hashCode()}"
+    Log.i(
+      TAG,
+      "Sleep timer scheduled for ${item.time}"
     )
     alarmManager.setAndAllowWhileIdle(
       AlarmManager.RTC_WAKEUP,
@@ -47,9 +47,9 @@ class AndroidAlarmScheduler(
     val intent = Intent("com.larvey.azuracastplayer.session.MusicPlayerService.SLEEP").apply {
       `package` = "com.larvey.azuracastplayer"
     }
-    Log.d(
-      "DEBUG",
-      "Canceled Sleep Timer, item: ${item.hashCode()}"
+    Log.i(
+      TAG,
+      "Sleep timer cancelled"
     )
     if (Build.VERSION.SDK_INT >= 34) {
       alarmManager.cancelAll()

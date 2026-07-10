@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
 import java.net.URL
 import javax.inject.Inject
 
+private const val TAG = "DiscoveryViewModel"
+
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
   val discoveryJSON: MutableState<DiscoveryJSON?>,
@@ -63,8 +65,9 @@ class DiscoveryViewModel @Inject constructor(
               }
             } catch (e: Exception) {
               Log.e(
-                "DISCOVERY-ERR",
-                "Something went wrong when fetching featured station palette"
+                TAG,
+                "Failed to load featured station palette",
+                e
               )
             }
           }
@@ -135,11 +138,11 @@ class DiscoveryViewModel @Inject constructor(
   private fun updateRadioList() {
     viewModelScope.launch {
       savedStationsDB.savedStations.value?.let { savedRadioList ->
+        Log.d(
+          TAG,
+          "Refreshing metadata for ${savedRadioList.size} saved stations"
+        )
         for (item in savedRadioList) {
-          Log.d(
-            "DEBUG",
-            "Fetching Data for ${item.name}"
-          )
           nowPlayingData.getStationInformation(
             item.url,
             item.shortcode
