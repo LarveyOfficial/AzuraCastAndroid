@@ -15,15 +15,14 @@ Guidance for working in this repository. This is a **native Android radio player
 - **SDK**: `compileSdk`/`targetSdk = 36`, `minSdk = 26` (Android 8.0). JVM target 11.
 - **Release build**: R8 minify + resource shrink enabled. Keep rules in [app/proguard-rules.pro](app/proguard-rules.pro) (protects Retrofit interfaces, Gson `@SerializedName` fields, and the `classes.data`/`classes.models` packages — **if you rename or move data classes, update ProGuard rules or release JSON parsing breaks**).
 - **Namespace / appId**: `com.larvey.azuracastplayer`. Version tracked as `versionCode`/`versionName` in [app/build.gradle.kts](app/build.gradle.kts).
-- Common commands: `./gradlew assembleDebug`, `./gradlew installDebug`, `./gradlew assembleRelease`, `./gradlew lint`. (There are no meaningful unit/instrumentation tests — only the template `ExampleUnitTest`/`ExampleInstrumentedTest` scaffolding via deps; do not rely on a test suite.)
+- Common commands: `./gradlew assembleDebug`, `./gradlew installDebug`, `./gradlew assembleRelease`, `./gradlew lint`, `./gradlew testDebugUnitTest`. JVM unit tests live in `app/src/test/` (pure logic, Gson fixture contracts in `app/src/test/resources/fixtures/`, MockWebServer coverage of the repository); run them before committing.
 
 ### Key libraries
 - **Media3 (ExoPlayer + `MediaLibraryService` + `MediaSession`)** — playback + Android Auto/system media browser. HLS support (`media3-exoplayer-hls`).
 - **Hilt (Dagger)** — dependency injection; app-wide singletons.
 - **Room** — persistence of saved stations (destructive migration).
 - **DataStore (Preferences)** — user settings (`"settings"` store).
-- **Retrofit + Gson** — AzuraCast REST/static JSON APIs.
-- **Jackson Kotlin module** — present as a dependency but Retrofit uses Gson; treat Gson as the JSON layer.
+- **Retrofit + Gson** — AzuraCast REST/static JSON APIs (suspend functions behind `AzuraCastRepository`).
 - **Coil 3** — all async image loading + bitmap extraction for palette.
 - **AndroidX Palette** — dominant/vibrant/muted color extraction from album art.
 - **RenderScript Toolkit** (`libs/renderscript-toolkit-release.aar`, `com.google.android.renderscript.Toolkit`) — Gaussian blur for the legacy background.
@@ -36,7 +35,7 @@ Guidance for working in this repository. This is a **native Android radio player
 
 ## 2. High-level architecture
 
-Loosely MVVM with a **service-owned player** and **Hilt singletons acting as a shared in-memory state bus**. There is no repository layer abstraction; ViewModels talk to singletons and free-function API callers directly.
+MVVM with a **service-owned player**, **Hilt singletons acting as a shared in-memory state bus**, and a single **`AzuraCastRepository`** behind the singletons/ViewModels for all network access.
 
 ```
 AppSetup (Application, @HiltAndroidApp)
@@ -77,11 +76,11 @@ Because state is shared this way, **UI updates as a side effect of the service (
 | Package | Contents |
 |---|---|
 | `AppSetup.kt` | `Application` class. Boots Hilt, cancels stray sleep alarms, warms the station metadata cache, holds `UserPreferences`. Declares Hilt `@EntryPoint`s for accessing singletons from non-injected code. Also defines the `Context.dataStore` extension. |
-| `api/` | Free functions wrapping Retrofit calls. `FetchStationData` (nowplaying_static seed), `RefreshMetadata` (nowplaying_static + push into player), `FindHostsStations` (`/api/nowplaying` list for add-station search), `FetchDiscoveryJSON` (discovery catalog). |
+| `api/` | The network layer: `ApiResult` (sealed result + `safeApiCall` mapper), `AzuraCastApi` (the single Retrofit interface), `AzuraCastRepository` (suspend functions returning `ApiResult`; pure URL builders). |
 | `classes/data/` | Plain data/model classes. `StationJSON` (the AzuraCast now-playing schema), `DiscoveryJSON`, `SavedStation` (Room `@Entity`). |
 | `classes/models/` | The shared-state singletons' backing classes: `NowPlayingData`, `SavedStationsDB`, `SharedMediaController`. |
 | `db/` | Room: `SavedStationDao`, `SavedStationsDatabase`. `db/settings/` holds `UserPreferences` (DataStore), `SettingsViewModel`, `AppViewModelProvider`. |
-| `hiltModules/singletons/` | `@Module @Provides @Singleton` definitions for the four DI singletons. |
+| `hiltModules/` | `NetworkModule` (OkHttp/Retrofit/`AzuraCastApi`), `CoroutinesModule` (`@ApplicationScope` main-immediate scope); `singletons/` holds the state-bus singleton providers (`NowPlayingData`, `SavedStationsDB`, `SharedMediaController`, `DiscoveryJSON`). |
 | `session/` | Playback: `MusicPlayerService`, `MediaController` (client-side `rememberManagedMediaController`), `sleepTimer/` (AlarmManager-based). |
 | `state/` | `PlayerState` — a Compose-observable snapshot of a Media3 `Player` (mirrors every `Player.Listener` callback into snapshot state). |
 | `ui/mainActivity/` | The activity, its ViewModel, and the main-screen sub-features: `radios/` (My Radios list/grid), `addStations/`, `settings/`, `components/` (mini player, mesh gradient, edit/delete dialogs). |
@@ -94,11 +93,11 @@ Because state is shared this way, **UI updates as a side effect of the service (
 
 ## 4. Data models & AzuraCast APIs
 
-All network access is plain Retrofit `Call.enqueue` callbacks (no coroutines/suspend on the API layer), each building its own `OkHttpClient`/`Retrofit`. On failure they log and bail (search the codebase for `"Fuck"` — that's the failure log string). URLs are always forced to HTTPS via `String.fixHttps()`; the manifest also allows cleartext.
+All network access flows through **`AzuraCastRepository`** ([api/AzuraCastRepository.kt](app/src/main/java/com/larvey/azuracastplayer/api/AzuraCastRepository.kt)) — a Hilt `@Singleton` exposing suspend functions that return a typed **`ApiResult`** (`Success` / `Failure.Http` / `Failure.Network` / `Failure.Unexpected`). One shared default-configured `OkHttpClient` + `Retrofit` (from `hiltModules/NetworkModule`), one Retrofit interface (`AzuraCastApi`): the fixed-host discovery endpoint is relative to the base URL, the per-station-host endpoints take `@Url` absolute URLs built by pure, test-covered builders. **The repository never logs (callers log with context) and never switches dispatchers** — Retrofit suspend calls are non-blocking, and callers rely on resuming on the main thread to mutate the Media3 player. Do not add `withContext(Dispatchers.IO)` there. Callers launch work on the `@ApplicationScope` `CoroutineScope` (`Dispatchers.Main.immediate`, from `hiltModules/CoroutinesModule`). URLs are always forced to HTTPS via `String.fixHttps()`; the manifest also allows cleartext.
 
 **Endpoints used** (base URL is `https://<station-host>`):
-- `GET /api/nowplaying_static/{shortCode}.json` → `StationJSON`. The primary metadata source (["static nowplaying" JSON](https://www.azuracast.com/docs/developers/now-playing-data/#static-now-playing-json-file)). Used by both `FetchStationData` (seed cache) and `RefreshMetadata` (update the playing item's metadata). Preferred because it's a cached static file, cheap to poll.
-- `GET /api/nowplaying` → `List<StationJSON>`. Used only by the add-station flow (`FindHostsStations`) to enumerate all stations on a host the user typed in.
+- `GET /api/nowplaying_static/{shortCode}.json` → `StationJSON`. The primary metadata source (["static nowplaying" JSON](https://www.azuracast.com/docs/developers/now-playing-data/#static-now-playing-json-file)). Fetched via `AzuraCastRepository.getNowPlayingStatic` (seeds the cache and refreshes the playing item's metadata). Preferred because it's a cached static file, cheap to poll.
+- `GET /api/nowplaying` → `List<StationJSON>`. Used only by the add-station flow (`AzuraCastRepository.listHostStations`) to enumerate all stations on a host the user typed in.
 - Album art URLs: `https://<url>/api/station/<shortcode>/art/-1` and per-song `art` fields.
 
 **Discovery catalog**: fetched from a static GitHub-hosted JSON, **not** from AzuraCast:
@@ -142,9 +141,9 @@ Keys: `is_grid_view` (My Radios grid vs list, default grid), `theme_type` (`Them
 ### How a station starts playing
 `NowPlayingData.setPlaybackSource(mountURI, url, shortCode, mediaPlayer)`:
 1. stops the current player, sets the now-playing tuple,
-2. calls `setMediaMetadata(..., reset=true)` → `RefreshMetadata` fetches the static JSON, builds a `MediaItem` with full `MediaMetadata` (title/artist/album/art/duration), `replaceMediaItem(0, ...)`, then `prepare()` + `play()`.
+2. calls `setMediaMetadata(..., reset=true)` → fetches the static JSON via the repository, then `applyNowPlayingMetadata` builds a `MediaItem` with full `MediaMetadata` (title/artist/album/art/duration), `replaceMediaItem(0, ...)`, then `prepare()` + `play()` — all on the main thread via the `@ApplicationScope` scope.
 
-Note the metadata quirk in [api/RefreshMetadata.kt](app/src/main/java/com/larvey/azuracastplayer/api/RefreshMetadata.kt): Android Auto reads `subtitle` as artist and `description` as album, so those fields are set redundantly alongside the "correct" ones. Keep both when editing.
+Note the metadata quirks in `NowPlayingData.applyNowPlayingMetadata` ([classes/models/NowPlayingData.kt](app/src/main/java/com/larvey/azuracastplayer/classes/models/NowPlayingData.kt)): Android Auto reads `subtitle` as artist and `description` as album, so those fields are set redundantly alongside the "correct" ones — keep both when editing. Also `staticData.value = staticDataMap.put(...)` intentionally stores the *previous* map value (a `.put()` return), so `staticData` lags one refresh; live-position math and the progress UI were built against this — do not "fix" it casually.
 
 ### Metadata polling
 Two independent pollers keep metadata fresh (radio has no client-side "track changed" signal):
@@ -282,7 +281,7 @@ Theme ([ui/theme/](app/src/main/java/com/larvey/azuracastplayer/ui/theme/)): Mat
 
 - **2-space indentation**, `kotlin.code.style=official`. Match the surrounding heavy line-wrapping style (each builder arg on its own line).
 - **No error UX / thin error handling**: API failures just log and no-op. If you add features, follow the existing null-check-and-bail pattern but consider surfacing errors.
-- **Free-function API layer**: network calls are top-level functions taking `MutableState`/`MutableMap` to write results into, not suspend functions returning values. New endpoints should probably follow this to fit, though it's the weakest part of the architecture.
+- **API layer**: add new endpoints to `AzuraCastApi` + `AzuraCastRepository` (suspend → `ApiResult`), and handle both result branches at the call site (log failures with context — the repository itself never logs). Never make the repository switch dispatchers; player-mutating callers depend on main-thread resumption.
 - **Shared mutable singletons** are load-bearing (see §2). Prefer wiring new cross-component state through `SharedMediaController` / `NowPlayingData` rather than inventing a parallel path.
 - **`fixHttps()` everywhere**: keep applying it to any station/art/mount URL you introduce, or cache keys and playback break for `http` inputs. Port-in-URL handling was a real bug fixed historically ("Fix URLs w/ port numbers").
 - **ProGuard**: any new Retrofit interface / Gson model must survive minification — extend the keep rules if you add data classes outside `classes.data`/`classes.models`.
