@@ -42,6 +42,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so the commit-count versionCode is correct.
+          fetch-depth: 0
+
+      - name: Compute versionCode from commit count
+        id: vc
+        run: echo "version_code=$(( $(git rev-list --count HEAD) + 75 ))" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -59,6 +66,7 @@ jobs:
 
       - name: Build signed release APK + AAB
         env:
+          VERSION_CODE: ${{ steps.vc.outputs.version_code }}
           SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
@@ -102,6 +110,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so the commit-count versionCode is correct.
+          fetch-depth: 0
+
+      - name: Compute versionCode from commit count
+        id: vc
+        run: echo "version_code=$(( $(git rev-list --count HEAD) + 75 ))" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -119,6 +134,7 @@ jobs:
 
       - name: Build signed release APK
         env:
+          VERSION_CODE: ${{ steps.vc.outputs.version_code }}
           SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}

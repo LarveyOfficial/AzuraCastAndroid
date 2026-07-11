@@ -308,10 +308,17 @@ Non-`main` branches are protected by a **ruleset** (require PR, signed commits, 
    - attaches the **APK** to the public GitHub Release, and
    - uploads the **AAB** privately to the **Play Console internal testing track** (via `r0adkll/upload-google-play`). The AAB is never attached to the public Release. The `nightly` pre-release gets an APK only (no Play upload).
 
+### Beta channel — [.github/workflows/beta.yml](.github/workflows/beta.yml)
+Beta is a **distribution channel, not a separate version lineage** — release-please still owns the single stable SemVer line; betas are just builds of the *upcoming* version delivered to a testing track. Deliberately **not** using release-please's prerelease mode (it wants a separate branch/component and fights a single-`main` flow).
+- **Triggers (opt-in):** merging a PR into `main` that carries the **`beta`** label, or a manual **workflow_dispatch** ("Run workflow") to queue the current state of `main`.
+- **Version:** `versionName` = `<next>-beta.<commitCount>` where `<next>` is read from release-please's open release PR title (falls back to the manifest). Passed to Gradle via `VERSION_NAME_OVERRIDE`.
+- **Delivery:** signed **AAB → Play internal track as a `draft`** (nothing goes live until you publish/promote it), plus a sideloadable **APK as a run artifact**. You promote internal → your beta track manually in the console.
+- Betas do **not** touch the stable production line, the GitHub Releases, or the `nightly` pre-release.
+
 ### Where the version lives
-- **`versionName`** in [app/build.gradle.kts](app/build.gradle.kts) is owned by release-please — it's the line tagged `// x-release-please-version`. **Never edit the version string by hand** and keep that trailing comment or the updater won't find it.
+- **`versionName`** in [app/build.gradle.kts](app/build.gradle.kts) is owned by release-please — it's the line tagged `// x-release-please-version`. **Never edit the version string by hand** and keep that trailing comment or the updater won't find it. Beta CI builds relabel it via the `VERSION_NAME_OVERRIDE` env override (the annotated line is untouched).
 - Source of truth is [.release-please-manifest.json](.release-please-manifest.json) (mirrored in [version.txt](version.txt)). Config is [release-please-config.json](release-please-config.json). `bootstrap-sha` there pins the history start (commit `fce73a6`) so the first changelog doesn't ingest the old non-conventional history — **remove `bootstrap-sha` after the first release cuts.**
-- **`versionCode`** is NOT managed by release-please (it only does SemVer strings). It's computed in `build.gradle.kts` as `GITHUB_RUN_NUMBER + 75` so it always increases and never drops below the last published `75`; local builds fall back to `75`.
+- **`versionCode`** is NOT managed by release-please. Every CI build that can be uploaded to Play passes `VERSION_CODE = (git rev-list --count HEAD) + 75` — the **main commit count**, which is workflow-independent and strictly monotonic across the release *and* beta pipelines (unlike `GITHUB_RUN_NUMBER`, which is per-workflow and resets on a workflow rename). `build.gradle.kts` reads `VERSION_CODE`; local/PR builds fall back to `75`. (Re-dispatching a beta on an *unchanged* `main` reuses the same commit count → same code → Play rejects it as a duplicate; that's expected — merge a commit first.)
 - The current line before release-please's first bump is `1.1.0`. The first release-please Release will be the next bump from there (e.g. `1.1.1` for a `fix`, `1.2.0` for a `feat`). If you want `1.1.0` itself cut as a Release, add `Release-As: 1.1.0` to a commit footer once.
 
 ### One-time setup the maintainer must do (outside code)
@@ -322,4 +329,5 @@ Non-`main` branches are protected by a **ruleset** (require PR, signed commits, 
   Without these the build job fails (the app-level signing config no-ops locally, leaving unsigned release builds — that's expected off-CI).
 - **Play upload secret**: `PLAY_SERVICE_ACCOUNT_JSON` — full JSON of a Google Play Developer API service account with "Release to testing tracks" permission, used to push the AAB to the internal track. (Google may require the app's very first release be made manually in the console before API uploads are accepted.)
 - **Note on required checks**: PRs opened by the default `GITHUB_TOKEN` don't trigger *other* workflows. If you later add required status checks that must run on the release PR, switch the action's `token:` to a PAT/App token.
+- **Beta channel** reuses the same signing + `PLAY_SERVICE_ACCOUNT_JSON` secrets (the service account's "Release to testing tracks" permission covers the internal track) — no new secrets. A repo label named **`beta`** must exist (already created) for the label trigger.
 
