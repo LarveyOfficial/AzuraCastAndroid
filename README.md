@@ -41,6 +41,11 @@ Before reporting any issues, ensure that the issue hasn't already been reported 
 
 This project does not have any official affiliation with the [AzuraCast Project](https://www.azuracast.com/). This is an **unofficial app** simply made due to interest in AzuraCast. Any issues for this app should **not** be directed towards the AzuraCast team. Thank you!
 
+## AI Disclaimer
+
+This project was originally created with 0 use of AI, but as the times change so have the tools available to me. I have started to utilize AI as a **tool** not a replacement, it is used for repetitive or time consuming tasks such as code comments, unit test creation, code cleanup, and refactoring.
+It is **not** used as a replacement for any real developers or development work.
+
 ## iOS/iPadOS
 
 Looking for an iOS alternative? Checkout the sister iOS app on the [AppStore](https://apps.apple.com/us/app/azuracast-radio/id6740510724)
