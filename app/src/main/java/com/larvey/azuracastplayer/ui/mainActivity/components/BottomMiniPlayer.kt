@@ -63,7 +63,7 @@ import com.larvey.azuracastplayer.utils.updateTime
 fun MiniPlayer(
   playerState: PlayerState?,
   showNowPlaying: () -> Unit,
-  nowPlaying: NowPlaying?,
+  nowPlaying: () -> NowPlaying?,
   pause: () -> Unit,
   play: () -> Unit,
   palette: MutableState<Palette?>?,
@@ -81,9 +81,10 @@ fun MiniPlayer(
     )
   )
 
-  LaunchedEffect(lifecycleOwner) {
+  val hasMedia = playerState?.currentMediaItem != null
+  LaunchedEffect(lifecycleOwner, hasMedia) {
     updateTime(
-      isVisible = playerState?.currentMediaItem != null,
+      isVisible = hasMedia,
       updateProgress = { progress, position ->
         currentProgress = progress
         currentPosition = position

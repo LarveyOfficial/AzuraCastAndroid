@@ -528,7 +528,7 @@ class MainActivity : ComponentActivity() {
                                 showNowPlaying = {
                                   showNowPlayingSheet.value = true
                                 },
-                                nowPlaying = mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying,
+                                nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
                                 pause = {
                                   mediaController?.pause()
                                 },

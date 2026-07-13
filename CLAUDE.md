@@ -148,7 +148,7 @@ Note the metadata quirks in `NowPlayingData.applyNowPlayingMetadata` ([classes/m
 ### Metadata polling
 Two independent pollers keep metadata fresh (radio has no client-side "track changed" signal):
 - `MainActivityViewModel.init` loops every **30 s** refreshing every saved station's metadata (while the app is foregrounded — gated by `fetchData`, toggled in `onPause`/`onResume`).
-- The Now Playing UI runs a **1 s** `updateTime` loop ([utils/UpdatePlayerTime.kt](app/src/main/java/com/larvey/azuracastplayer/utils/UpdatePlayerTime.kt)) to advance the progress bar, computing live-stream elapsed from `played_at`.
+- The Now Playing UI runs a **1 s** `updateTime` loop ([utils/UpdatePlayerTime.kt](app/src/main/java/com/larvey/azuracastplayer/utils/UpdatePlayerTime.kt)) to advance the progress bar, computing live-stream elapsed from `played_at`. Its `nowPlaying` argument is a **provider** (`() -> NowPlaying?`) read fresh each tick — the loop lives in a `LaunchedEffect(lifecycleOwner, …)` that does **not** restart on song change, so capturing the snapshot by value froze `played_at` at the first song and pegged HLS at 100% (fixed in `fix/hls-progress-reset`). Keep it a provider; don't pass `staticData.value?.nowPlaying` directly.
 
 ### Sleep timer — [session/sleepTimer/](app/src/main/java/com/larvey/azuracastplayer/session/sleepTimer/)
 `AndroidAlarmScheduler` uses `AlarmManager.setAndAllowWhileIdle(RTC_WAKEUP, ...)` to broadcast the SLEEP action at the chosen time; the service receiver stops playback. UI lives in `MediaControls` (§7). Requires exact-alarm capability. Cancel uses `cancelAll()` on API ≥ 34.
