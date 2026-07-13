@@ -12,6 +12,9 @@ data class AlbumTint(
   val onContainer: Color
 )
 
+private fun Palette.bestSwatch(): Palette.Swatch? =
+  vibrantSwatch ?: dominantSwatch ?: mutedSwatch
+
 /**
  * A muted, theme-appropriate "container" tint pulled from the artwork — conceptually like
  * Material's *Container tonal roles, but sourced from the album art instead of the app theme
@@ -23,12 +26,10 @@ data class AlbumTint(
  * neutral surface.
  */
 fun albumTint(
-  palette: MutableState<Palette?>?,
+  palette: Palette?,
   isDark: Boolean
 ): AlbumTint? {
-  val swatch = palette?.value?.let {
-    it.vibrantSwatch ?: it.dominantSwatch ?: it.mutedSwatch
-  } ?: return null
+  val swatch = palette?.bestSwatch() ?: return null
 
   val hsl = floatArrayOf(0f, 0f, 0f)
   colorToHSL(swatch.rgb, hsl)
@@ -47,5 +48,28 @@ fun albumTint(
     )
   )
 
+  return AlbumTint(container, onContainer)
+}
+
+fun albumTint(
+  palette: MutableState<Palette?>?,
+  isDark: Boolean
+): AlbumTint? = albumTint(palette?.value, isDark)
+
+/**
+ * A pale, album-hued "chip" tone with a deep album-hued on-color — for a light action button
+ * (the Now Playing play/pause) that sits on the dark-ish palette background. Theme-independent:
+ * the button stays light so it always reads as the primary affordance, and the icon carries the
+ * album color. Returns null (→ caller falls back to white) when there is no usable swatch.
+ */
+fun albumLightChip(palette: Palette?): AlbumTint? {
+  val swatch = palette?.bestSwatch() ?: return null
+
+  val hsl = floatArrayOf(0f, 0f, 0f)
+  colorToHSL(swatch.rgb, hsl)
+  val sat = hsl[1].coerceAtMost(0.6f)
+
+  val container = Color(HSLToColor(floatArrayOf(hsl[0], sat * 0.5f, 0.87f)))
+  val onContainer = Color(HSLToColor(floatArrayOf(hsl[0], sat, 0.28f)))
   return AlbumTint(container, onContainer)
 }

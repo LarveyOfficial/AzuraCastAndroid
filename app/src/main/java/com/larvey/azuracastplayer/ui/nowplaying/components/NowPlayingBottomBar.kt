@@ -107,7 +107,8 @@ fun NowPlayingBottomBar(
         pause = pause,
         play = play,
         playerState = playerState,
-        isSleeping = isSleeping
+        isSleeping = isSleeping,
+        palette = palette
       )
       Row(
         modifier = Modifier
