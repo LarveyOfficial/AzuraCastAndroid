@@ -122,6 +122,7 @@ Keys: `is_grid_view` (My Radios grid vs list, default grid), `theme_type` (`Them
 [session/MusicPlayerService.kt](app/src/main/java/com/larvey/azuracastplayer/session/MusicPlayerService.kt) is a `MediaLibraryService` (`@AndroidEntryPoint`, `foregroundServiceType=mediaPlayback`). It is the single source of playback truth.
 
 ### Player setup (`onCreate`)
+- The ExoPlayer is built with `setAudioAttributes(DEFAULT, /*handleAudioFocus=*/true)` **and** `setHandleAudioBecomingNoisy(true)` — the latter is what pauses playback on headphone unplug / Bluetooth disconnect (audio-focus handling alone is unreliable for BT disconnects across devices). Keep it enabled.
 - ExoPlayer wrapped in a custom `ForwardingPlayer` that overrides:
   - `play()` → also `seekToDefaultPosition()` (jump to live edge on resume).
   - `stop()` → clears the now-playing tuple, cancels any sleep alarm, `isSleeping=false`, `clearMediaItems()`.
