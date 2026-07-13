@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +29,15 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
 import androidx.lifecycle.LifecycleOwner
@@ -46,6 +48,7 @@ import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.utils.updateTime
+import kotlinx.coroutines.delay
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -65,6 +68,8 @@ fun NowPlayingBottomBar(
   nowPlaying: () -> NowPlaying?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
+
+  val haptics = LocalHapticFeedback.current
 
   var currentProgress by remember { mutableFloatStateOf(0f) }
   var currentPosition by remember { mutableLongStateOf(0) }
@@ -124,11 +129,16 @@ fun NowPlayingBottomBar(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Press-to-expand, matching the Stop / Sleep control buttons above.
-        val queueInteraction = remember { MutableInteractionSource() }
-        val queuePressed by queueInteraction.collectIsPressedAsState()
+        // Press-to-expand on tap, matching the Stop / Sleep control buttons above.
+        var queueExpanded by remember { mutableStateOf(false) }
+        LaunchedEffect(queueExpanded) {
+          if (queueExpanded) {
+            delay(220)
+            queueExpanded = false
+          }
+        }
         val queueWeight by animateFloatAsState(
-          targetValue = if (queuePressed) 1.3f else 1f,
+          targetValue = if (queueExpanded) 1.24f else 1f,
           animationSpec = AppMotion.spatialFast(),
           label = "queuePillWeight"
         )
@@ -162,9 +172,11 @@ fun NowPlayingBottomBar(
             .clip(expressiveShape(20.dp))
             .background(Color.White.copy(alpha = 0.15f))
             .clickable(
-              interactionSource = queueInteraction,
+              interactionSource = remember { MutableInteractionSource() },
               indication = ripple()
             ) {
+              haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+              queueExpanded = true
               toggleQueueVisibility()
             },
           contentAlignment = Alignment.Center

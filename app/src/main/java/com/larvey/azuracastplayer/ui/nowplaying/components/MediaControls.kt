@@ -116,11 +116,11 @@ fun MediaControls(
     }
   }
   fun weightFor(slot: ControlSlot): Float = when (slot) {
-    ControlSlot.PLAY_PAUSE -> if (lastClicked == ControlSlot.PLAY_PAUSE) 1.85f else 1.5f
+    ControlSlot.PLAY_PAUSE -> if (lastClicked == ControlSlot.PLAY_PAUSE) 1.78f else 1.5f
     else -> when (lastClicked) {
-      slot -> 1.3f
+      slot -> 1.24f
       ControlSlot.NONE -> 1f
-      else -> 0.72f
+      else -> 0.78f
     }
   }
   val stopWeight by animateFloatAsState(weightFor(ControlSlot.STOP), AppMotion.spatialFast(), label = "stopWeight")
@@ -322,6 +322,7 @@ private fun RowScope.ControlPill(
   onClick: () -> Unit,
   content: @Composable () -> Unit
 ) {
+  val haptics = LocalHapticFeedback.current
   Box(
     modifier = Modifier
       .weight(weight)
@@ -331,7 +332,10 @@ private fun RowScope.ControlPill(
       .clickable(
         interactionSource = remember { MutableInteractionSource() },
         indication = ripple()
-      ) { onClick() },
+      ) {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onClick()
+      },
     contentAlignment = Alignment.Center
   ) {
     content()
