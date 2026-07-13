@@ -53,7 +53,7 @@ fun NowPlayingBottomBar(
   isSleeping: MutableState<Boolean>?,
   currentMount: Mount?,
   palette: Palette?,
-  nowPlaying: NowPlaying?,
+  nowPlaying: () -> NowPlaying?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
 
@@ -68,9 +68,10 @@ fun NowPlayingBottomBar(
     )
   )
 
-  LaunchedEffect(lifecycleOwner) {
+  val hasMedia = playerState.currentMediaItem != null
+  LaunchedEffect(lifecycleOwner, hasMedia) {
     updateTime(
-      isVisible = playerState.currentMediaItem != null,
+      isVisible = hasMedia,
       updateProgress = { progress, position ->
         currentProgress = progress
         currentPosition = position
