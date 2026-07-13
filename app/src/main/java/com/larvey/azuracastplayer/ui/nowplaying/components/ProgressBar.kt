@@ -20,14 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils.HSLToColor
-import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.utils.albumColors
 import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -45,18 +43,7 @@ fun ProgressBar(
   palette: Palette?
 ) {
   Column {
-    val brightDominant = floatArrayOf(
-      0f,
-      0f,
-      0f
-    )
-    colorToHSL(
-      palette?.dominantSwatch?.rgb ?: Color.White.toArgb(),
-      brightDominant
-    )
-    if (brightDominant[2] <= 0.7f) {
-      brightDominant[2] = 0.7f
-    }
+    val colors = albumColors(palette)
 
     val isPlaying = animateFloatAsState(
       targetValue = if (playerState.isPlaying) 1f else 0f,
@@ -64,14 +51,11 @@ fun ProgressBar(
 
     LinearWavyProgressIndicator(
       progress = { progressAnimation },
-      trackColor = Color(
-        palette?.lightVibrantSwatch?.bodyTextColor
-          ?: Color.DarkGray.toArgb()
-      ),
+      trackColor = colors.track,
       amplitude = { isPlaying.value },
       stopSize = 0.dp,
       waveSpeed = 15.dp,
-      color = Color(HSLToColor(brightDominant)),
+      color = colors.bright,
       modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 16.dp)

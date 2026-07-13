@@ -66,7 +66,7 @@ import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
-import com.larvey.azuracastplayer.utils.albumLightChip
+import com.larvey.azuracastplayer.utils.albumColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -101,9 +101,9 @@ fun MediaControls(
   val buffering = playerState.playbackState == 2
 
   // Album-tinted light play button (icon carries the album hue); translucent glass side buttons.
-  val chip = albumLightChip(palette)
-  val playColor = chip?.container ?: Color.White
-  val playIconColor = chip?.onContainer ?: Color(0xFF1C1B1F)
+  val colors = albumColors(palette)
+  val playColor = colors.lightChip
+  val playIconColor = colors.onLightChip
   val sideColor = Color.White.copy(alpha = 0.15f)
 
   // Press-to-expand: the tapped button grows and its neighbours compress (play/pause never

@@ -52,7 +52,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
@@ -81,8 +80,7 @@ import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
-import com.larvey.azuracastplayer.utils.albumTint
-import com.larvey.azuracastplayer.utils.correctedVibrantColor
+import com.larvey.azuracastplayer.utils.albumColors
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.isDark
 
@@ -107,19 +105,19 @@ fun MiniPlayer(
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
   val dark = MaterialTheme.colorScheme.isDark()
-  val tint = albumTint(palette, dark)
+  val colors = albumColors(palette?.value)
   val containerColor by animateColorAsState(
-    targetValue = tint?.container ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+    targetValue = colors.container,
     animationSpec = tween(durationMillis = 450),
     label = "miniContainer"
   )
   val onContainerColor by animateColorAsState(
-    targetValue = tint?.onContainer ?: MaterialTheme.colorScheme.onSurface,
+    targetValue = colors.onContainer,
     animationSpec = tween(durationMillis = 450),
     label = "miniOnContainer"
   )
-  val accent = correctedVibrantColor(palette, dark) ?: MaterialTheme.colorScheme.primary
-  val onAccent = if (accent.luminance() > 0.5f) Color.Black else Color.White
+  val accent = colors.accent
+  val onAccent = colors.onAccent
 
   // Swipe-left/right-to-dismiss (stop playback).
   val scope = rememberCoroutineScope()
