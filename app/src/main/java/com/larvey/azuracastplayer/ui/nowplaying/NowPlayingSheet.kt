@@ -197,7 +197,7 @@ fun NowPlayingSheet(
               playerState = nowPlayingViewModel.sharedMediaController.playerState.value!!,
               currentMount = nowPlayingViewModel.nowPlayingData.staticData.value?.station?.mounts?.find { it.url == nowPlayingViewModel.sharedMediaController.playerState.value?.currentMediaItem?.mediaId },
               palette = palette?.value,
-              nowPlaying = nowPlayingViewModel.nowPlayingData.staticData.value?.nowPlaying,
+              nowPlaying = { nowPlayingViewModel.nowPlayingData.staticData.value?.nowPlaying },
               isSleeping = nowPlayingViewModel.sharedMediaController.isSleeping
             )
           }
