@@ -154,7 +154,13 @@ class MusicPlayerService : MediaLibraryService() {
       ExoPlayer.Builder(this).setAudioAttributes(
         AudioAttributes.DEFAULT,
         true
-      ).build()
+      )
+        // Pause when audio would otherwise blast from the phone speaker after a
+        // headphone unplug or Bluetooth disconnect. Audio-focus handling alone
+        // (the `true` above) is unreliable across devices for BT disconnects;
+        // ACTION_AUDIO_BECOMING_NOISY is the signal that reliably fires.
+        .setHandleAudioBecomingNoisy(true)
+        .build()
     ) {
       override fun play() {
         super.play()
