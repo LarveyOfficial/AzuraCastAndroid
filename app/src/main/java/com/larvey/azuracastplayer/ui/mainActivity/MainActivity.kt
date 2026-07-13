@@ -25,9 +25,14 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,6 +73,8 @@ import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -92,6 +99,7 @@ import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
+import com.larvey.azuracastplayer.ui.mainActivity.components.FloatingExpressiveNavBar
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.mainActivity.settings.SettingsSheet
@@ -269,6 +277,14 @@ class MainActivity : ComponentActivity() {
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
 
+        // Phones get the custom FloatingExpressiveNavBar (rendered in the bottomBar), so suppress
+        // the NavigationSuiteScaffold's own bar; tablets keep the stock NavigationRail.
+        val navLayoutType = if (isWide) {
+          NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+        } else {
+          NavigationSuiteType.None
+        }
+
         if (!isWide) {
           LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
@@ -371,6 +387,7 @@ class MainActivity : ComponentActivity() {
                           )
                         }
                       },
+                      layoutType = navLayoutType,
                       navigationSuiteColors = NavigationSuiteDefaults.colors(
                         navigationRailContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                       )
@@ -513,31 +530,73 @@ class MainActivity : ComponentActivity() {
                           FabPosition.End
                         },
                         bottomBar = {
-                          AnimatedVisibility(
-                            visible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded),
-                            enter = slideInVertically(
-                              initialOffsetY = { fullHeight -> fullHeight * 2 },
-                              animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
-                            ),
-                            exit = if (isWide) ExitTransition.None else slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
-                          ) {
-                            BottomAppBar(
-                              containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                              contentPadding = PaddingValues(0.dp)
+                          val miniPlayerVisible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded)
+
+                          val miniPlayer = @Composable {
+                            MiniPlayer(
+                              playerState = playerState,
+                              showNowPlaying = {
+                                showNowPlayingSheet.value = true
+                              },
+                              nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
+                              pause = {
+                                mediaController?.pause()
+                              },
+                              play = {
+                                mediaController?.play()
+                              },
+                              palette = mainActivityViewModel?.palette,
+                            )
+                          }
+
+                          if (isWide) {
+                            // Tablets keep the stock NavigationRail; the mini player sits in the bar.
+                            AnimatedVisibility(
+                              visible = miniPlayerVisible,
+                              enter = slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight * 2 },
+                                animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
+                              ),
+                              exit = ExitTransition.None
                             ) {
-                              MiniPlayer(
-                                playerState = playerState,
-                                showNowPlaying = {
-                                  showNowPlayingSheet.value = true
-                                },
-                                nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
-                                pause = {
-                                  mediaController?.pause()
-                                },
-                                play = {
-                                  mediaController?.play()
-                                },
-                                palette = mainActivityViewModel?.palette,
+                              BottomAppBar(
+                                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                contentPadding = PaddingValues(0.dp)
+                              ) {
+                                miniPlayer()
+                              }
+                            }
+                          } else {
+                            // Phones: floating mini player stacked above the floating nav bar.
+                            Column(
+                              modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                            ) {
+                              AnimatedVisibility(
+                                visible = miniPlayerVisible,
+                                enter = slideInHorizontally(
+                                  initialOffsetX = { fullWidth -> fullWidth },
+                                  animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
+                                ),
+                                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth })
+                              ) {
+                                Box(
+                                  modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(76.dp)
+                                ) {
+                                  miniPlayer()
+                                }
+                              }
+                              FloatingExpressiveNavBar(
+                                destinations = AppDestinations.entries,
+                                current = currentDestination,
+                                fusedTop = miniPlayerVisible,
+                                onSelect = { destination ->
+                                  currentDestination = destination
+                                  discoveryViewingStation.value = false
+                                }
                               )
                             }
                           }

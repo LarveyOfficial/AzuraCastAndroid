@@ -113,13 +113,21 @@ fun MiniPlayer(
     modifier = Modifier
       .fillMaxSize()
       .padding(
-        horizontal = 12.dp,
-        vertical = 6.dp
+        start = 12.dp,
+        end = 12.dp,
+        top = 6.dp,
+        bottom = 4.dp
       )
   ) {
     Surface(
       modifier = Modifier.fillMaxSize(),
-      shape = expressiveShape(24.dp),
+      // Bottom corners squared off to nest against the nav bar's squared top below it.
+      shape = RoundedCornerShape(
+        topStart = 24.dp,
+        topEnd = 24.dp,
+        bottomStart = 14.dp,
+        bottomEnd = 14.dp
+      ),
       color = containerColor,
       shadowElevation = 4.dp
     ) {
