@@ -1,5 +1,10 @@
 package com.larvey.azuracastplayer.ui.mainActivity.components
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -23,29 +28,84 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
-private enum class MiniDismissDragPhase { IDLE, TENSION, SNAPPING, FREE_DRAG }
+/**
+ * Amplitude-aware haptics for the swipe gesture. On API 26+ with amplitude control we drive the
+ * [Vibrator] directly so the ticks can literally get stronger as you approach the unlock point;
+ * otherwise we fall back to Compose's discrete [HapticFeedback].
+ */
+internal class SwipeHaptics(
+  private val vibrator: Vibrator?,
+  private val fallback: HapticFeedback
+) {
+  private val hasAmplitude = vibrator?.hasAmplitudeControl() == true
+
+  /** The satisfying "break free" when the drag crosses the unlock point. */
+  fun unlock() = buzz(durationMs = 26, amplitude = 235, fallback = HapticFeedbackType.LongPress)
+
+  /** The relock "clunk" — slightly weaker than [unlock]. */
+  fun relock() = buzz(durationMs = 24, amplitude = 200, fallback = HapticFeedbackType.LongPress)
+
+  private fun buzz(
+    durationMs: Long,
+    amplitude: Int,
+    fallback: HapticFeedbackType
+  ) {
+    val v = vibrator
+    if (v != null && v.hasVibrator()) {
+      try {
+        val amp = if (hasAmplitude) amplitude.coerceIn(1, 255) else VibrationEffect.DEFAULT_AMPLITUDE
+        v.vibrate(VibrationEffect.createOneShot(durationMs, amp))
+        return
+      } catch (_: Exception) {
+        // fall through to the Compose haptic
+      }
+    }
+    this.fallback.performHapticFeedback(fallback)
+  }
+}
+
+private fun Context.dismissVibrator(): Vibrator? = try {
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+  } else {
+    @Suppress("DEPRECATION")
+    getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+  }
+} catch (_: Exception) {
+  null
+}
 
 /**
- * Horizontal swipe-to-dismiss for the mini player, ported from PixelPlayer's
- * MiniPlayerDismissGestureHandler. The card resists slightly (a small "tension" offset) until
- * the drag passes ~100dp, fires a haptic and then follows the finger; releasing past 40% of the
- * screen width flies the card off and calls [onDismiss] — which stops playback, the same action
- * as the Now Playing Stop button. Releasing short of that springs the card back.
+ * Horizontal swipe-to-dismiss for the mini player, with a two-state detent:
+ *
+ * - **Locked** (the resting state): the card resists, moving only a fraction of the finger
+ *   travel, and emits a texture haptic on movement that intensifies as it nears the unlock point.
+ * - Crossing the **unlock** distance ([unlockPx]) fires a strong haptic and "breaks free" — the
+ *   card snaps to the finger and now dismisses on release.
+ * - While unlocked, dragging back past the **relock** distance ([relockPx], < unlockPx, so there
+ *   is hysteresis) re-locks with a firmer haptic and the resistance returns.
+ *
+ * Releasing while unlocked flies the card off and calls [onDismiss] (stops playback — the same
+ * action as the Now Playing Stop button); releasing while locked springs it back.
  */
 internal class MiniPlayerDismissGestureHandler(
   private val scope: CoroutineScope,
-  private val density: Density,
-  private val hapticFeedback: HapticFeedback,
+  density: Density,
+  private val haptics: SwipeHaptics,
   private val offsetAnimatable: Animatable<Float, AnimationVector1D>,
   private val screenWidthPx: Float,
   private val onDismiss: () -> Unit
 ) {
-  private var dragPhase = MiniDismissDragPhase.IDLE
+  private val unlockPx = 120f * density.density
+  private val relockPx = 60f * density.density
+  private val maxTensionPx = 36f * density.density
+
+  private var locked = true
   private var accumulatedDragX = 0f
   private var offsetJob: Job? = null
 
   fun onDragStart() {
-    dragPhase = MiniDismissDragPhase.TENSION
+    locked = true
     accumulatedDragX = 0f
     offsetJob?.cancel()
     offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) { offsetAnimatable.stop() }
@@ -53,74 +113,55 @@ internal class MiniPlayerDismissGestureHandler(
 
   fun onHorizontalDrag(dragAmount: Float) {
     accumulatedDragX += dragAmount
+    val absDrag = abs(accumulatedDragX)
+    val direction = accumulatedDragX.sign
 
-    when (dragPhase) {
-      MiniDismissDragPhase.TENSION -> {
-        val snapThresholdPx = 100f * density.density
-        if (abs(accumulatedDragX) < snapThresholdPx) {
-          val maxTensionOffsetPx = 30f * density.density
-          val dragFraction = (abs(accumulatedDragX) / snapThresholdPx).coerceIn(0f, 1f)
-          val tensionOffset = lerp(0f, maxTensionOffsetPx, dragFraction)
-          offsetJob?.cancel()
-          offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            offsetAnimatable.snapTo(tensionOffset * accumulatedDragX.sign)
-          }
-        } else {
-          dragPhase = MiniDismissDragPhase.SNAPPING
-        }
+    if (locked) {
+      val progress = (absDrag / unlockPx).coerceIn(0f, 1f)
+
+      if (absDrag >= unlockPx) {
+        locked = false
+        haptics.unlock()
+        animateOffsetTo(
+          accumulatedDragX,
+          spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow)
+        )
+      } else {
+        // Resist: the card moves only a fraction of the finger travel.
+        snapOffsetTo(maxTensionPx * progress * direction)
       }
-
-      MiniDismissDragPhase.SNAPPING -> {
-        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-        offsetJob?.cancel()
-        offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-          offsetAnimatable.animateTo(
-            targetValue = accumulatedDragX,
-            animationSpec = spring(
-              dampingRatio = 0.8f,
-              stiffness = Spring.StiffnessLow
-            )
-          )
-        }
-        dragPhase = MiniDismissDragPhase.FREE_DRAG
+    } else {
+      if (absDrag <= relockPx) {
+        locked = true
+        haptics.relock()
+        animateOffsetTo(
+          maxTensionPx * (absDrag / unlockPx).coerceIn(0f, 1f) * direction,
+          spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+        )
+      } else {
+        // Free drag: follow the finger.
+        animateOffsetTo(
+          accumulatedDragX,
+          spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessHigh)
+        )
       }
-
-      MiniDismissDragPhase.FREE_DRAG -> {
-        offsetJob?.cancel()
-        offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-          offsetAnimatable.animateTo(
-            targetValue = accumulatedDragX,
-            animationSpec = spring(
-              dampingRatio = Spring.DampingRatioNoBouncy,
-              stiffness = Spring.StiffnessHigh
-            )
-          )
-        }
-      }
-
-      MiniDismissDragPhase.IDLE -> Unit
     }
   }
 
   fun onDragEnd() {
-    dragPhase = MiniDismissDragPhase.IDLE
     offsetJob?.cancel()
-    val dismissThreshold = screenWidthPx * 0.4f
-    if (abs(accumulatedDragX) > dismissThreshold) {
-      val targetDismissOffset = if (accumulatedDragX < 0) -screenWidthPx else screenWidthPx
+    if (!locked) {
+      // Unlocked → commit the dismiss.
+      val target = if (accumulatedDragX < 0) -screenWidthPx else screenWidthPx
       offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
         offsetAnimatable.animateTo(
-          targetValue = targetDismissOffset,
-          animationSpec = tween(
-            durationMillis = 200,
-            easing = FastOutSlowInEasing
-          )
+          targetValue = target,
+          animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
         )
-        // Card is off-screen; stop playback. The host removes the (now-empty) mini player,
-        // so we intentionally leave the offset off-screen rather than snapping back.
         onDismiss()
       }
     } else {
+      // Still locked → spring back.
       offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
         offsetAnimatable.animateTo(
           targetValue = 0f,
@@ -130,6 +171,30 @@ internal class MiniPlayerDismissGestureHandler(
           )
         )
       }
+    }
+  }
+
+  fun onDragCancel() {
+    locked = true
+    accumulatedDragX = 0f
+    animateOffsetTo(
+      0f,
+      spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+    )
+  }
+
+  private fun snapOffsetTo(value: Float) {
+    offsetJob?.cancel()
+    offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) { offsetAnimatable.snapTo(value) }
+  }
+
+  private fun animateOffsetTo(
+    value: Float,
+    spec: androidx.compose.animation.core.AnimationSpec<Float>
+  ) {
+    offsetJob?.cancel()
+    offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      offsetAnimatable.animateTo(value, spec)
     }
   }
 }
@@ -143,12 +208,15 @@ internal fun rememberMiniPlayerDismissGestureHandler(
   screenWidthPx: Float,
   onDismiss: () -> Unit
 ): MiniPlayerDismissGestureHandler {
+  val context = LocalContext.current
+  val vibrator = remember(context) { context.dismissVibrator() }
+  val haptics = remember(vibrator, hapticFeedback) { SwipeHaptics(vibrator, hapticFeedback) }
   val onDismissState = rememberUpdatedState(onDismiss)
-  return remember(scope, density, hapticFeedback, offsetAnimatable, screenWidthPx) {
+  return remember(scope, density, haptics, offsetAnimatable, screenWidthPx) {
     MiniPlayerDismissGestureHandler(
       scope = scope,
       density = density,
-      hapticFeedback = hapticFeedback,
+      haptics = haptics,
       offsetAnimatable = offsetAnimatable,
       screenWidthPx = screenWidthPx,
       onDismiss = { onDismissState.value() }
@@ -168,7 +236,8 @@ internal fun Modifier.miniPlayerDismissHorizontalGesture(
         change.consume()
         handler.onHorizontalDrag(dragAmount)
       },
-      onDragEnd = { handler.onDragEnd() }
+      onDragEnd = { handler.onDragEnd() },
+      onDragCancel = { handler.onDragCancel() }
     )
   }
 }
