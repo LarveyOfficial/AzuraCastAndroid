@@ -1,11 +1,17 @@
 package com.larvey.azuracastplayer.ui.mainActivity.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeSpacing
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,27 +26,42 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.palette.graphics.Palette
@@ -51,10 +72,12 @@ import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.ui.theme.AppMotion
+import com.larvey.azuracastplayer.ui.theme.expressiveShape
+import com.larvey.azuracastplayer.utils.albumTint
 import com.larvey.azuracastplayer.utils.correctedVibrantColor
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.isDark
-import com.larvey.azuracastplayer.utils.updateTime
 
 @OptIn(
   ExperimentalMaterial3ExpressiveApi::class
@@ -63,66 +86,64 @@ import com.larvey.azuracastplayer.utils.updateTime
 fun MiniPlayer(
   playerState: PlayerState?,
   showNowPlaying: () -> Unit,
+  // nowPlaying / lifecycleOwner are kept for signature stability with the call site; the
+  // mini player no longer shows progress, so it no longer needs to poll play position.
   nowPlaying: () -> NowPlaying?,
   pause: () -> Unit,
   play: () -> Unit,
   palette: MutableState<Palette?>?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
-
-  var currentProgress by remember { mutableFloatStateOf(0f) }
-  var currentPosition by remember { mutableLongStateOf(0) }
-
-  val progressAnimation by animateFloatAsState(
-    targetValue = currentProgress,
-    animationSpec = tween(
-      durationMillis = 1000,
-      easing = LinearEasing
-    )
+  val dark = MaterialTheme.colorScheme.isDark()
+  val tint = albumTint(palette, dark)
+  val containerColor by animateColorAsState(
+    targetValue = tint?.container ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+    animationSpec = tween(durationMillis = 450),
+    label = "miniContainer"
   )
+  val onContainerColor by animateColorAsState(
+    targetValue = tint?.onContainer ?: MaterialTheme.colorScheme.onSurface,
+    animationSpec = tween(durationMillis = 450),
+    label = "miniOnContainer"
+  )
+  val accent = correctedVibrantColor(palette, dark) ?: MaterialTheme.colorScheme.primary
+  val onAccent = if (accent.luminance() > 0.5f) Color.Black else Color.White
 
-  val hasMedia = playerState?.currentMediaItem != null
-  LaunchedEffect(lifecycleOwner, hasMedia) {
-    updateTime(
-      isVisible = hasMedia,
-      updateProgress = { progress, position ->
-        currentProgress = progress
-        currentPosition = position
-      },
-      playerState = playerState,
-      nowPlaying = nowPlaying
-    )
-  }
-
-  val dominantColor = correctedVibrantColor(
-    palette,
-    MaterialTheme.colorScheme.isDark()
-  ) ?: MaterialTheme.colorScheme.primary
-
-  Surface(
+  Box(
     modifier = Modifier
-      .fillMaxSize(),
-    color = MaterialTheme.colorScheme.surfaceContainer
+      .fillMaxSize()
+      .padding(
+        horizontal = 12.dp,
+        vertical = 6.dp
+      )
   ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Surface(
+      modifier = Modifier.fillMaxSize(),
+      shape = expressiveShape(24.dp),
+      color = containerColor,
+      shadowElevation = 4.dp
+    ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .clickable {
-            showNowPlaying()
-          }
-          .padding(start = 16.dp)
-          .weight(1f)
+          .fillMaxSize()
+          .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = ripple()
+          ) { showNowPlaying() }
+          .padding(start = 8.dp)
       ) {
-        AnimatedContent(playerState?.mediaMetadata?.artworkUri.toString()) {
+        AnimatedContent(
+          targetState = playerState?.mediaMetadata?.artworkUri.toString(),
+          label = "miniArtwork"
+        ) {
           AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
               .data(it.fixHttps())
               .crossfade(true)
               .placeholderMemoryCacheKey(it.fixHttps())
               .placeholder(
-                if (MaterialTheme.colorScheme.isDark()) {
+                if (dark) {
                   R.drawable.loading_image_dark
                 } else {
                   R.drawable.loading_image
@@ -131,79 +152,207 @@ fun MiniPlayer(
               .diskCacheKey(it.fixHttps())
               .build(),
             contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
-            error = if (MaterialTheme.colorScheme.isDark()) {
+            error = if (dark) {
               painterResource(R.drawable.image_loading_failed_dark)
             } else {
               painterResource(R.drawable.image_loading_failed)
             },
             modifier = Modifier
               .fillMaxHeight()
-              .padding(vertical = 6.dp)
-              .clip(RoundedCornerShape(8.dp)),
+              .padding(vertical = 10.dp)
+              .clip(expressiveShape(12.dp)),
+          )
+        }
+        Spacer(modifier = Modifier.size(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+          EdgeFadeMarquee(
+            text = playerState?.mediaMetadata?.displayTitle?.toString() ?: " ",
+            style = MaterialTheme.typography.titleSmall.copy(
+              fontSize = 15.sp,
+              lineHeight = 20.sp,
+              fontWeight = FontWeight.SemiBold,
+              letterSpacing = (-0.2).sp,
+              color = onContainerColor
+            ),
+            gradientEdgeColor = containerColor,
+            modifier = Modifier.fillMaxWidth()
+          )
+          EdgeFadeMarquee(
+            text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
+            style = MaterialTheme.typography.bodySmall.copy(
+              fontSize = 13.sp,
+              lineHeight = 17.sp,
+              color = onContainerColor.copy(alpha = 0.7f)
+            ),
+            gradientEdgeColor = containerColor,
+            modifier = Modifier.fillMaxWidth()
           )
         }
         Spacer(modifier = Modifier.size(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = (playerState?.mediaMetadata?.displayTitle?.toString() ?: " "),
-            maxLines = 1,
-            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-            fontWeight = FontWeight.Bold
-          )
-          Text(
-            text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
-            maxLines = 1,
-            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-            style = MaterialTheme.typography.labelLarge
-          )
-        }
-        AnimatedContent(
-          targetState = playerState?.playbackState,
-          modifier = Modifier.padding(end = 15.dp)
-        ) { loading ->
-          if (loading != 2) {
-            AnimatedContent(
-              targetState = playerState?.isPlaying,
-            ) { targetState ->
-              if (targetState == true) {
-                IconButton(onClick = {
-                  pause()
-                }) {
-                  Icon(
-                    imageVector = Icons.Rounded.Pause,
-                    contentDescription = "Pause",
-                    modifier = Modifier.size(48.dp)
-                  )
-                }
-              } else {
-                IconButton(onClick = {
-                  play()
-                }) {
-                  Icon(
-                    imageVector = Icons.Rounded.PlayArrow,
-                    contentDescription = "Play",
-                    modifier = Modifier.size(48.dp)
-                  )
-                }
-              }
-            }
-          } else {
+        MiniPlayPauseChip(
+          playbackState = playerState?.playbackState,
+          isPlaying = playerState?.isPlaying == true,
+          accent = accent,
+          onAccent = onAccent,
+          play = play,
+          pause = pause,
+          modifier = Modifier.padding(end = 10.dp)
+        )
+      }
+    }
+  }
+}
 
-            LoadingIndicator(
-              modifier = Modifier.size(48.dp),
-              color = MaterialTheme.colorScheme.onBackground
+/**
+ * Filled squircle play/pause chip whose corner subtly morphs (rounder when paused, tighter
+ * when playing) — a compact preview of the full player's morphing control. Shows a wavy
+ * loading spinner while buffering.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun MiniPlayPauseChip(
+  playbackState: Int?,
+  isPlaying: Boolean,
+  accent: Color,
+  onAccent: Color,
+  play: () -> Unit,
+  pause: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val haptics = LocalHapticFeedback.current
+  Box(
+    modifier = modifier.size(46.dp),
+    contentAlignment = Alignment.Center
+  ) {
+    // playbackState == Player.STATE_BUFFERING (2) → wavy loading spinner
+    AnimatedContent(
+      targetState = playbackState,
+      label = "miniBuffering"
+    ) { state ->
+      if (state == 2) {
+        LoadingIndicator(
+          modifier = Modifier.size(46.dp),
+          color = accent
+        )
+      } else {
+        // paused → full circle (half the 46dp box), playing → tighter squircle
+        val corner by animateDpAsState(
+          targetValue = if (isPlaying) 14.dp else 23.dp,
+          animationSpec = AppMotion.spatial(),
+          label = "miniChipCorner"
+        )
+        Box(
+          modifier = Modifier
+            .size(46.dp)
+            .clip(RoundedCornerShape(corner))
+            .background(accent)
+            .clickable(
+              interactionSource = remember { MutableInteractionSource() },
+              indication = ripple(bounded = false)
+            ) {
+              haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+              if (isPlaying) pause() else play()
+            },
+          contentAlignment = Alignment.Center
+        ) {
+          Crossfade(
+            targetState = isPlaying,
+            animationSpec = AppMotion.effectsFast(),
+            label = "miniPlayPauseIcon"
+          ) { playing ->
+            Icon(
+              imageVector = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+              contentDescription = if (playing) "Pause" else "Play",
+              tint = onAccent,
+              modifier = Modifier.size(24.dp)
             )
           }
         }
       }
-      LinearProgressIndicator(
-        modifier = Modifier
-          .fillMaxWidth(),
-        progress = { progressAnimation },
-        trackColor = MaterialTheme.colorScheme.surfaceContainer,
-        color = dominantColor,
-        drawStopIndicator = {}
-      )
     }
+  }
+}
+
+/**
+ * Single-line text that scrolls (marquee) only when it overflows, with a soft gradient
+ * fade at whichever edge is clipped. Ported from PixelPlayer's AutoScrollingText — the fade
+ * is a horizontal-gradient rect drawn with [BlendMode.DstIn] over an offscreen layer.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun EdgeFadeMarquee(
+  text: String,
+  style: TextStyle,
+  gradientEdgeColor: Color,
+  modifier: Modifier = Modifier,
+  gradientWidth: Dp = 20.dp
+) {
+  SubcomposeLayout(modifier = modifier.clipToBounds()) { constraints ->
+    val measured = subcompose("measure") {
+      Text(text = text, style = style, maxLines = 1, softWrap = false)
+    }[0].measure(constraints.copy(maxWidth = Constraints.Infinity))
+
+    val overflowing = measured.width > constraints.maxWidth
+
+    val content = @Composable {
+      if (overflowing) {
+        var scrolling by remember(text) { mutableStateOf(false) }
+        val canFadeLeft by remember(text) { derivedStateOf { scrolling } }
+        LaunchedEffect(text) {
+          scrolling = false
+          kotlinx.coroutines.delay(2000)
+          scrolling = true
+        }
+        val leftEdge by animateColorAsState(
+          targetValue = if (canFadeLeft) Color.Transparent else gradientEdgeColor,
+          animationSpec = tween(durationMillis = 500),
+          label = "leftEdge"
+        )
+        Box(
+          modifier = Modifier
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+              drawContent()
+              val w = gradientWidth.toPx()
+              drawRect(
+                brush = Brush.horizontalGradient(
+                  colors = listOf(leftEdge, gradientEdgeColor),
+                  startX = 0f,
+                  endX = w
+                ),
+                blendMode = BlendMode.DstIn
+              )
+              drawRect(
+                brush = Brush.horizontalGradient(
+                  colors = listOf(gradientEdgeColor, Color.Transparent),
+                  startX = size.width - w,
+                  endX = size.width
+                ),
+                blendMode = BlendMode.DstIn
+              )
+            }
+        ) {
+          Text(
+            text = text,
+            style = style,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.basicMarquee(
+              iterations = Int.MAX_VALUE,
+              spacing = MarqueeSpacing(gradientWidth + 6.dp),
+              velocity = 24.dp,
+              initialDelayMillis = 2000
+            )
+          )
+        }
+      } else {
+        Text(text = text, style = style, maxLines = 1, softWrap = false)
+      }
+    }
+
+    val placeable = subcompose("content", content)[0].measure(constraints)
+    val width = constraints.maxWidth.takeIf { it != Constraints.Infinity } ?: placeable.width
+    layout(width, placeable.height) { placeable.place(0, 0) }
   }
 }

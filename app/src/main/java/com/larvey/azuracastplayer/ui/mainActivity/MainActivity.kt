@@ -25,6 +25,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -521,7 +522,8 @@ class MainActivity : ComponentActivity() {
                             exit = if (isWide) ExitTransition.None else slideOutVertically(targetOffsetY = { fullHeight -> fullHeight * 2 })
                           ) {
                             BottomAppBar(
-                              containerColor = MaterialTheme.colorScheme.surfaceContainer
+                              containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                              contentPadding = PaddingValues(0.dp)
                             ) {
                               MiniPlayer(
                                 playerState = playerState,
