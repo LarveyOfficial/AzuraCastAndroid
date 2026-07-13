@@ -3,6 +3,7 @@ package com.larvey.azuracastplayer.ui.mainActivity.components
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -34,10 +35,12 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +55,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -61,7 +66,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
+import kotlin.math.abs
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.palette.graphics.Palette
@@ -91,6 +98,11 @@ fun MiniPlayer(
   nowPlaying: () -> NowPlaying?,
   pause: () -> Unit,
   play: () -> Unit,
+  // Swiped-away → stop playback entirely (same action as the Now Playing Stop button).
+  stop: () -> Unit,
+  // Reports swipe-away progress (0 = at rest, 1 = at the dismiss threshold) so the nav bar
+  // below can round its top corners back in sync — making them feel like they detach.
+  onDismissProgress: (Float) -> Unit = {},
   palette: MutableState<Palette?>?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
@@ -109,6 +121,25 @@ fun MiniPlayer(
   val accent = correctedVibrantColor(palette, dark) ?: MaterialTheme.colorScheme.primary
   val onAccent = if (accent.luminance() > 0.5f) Color.Black else Color.White
 
+  // Swipe-left/right-to-dismiss (stop playback).
+  val scope = rememberCoroutineScope()
+  val density = LocalDensity.current
+  val dismissHaptics = LocalHapticFeedback.current
+  val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+  val dismissOffset = remember { Animatable(0f) }
+  val dismissHandler = rememberMiniPlayerDismissGestureHandler(
+    scope = scope,
+    density = density,
+    hapticFeedback = dismissHaptics,
+    offsetAnimatable = dismissOffset,
+    screenWidthPx = screenWidthPx,
+    onDismiss = stop
+  )
+  // 0 at rest → 1 at the dismiss threshold; drives the "detach" corner rounding.
+  val dragProgress = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
+  val bottomCorner = lerp(14.dp, 24.dp, dragProgress)
+  SideEffect { onDismissProgress(dragProgress) }
+
   Box(
     modifier = Modifier
       .fillMaxSize()
@@ -120,13 +151,20 @@ fun MiniPlayer(
       )
   ) {
     Surface(
-      modifier = Modifier.fillMaxSize(),
-      // Bottom corners squared off to nest against the nav bar's squared top below it.
+      modifier = Modifier
+        .fillMaxSize()
+        .graphicsLayer { translationX = dismissOffset.value }
+        .miniPlayerDismissHorizontalGesture(
+          enabled = true,
+          handler = dismissHandler
+        ),
+      // Bottom corners squared off to nest against the nav bar's squared top below it;
+      // they round back up to match the top as the card is swiped away (detaching).
       shape = RoundedCornerShape(
         topStart = 24.dp,
         topEnd = 24.dp,
-        bottomStart = 14.dp,
-        bottomEnd = 14.dp
+        bottomStart = bottomCorner,
+        bottomEnd = bottomCorner
       ),
       color = containerColor,
       shadowElevation = 4.dp

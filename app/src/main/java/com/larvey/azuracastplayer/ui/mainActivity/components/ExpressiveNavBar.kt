@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.larvey.azuracastplayer.ui.mainActivity.AppDestinations
 import com.larvey.azuracastplayer.ui.theme.AppMotion
@@ -54,15 +55,19 @@ fun FloatingExpressiveNavBar(
   current: AppDestinations,
   onSelect: (AppDestinations) -> Unit,
   fusedTop: Boolean,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  // Live mini-player swipe-away progress (0 = resting on the bar, 1 = fully detached).
+  detachProgress: () -> Float = { 0f }
 ) {
   // Top corners square off (nesting under the mini player) only when one sits above; with no
-  // mini player the bar is uniformly rounded. Animates as playback starts/stops.
-  val topCorner by animateDpAsState(
+  // mini player the bar is uniformly rounded. Animates as playback starts/stops, and rounds
+  // back toward the bottom radius as the mini player is swiped away (they detach).
+  val nestedCorner by animateDpAsState(
     targetValue = if (fusedTop) 14.dp else 30.dp,
     animationSpec = AppMotion.spatial(),
     label = "navTopCorner"
   )
+  val topCorner = lerp(nestedCorner, 30.dp, detachProgress().coerceIn(0f, 1f))
   Surface(
     modifier = modifier
       .fillMaxWidth()

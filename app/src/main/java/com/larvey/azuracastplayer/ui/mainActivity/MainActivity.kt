@@ -18,6 +18,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -532,6 +533,10 @@ class MainActivity : ComponentActivity() {
                         bottomBar = {
                           val miniPlayerVisible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded)
 
+                          // Shared mini-player swipe-away progress so the nav bar can round its
+                          // top corners back in sync (they detach together).
+                          var dismissProgress by remember { mutableStateOf(0f) }
+
                           val miniPlayer = @Composable {
                             MiniPlayer(
                               playerState = playerState,
@@ -545,6 +550,10 @@ class MainActivity : ComponentActivity() {
                               play = {
                                 mediaController?.play()
                               },
+                              stop = {
+                                mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop()
+                              },
+                              onDismissProgress = { dismissProgress = it },
                               palette = mainActivityViewModel?.palette,
                             )
                           }
@@ -579,7 +588,9 @@ class MainActivity : ComponentActivity() {
                                   initialOffsetX = { fullWidth -> fullWidth },
                                   animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
                                 ),
-                                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth })
+                                // Fade out (rather than slide) so it doesn't fight the swipe-to-dismiss,
+                                // which has already flung the card off-screen in the swipe direction.
+                                exit = fadeOut(animationSpec = tween(200))
                               ) {
                                 Box(
                                   modifier = Modifier
@@ -593,6 +604,7 @@ class MainActivity : ComponentActivity() {
                                 destinations = AppDestinations.entries,
                                 current = currentDestination,
                                 fusedTop = miniPlayerVisible,
+                                detachProgress = { dismissProgress },
                                 onSelect = { destination ->
                                   currentDestination = destination
                                   discoveryViewingStation.value = false
