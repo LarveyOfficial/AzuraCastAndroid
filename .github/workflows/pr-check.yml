@@ -14,12 +14,64 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  # Decide which checks are worth running for this PR, purely by which files
+  # changed (not what changed inside them):
+  #   code  = app sources / build config / ProGuard / gradle → build inputs
+  #   tests = app/src/test or androidTest
+  # Docs-only PRs (READMEs, screenshots, release-please metadata, etc.) set both
+  # false, so every downstream job skips. A skipped required check is treated as
+  # passing by branch protection, so the PR stays mergeable — this is why the
+  # gating lives in per-job `if:`, NOT a workflow-level `paths:` filter (that
+  # would stop the checks from ever reporting and block the PR forever).
+  changes:
+    name: Detect changes
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      tests: ${{ steps.filter.outputs.tests }}
+    steps:
+      - name: Classify changed files
+        id: filter
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Fail open: if we can't list the diff, run everything.
+          if ! files=$(gh pr diff "$PR" -R "$REPO" --name-only); then
+            echo "Could not read PR diff — running all checks."
+            echo "code=true"  >> "$GITHUB_OUTPUT"
+            echo "tests=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Changed files:"; printf '%s\n' "$files"
+          code=false
+          tests=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              app/src/test/*|app/src/androidTest/*)
+                tests=true ;;
+              app/src/main/*|\
+              app/build.gradle.kts|build.gradle.kts|settings.gradle.kts|\
+              gradle.properties|gradle/libs.versions.toml|gradle/wrapper/*|\
+              gradlew|gradlew.bat|app/proguard-rules.pro|app/libs/*)
+                code=true ;;
+            esac
+          done <<< "$files"
+          echo "Result: code=$code tests=$tests"
+          echo "code=$code"   >> "$GITHUB_OUTPUT"
+          echo "tests=$tests" >> "$GITHUB_OUTPUT"
+
+  # Runs when app code OR test code changed (code can break existing tests).
   unit-tests:
     name: Unit Tests
-    # Skip everything on draft PRs; runs once the PR is marked ready for review.
-    if: ${{ github.event.pull_request.draft == false }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.tests == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,9 +85,11 @@ jobs:
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
+  # Lint + both builds only care about build inputs — they skip a test-only PR.
   lint:
     name: Lint
-    if: ${{ github.event.pull_request.draft == false }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +105,8 @@ jobs:
 
   debug-build:
     name: Debug Build
-    if: ${{ github.event.pull_request.draft == false }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -103,7 +158,8 @@ jobs:
 
   release-build:
     name: Release Build
-    if: ${{ github.event.pull_request.draft == false }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
