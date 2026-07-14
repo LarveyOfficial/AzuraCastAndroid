@@ -4,11 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -20,9 +17,8 @@ import kotlin.math.abs
  *
  * [translationY] is the single source of truth for how open the player is: `0f` = fully expanded,
  * [collapsedY] = collapsed. A drag moves it 1:1 with the finger; releasing settles it to one end.
- * [expansion] (0..1) is *derived* from it so the two can never disagree. The player content itself
- * is drawn in a bottom-anchored window that grows upward, so the mini bar stays put while the sheet
- * expands over it.
+ * [expansion] (0..1) is *derived* from it so the two can never disagree — geometry, the layer
+ * cross-fade, and the scrim all read it.
  */
 class ExpandingPlayerState(
   private val scope: CoroutineScope
@@ -32,14 +28,11 @@ class ExpandingPlayerState(
   var collapsedY: Float = 0f
     private set
 
-  /** True while the user is actively dragging — used to show placeholders instead of live content. */
-  var isDragging by mutableStateOf(false)
-    private set
-
   /** Set once by the layout so drag thresholds are in real px. */
   var dragThresholdPx: Float = 24f
 
   private var initialized = false
+  private var isDragging = false
   private var accumulated = 0f
   private var expandedState = false
 

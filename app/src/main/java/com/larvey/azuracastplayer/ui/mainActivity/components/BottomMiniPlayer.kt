@@ -65,7 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 import androidx.lifecycle.LifecycleOwner
@@ -132,9 +131,8 @@ fun MiniPlayer(
     screenWidthPx = screenWidthPx,
     onDismiss = stop
   )
-  // 0 at rest → 1 at the dismiss threshold; drives the "detach" corner rounding.
+  // 0 at rest → 1 at the dismiss threshold; still reported so callers can react to the swipe.
   val dragProgress = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
-  val bottomCorner = lerp(14.dp, 24.dp, dragProgress)
   SideEffect { onDismissProgress(dragProgress) }
 
   Box(
@@ -155,14 +153,9 @@ fun MiniPlayer(
           enabled = true,
           handler = dismissHandler
         ),
-      // Bottom corners squared off to nest against the nav bar's squared top below it;
-      // they round back up to match the top as the card is swiped away (detaching).
-      shape = RoundedCornerShape(
-        topStart = 24.dp,
-        topEnd = 24.dp,
-        bottomStart = bottomCorner,
-        bottomEnd = bottomCorner
-      ),
+      // Fully rounded card — this bar is used only on wide/tablet layouts (in the pane's bottom
+      // bar), where there is no navigation bar beneath it to nest against.
+      shape = RoundedCornerShape(24.dp),
       color = containerColor,
       shadowElevation = 4.dp
     ) {

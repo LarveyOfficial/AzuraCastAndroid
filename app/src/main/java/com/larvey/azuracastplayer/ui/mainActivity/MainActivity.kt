@@ -19,7 +19,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -31,8 +30,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -84,11 +85,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -115,7 +119,6 @@ import com.larvey.azuracastplayer.ui.nowplaying.rememberExpandingPlayerState
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
 import com.larvey.azuracastplayer.utils.albumColors
-import com.larvey.azuracastplayer.utils.isDark
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -241,9 +244,9 @@ class MainActivity : ComponentActivity() {
         val expandingPlayerState = rememberExpandingPlayerState()
         // Mini-player swipe-away progress, shared so the floating nav bar rounds its top corners
         // back in sync as the bar detaches. Written by the mini bar, read by the nav bar.
-        var miniDismissProgress by remember { mutableStateOf(0f) }
+        var miniDismissProgress by remember { mutableFloatStateOf(0f) }
         // Measured nav-bar height, so it can slide straight down by its own height as the player opens.
-        var navBarHeightPx by remember { mutableStateOf(0) }
+        var navBarHeightPx by remember { mutableIntStateOf(0) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
 
@@ -260,6 +263,12 @@ class MainActivity : ComponentActivity() {
         val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
         var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.STATIONS) }
         val discoveryViewingStation = remember { mutableStateOf(false) }
+        // Briefly true while the discover detail pane is animating away, so the Now Playing pane
+        // waits for it to finish instead of both moving at once (which jitters).
+        var hidingDiscoverDetail by remember { mutableStateOf(false) }
+        // Hides the wide mini bar first (before the discover detail closes), so it disappears at its
+        // resting width instead of snapping to full width when its pane-reserved padding drops.
+        var hideMiniForDock by remember { mutableStateOf(false) }
 
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()
@@ -556,7 +565,19 @@ class MainActivity : ComponentActivity() {
                             MiniPlayer(
                               playerState = playerState,
                               showNowPlaying = {
-                                showNowPlayingSheet.value = true
+                                // Wide layouts: instead of a full-screen sheet, sequence it so nothing
+                                // collides: hide the mini bar first (at its resting width), then close
+                                // the discover detail, then — once it's gone — dock the resizable Now
+                                // Playing pane.
+                                scope.launch {
+                                  hideMiniForDock = true
+                                  delay(120)
+                                  hidingDiscoverDetail = true
+                                  discoveryViewingStation.value = false
+                                  delay(350)
+                                  hidingDiscoverDetail = false
+                                  hideMiniForDock = false
+                                }
                               },
                               nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
                               pause = {
@@ -576,7 +597,7 @@ class MainActivity : ComponentActivity() {
                           if (isWide) {
                             // Tablets keep the stock NavigationRail; the mini player sits in the bar.
                             AnimatedVisibility(
-                              visible = miniPlayerVisible,
+                              visible = miniPlayerVisible && !hideMiniForDock,
                               enter = slideInVertically(
                                 initialOffsetY = { fullHeight -> fullHeight * 2 },
                                 animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
@@ -587,7 +608,31 @@ class MainActivity : ComponentActivity() {
                                 containerColor = androidx.compose.ui.graphics.Color.Transparent,
                                 contentPadding = PaddingValues(0.dp)
                               ) {
-                                miniPlayer()
+                                // Keep the bar over the left (main/browse) column. On the Discover
+                                // detail split the station details occupy the right pane (its width is
+                                // the directive's preferred pane width), so reserve that on the right;
+                                // otherwise cap the bar to a card width instead of stretching a wide
+                                // layout edge-to-edge.
+                                Box(
+                                  modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                      end = if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+                                        customDirective.defaultPanePreferredWidth
+                                      } else {
+                                        0.dp
+                                      }
+                                    )
+                                ) {
+                                  Box(
+                                    modifier = Modifier
+                                      .fillMaxHeight()
+                                      .widthIn(max = 560.dp)
+                                      .align(Alignment.CenterStart)
+                                  ) {
+                                    miniPlayer()
+                                  }
+                                }
                               }
                             }
                           } else {
@@ -696,7 +741,7 @@ class MainActivity : ComponentActivity() {
                 },
                 supportingPane = {
                   AnimatedVisibility(
-                    visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value,
+                    visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value && !hidingDiscoverDetail,
                     enter = slideInHorizontally(
                       initialOffsetX = { fullWidth -> fullWidth * 2 }
                     ),
