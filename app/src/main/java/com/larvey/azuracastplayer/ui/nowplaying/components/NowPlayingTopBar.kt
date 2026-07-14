@@ -78,7 +78,7 @@ fun NowPlayingTopBar(
         topEnd = 22.dp,
         bottomEnd = 22.dp
       ),
-      width = 45.dp
+      width = 42.dp
     ) {
       Icon(
         imageVector = Icons.AutoMirrored.Rounded.QueueMusic,

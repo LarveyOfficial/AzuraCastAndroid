@@ -17,6 +17,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -286,6 +288,13 @@ class MainActivity : ComponentActivity() {
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
 
+        // Lift the FAB above the mini player when it's showing. The mini bar is now an overlay
+        // (not in the Scaffold's bottomBar), so the Scaffold no longer reserves space for it.
+        val fabMiniInset by animateDpAsState(
+          targetValue = if (!isWide && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp,
+          label = "Fab Mini Inset"
+        )
+
         // Phones get the custom FloatingExpressiveNavBar (rendered in the bottomBar), so suppress
         // the NavigationSuiteScaffold's own bar; tablets keep the stock NavigationRail.
         val navLayoutType = if (isWide) {
@@ -493,6 +502,7 @@ class MainActivity : ComponentActivity() {
                               onClick = {
                                 showAddDialog.value = true
                               },
+                              modifier = Modifier.padding(bottom = fabMiniInset),
                               containerColor = animatedFabColor.value
                             ) {
                               Icon(
@@ -523,6 +533,7 @@ class MainActivity : ComponentActivity() {
                               onClick = {
                                 confirmEdit.value = true
                               },
+                              modifier = Modifier.padding(bottom = fabMiniInset),
                               containerColor = MaterialTheme.colorScheme.tertiary
                             ) {
                               Icon(
@@ -763,18 +774,33 @@ class MainActivity : ComponentActivity() {
         // Phone Now Playing: a single surface that grows from the mini bar into the full screen.
         // Rendered last so it overlays the app; the collapsed bar sits above the floating nav bar.
         // Tablets keep the side pane.
-        if (!isWide && playerState?.currentMediaItem?.mediaId != null) {
-          ExpandingNowPlayer(
-            state = expandingPlayerState,
-            playerState = playerState,
-            palette = mainActivityViewModel?.palette,
-            colorList = mainActivityViewModel?.colorList,
-            nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
-            play = { mediaController?.play() },
-            pause = { mediaController?.pause() },
-            stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
-            onDismissProgress = { miniDismissProgress = it }
-          )
+        if (!isWide) {
+          // When playback ends, snap the surface back to the mini bar so the next song opens as the
+          // mini bar (sliding in) rather than reappearing full-screen where it was left.
+          LaunchedEffect(playerState?.currentMediaItem?.mediaId) {
+            if (playerState?.currentMediaItem?.mediaId == null) {
+              expandingPlayerState.snapToCollapsed()
+            }
+          }
+          AnimatedVisibility(
+            visible = playerState?.currentMediaItem?.mediaId != null,
+            // Slide the (collapsed) mini bar in from the side, like the standalone mini player did.
+            // Exit is instant — the animated stop already slides the bar away before it disappears.
+            enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+            exit = ExitTransition.None
+          ) {
+            ExpandingNowPlayer(
+              state = expandingPlayerState,
+              playerState = playerState,
+              palette = mainActivityViewModel?.palette,
+              colorList = mainActivityViewModel?.colorList,
+              nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
+              play = { mediaController?.play() },
+              pause = { mediaController?.pause() },
+              stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
+              onDismissProgress = { miniDismissProgress = it }
+            )
+          }
         }
       }
     }

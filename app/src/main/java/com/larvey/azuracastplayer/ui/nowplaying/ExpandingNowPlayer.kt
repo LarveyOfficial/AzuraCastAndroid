@@ -50,6 +50,7 @@ import com.larvey.azuracastplayer.ui.mainActivity.components.rememberMiniPlayerD
 import com.larvey.azuracastplayer.utils.albumColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -131,6 +132,20 @@ fun ExpandingNowPlayer(
     )
     val dismissProgress = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
     SideEffect { onDismissProgress(dismissProgress) }
+
+    // Stop from the full player collapses back to the mini bar, then slides it away, then actually
+    // stops — instead of the surface vanishing mid-screen.
+    val animatedStop: () -> Unit = {
+      scope.launch {
+        state.animateCollapse()
+        dismissOffset.animateTo(
+          targetValue = -screenWidthPx,
+          animationSpec = tween(durationMillis = 220)
+        )
+        stop()
+      }
+      Unit
+    }
 
     val isOpen by remember { derivedStateOf { state.expansion() > 0.001f } }
     // Mini row is only present (and interactive) while collapsed-ish, so it never blocks the
@@ -217,6 +232,7 @@ fun ExpandingNowPlayer(
           colorList = colorList,
           onCollapse = { state.collapse() },
           onNowPlayingRouteChange = { onNowPlayingRoute = it },
+          onStop = animatedStop,
           drawBackground = false
         )
       }

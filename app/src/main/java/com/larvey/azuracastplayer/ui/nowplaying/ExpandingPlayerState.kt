@@ -101,6 +101,25 @@ class ExpandingPlayerState(
 
   fun collapse() = settle(expand = false, velocityY = 0f)
 
+  /** Collapse to the mini bar and suspend until it finishes (used to sequence the animated stop). */
+  suspend fun animateCollapse() {
+    expandedState = false
+    isDragging = false
+    translationY.animateTo(
+      targetValue = collapsedY,
+      animationSpec = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium
+      )
+    )
+  }
+
+  /** Instantly reset to collapsed — called when playback ends so the next song opens as the mini bar. */
+  fun snapToCollapsed() {
+    expandedState = false
+    scope.launch(start = CoroutineStart.UNDISPATCHED) { translationY.snapTo(collapsedY) }
+  }
+
   private fun settle(expand: Boolean, velocityY: Float) {
     expandedState = expand
     isDragging = false

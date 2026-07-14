@@ -67,6 +67,9 @@ fun NowPlayingContent(
   colorList: MutableState<List<Color>>?,
   onCollapse: () -> Unit,
   onNowPlayingRouteChange: (Boolean) -> Unit = {},
+  // Overrides the Stop button action; the expanding surface passes an animated collapse-then-dismiss
+  // so stopping doesn't just make the surface vanish. Null = stop the player directly.
+  onStop: (() -> Unit)? = null,
   // The expanding surface draws the album background itself (so it also shows behind the drag
   // placeholder), so it renders this content with drawBackground = false.
   drawBackground: Boolean = true
@@ -122,8 +125,9 @@ fun NowPlayingContent(
       },
       bottomBar = {
         NowPlayingBottomBar(
-          stop = {
+          stop = onStop ?: {
             nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
+            Unit
           },
           pause = {
             nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.pause()
