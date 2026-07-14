@@ -100,12 +100,16 @@ import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import com.larvey.azuracastplayer.ui.mainActivity.components.FloatingExpressiveNavBar
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.mainActivity.settings.SettingsSheet
+import com.larvey.azuracastplayer.ui.nowplaying.ExpandingNowPlayer
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
+import com.larvey.azuracastplayer.ui.nowplaying.rememberExpandingPlayerState
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
 import com.larvey.azuracastplayer.utils.albumColors
@@ -229,6 +233,15 @@ class MainActivity : ComponentActivity() {
 
         val showAddDialog = remember { mutableStateOf(false) }
         val showNowPlayingSheet = remember { mutableStateOf(false) }
+
+        // Phone Now Playing is one continuous surface that grows from the mini bar into the full
+        // screen; this drives its 0..1 expansion. (Tablets keep the side pane and the modal sheet.)
+        val expandingPlayerState = rememberExpandingPlayerState()
+        // Mini-player swipe-away progress, shared so the floating nav bar rounds its top corners
+        // back in sync as the bar detaches. Written by the mini bar, read by the nav bar.
+        var miniDismissProgress by remember { mutableStateOf(0f) }
+        // Measured nav-bar height, so it can slide straight down by its own height as the player opens.
+        var navBarHeightPx by remember { mutableStateOf(0) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
 
@@ -528,10 +541,6 @@ class MainActivity : ComponentActivity() {
                         bottomBar = {
                           val miniPlayerVisible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded)
 
-                          // Shared mini-player swipe-away progress so the nav bar can round its
-                          // top corners back in sync (they detach together).
-                          var dismissProgress by remember { mutableStateOf(0f) }
-
                           val miniPlayer = @Composable {
                             MiniPlayer(
                               playerState = playerState,
@@ -548,7 +557,7 @@ class MainActivity : ComponentActivity() {
                               stop = {
                                 mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop()
                               },
-                              onDismissProgress = { dismissProgress = it },
+                              onDismissProgress = { miniDismissProgress = it },
                               palette = mainActivityViewModel?.palette,
                             )
                           }
@@ -571,35 +580,25 @@ class MainActivity : ComponentActivity() {
                               }
                             }
                           } else {
-                            // Phones: floating mini player stacked above the floating nav bar.
+                            // Phones: only the floating nav bar lives in the bar. The mini player is
+                            // now the collapsed state of the expanding Now Playing surface, rendered
+                            // as an overlay above everything (see ExpandingNowPlayer below), so it can
+                            // grow out of this slot into the full screen. As that surface expands the
+                            // nav bar slides straight down (by its own height) to make room.
                             Column(
                               modifier = Modifier
                                 .fillMaxWidth()
+                                .onSizeChanged { navBarHeightPx = it.height }
+                                .graphicsLayer {
+                                  translationY = navBarHeightPx.toFloat() * expandingPlayerState.expansion()
+                                }
                                 .navigationBarsPadding()
                             ) {
-                              AnimatedVisibility(
-                                visible = miniPlayerVisible,
-                                enter = slideInHorizontally(
-                                  initialOffsetX = { fullWidth -> fullWidth },
-                                  animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
-                                ),
-                                // Fade out (rather than slide) so it doesn't fight the swipe-to-dismiss,
-                                // which has already flung the card off-screen in the swipe direction.
-                                exit = fadeOut(animationSpec = tween(200))
-                              ) {
-                                Box(
-                                  modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(76.dp)
-                                ) {
-                                  miniPlayer()
-                                }
-                              }
                               FloatingExpressiveNavBar(
                                 destinations = AppDestinations.entries,
                                 current = currentDestination,
                                 fusedTop = miniPlayerVisible,
-                                detachProgress = { dismissProgress },
+                                detachProgress = { miniDismissProgress },
                                 onSelect = { destination ->
                                   currentDestination = destination
                                   discoveryViewingStation.value = false
@@ -759,6 +758,23 @@ class MainActivity : ComponentActivity() {
               colorList = mainActivityViewModel?.colorList
             )
           }
+        }
+
+        // Phone Now Playing: a single surface that grows from the mini bar into the full screen.
+        // Rendered last so it overlays the app; the collapsed bar sits above the floating nav bar.
+        // Tablets keep the side pane.
+        if (!isWide && playerState?.currentMediaItem?.mediaId != null) {
+          ExpandingNowPlayer(
+            state = expandingPlayerState,
+            playerState = playerState,
+            palette = mainActivityViewModel?.palette,
+            colorList = mainActivityViewModel?.colorList,
+            nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
+            play = { mediaController?.play() },
+            pause = { mediaController?.pause() },
+            stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
+            onDismissProgress = { miniDismissProgress = it }
+          )
         }
       }
     }

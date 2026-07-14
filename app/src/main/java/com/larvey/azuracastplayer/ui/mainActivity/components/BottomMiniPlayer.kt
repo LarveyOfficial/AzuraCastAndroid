@@ -104,7 +104,6 @@ fun MiniPlayer(
   palette: MutableState<Palette?>?,
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
-  val dark = MaterialTheme.colorScheme.isDark()
   val colors = albumColors(palette?.value)
   val containerColor by animateColorAsState(
     targetValue = colors.container,
@@ -167,83 +166,115 @@ fun MiniPlayer(
       color = containerColor,
       shadowElevation = 4.dp
     ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-          .fillMaxSize()
-          .clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = ripple()
-          ) { showNowPlaying() }
-          .padding(start = 8.dp)
-      ) {
-        AnimatedContent(
-          targetState = playerState?.mediaMetadata?.artworkUri.toString(),
-          label = "miniArtwork"
-        ) {
-          AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-              .data(it.fixHttps())
-              .crossfade(true)
-              .placeholderMemoryCacheKey(it.fixHttps())
-              .placeholder(
-                if (dark) {
-                  R.drawable.loading_image_dark
-                } else {
-                  R.drawable.loading_image
-                }
-              )
-              .diskCacheKey(it.fixHttps())
-              .build(),
-            contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
-            error = if (dark) {
-              painterResource(R.drawable.image_loading_failed_dark)
-            } else {
-              painterResource(R.drawable.image_loading_failed)
-            },
-            modifier = Modifier
-              .fillMaxHeight()
-              .padding(vertical = 10.dp)
-              .clip(expressiveShape(12.dp)),
-          )
-        }
-        Spacer(modifier = Modifier.size(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-          EdgeFadeMarquee(
-            text = playerState?.mediaMetadata?.displayTitle?.toString() ?: " ",
-            style = MaterialTheme.typography.titleSmall.copy(
-              fontSize = 15.sp,
-              lineHeight = 20.sp,
-              fontWeight = FontWeight.SemiBold,
-              letterSpacing = (-0.2).sp,
-              color = onContainerColor
-            ),
-            gradientEdgeColor = containerColor,
-            modifier = Modifier.fillMaxWidth()
-          )
-          EdgeFadeMarquee(
-            text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
-            style = MaterialTheme.typography.bodySmall.copy(
-              fontSize = 13.sp,
-              lineHeight = 17.sp,
-              color = onContainerColor.copy(alpha = 0.7f)
-            ),
-            gradientEdgeColor = containerColor,
-            modifier = Modifier.fillMaxWidth()
-          )
-        }
-        Spacer(modifier = Modifier.size(8.dp))
-        MiniPlayPauseChip(
-          playbackState = playerState?.playbackState,
-          isPlaying = playerState?.isPlaying == true,
-          accent = accent,
-          onAccent = onAccent,
-          play = play,
-          pause = pause,
-          modifier = Modifier.padding(end = 10.dp)
-        )
-      }
+      MiniPlayerContent(
+        playerState = playerState,
+        showNowPlaying = showNowPlaying,
+        play = play,
+        pause = pause,
+        containerColor = containerColor,
+        onContainerColor = onContainerColor,
+        accent = accent,
+        onAccent = onAccent
+      )
     }
+  }
+}
+
+/**
+ * The bare mini-player content row — album art, title/artist, play chip — with **no background of
+ * its own** (the caller provides it). This lets the expanding player use the mini content directly
+ * on top of the one growing card background, so the mini bar reads as the card itself expanding
+ * rather than a separate sheet appearing behind it. [MiniPlayer] wraps this in its own [Surface];
+ * the expanding surface draws its own shared background behind it.
+ */
+@Composable
+fun MiniPlayerContent(
+  playerState: PlayerState?,
+  showNowPlaying: () -> Unit,
+  play: () -> Unit,
+  pause: () -> Unit,
+  containerColor: Color,
+  onContainerColor: Color,
+  accent: Color,
+  onAccent: Color,
+  modifier: Modifier = Modifier
+) {
+  val dark = MaterialTheme.colorScheme.isDark()
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = modifier
+      .fillMaxSize()
+      .clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = ripple()
+      ) { showNowPlaying() }
+      .padding(start = 8.dp)
+  ) {
+    AnimatedContent(
+      targetState = playerState?.mediaMetadata?.artworkUri.toString(),
+      label = "miniArtwork"
+    ) {
+      AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+          .data(it.fixHttps())
+          .crossfade(true)
+          .placeholderMemoryCacheKey(it.fixHttps())
+          .placeholder(
+            if (dark) {
+              R.drawable.loading_image_dark
+            } else {
+              R.drawable.loading_image
+            }
+          )
+          .diskCacheKey(it.fixHttps())
+          .build(),
+        contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
+        error = if (dark) {
+          painterResource(R.drawable.image_loading_failed_dark)
+        } else {
+          painterResource(R.drawable.image_loading_failed)
+        },
+        modifier = Modifier
+          .fillMaxHeight()
+          .padding(vertical = 10.dp)
+          .clip(expressiveShape(12.dp)),
+      )
+    }
+    Spacer(modifier = Modifier.size(12.dp))
+    Column(modifier = Modifier.weight(1f)) {
+      EdgeFadeMarquee(
+        text = playerState?.mediaMetadata?.displayTitle?.toString() ?: " ",
+        style = MaterialTheme.typography.titleSmall.copy(
+          fontSize = 15.sp,
+          lineHeight = 20.sp,
+          fontWeight = FontWeight.SemiBold,
+          letterSpacing = (-0.2).sp,
+          color = onContainerColor
+        ),
+        gradientEdgeColor = containerColor,
+        modifier = Modifier.fillMaxWidth()
+      )
+      EdgeFadeMarquee(
+        text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
+        style = MaterialTheme.typography.bodySmall.copy(
+          fontSize = 13.sp,
+          lineHeight = 17.sp,
+          color = onContainerColor.copy(alpha = 0.7f)
+        ),
+        gradientEdgeColor = containerColor,
+        modifier = Modifier.fillMaxWidth()
+      )
+    }
+    Spacer(modifier = Modifier.size(8.dp))
+    MiniPlayPauseChip(
+      playbackState = playerState?.playbackState,
+      isPlaying = playerState?.isPlaying == true,
+      accent = accent,
+      onAccent = onAccent,
+      play = play,
+      pause = pause,
+      modifier = Modifier.padding(end = 10.dp)
+    )
   }
 }
 
