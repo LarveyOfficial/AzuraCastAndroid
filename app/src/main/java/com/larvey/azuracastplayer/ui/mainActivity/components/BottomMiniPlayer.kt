@@ -80,7 +80,7 @@ import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
-import com.larvey.azuracastplayer.utils.albumColors
+import com.larvey.azuracastplayer.utils.albumScheme
 import com.larvey.azuracastplayer.utils.fixHttps
 import com.larvey.azuracastplayer.utils.isDark
 
@@ -105,19 +105,22 @@ fun MiniPlayer(
   lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
   val dark = MaterialTheme.colorScheme.isDark()
-  val colors = albumColors(palette?.value)
+  // Album-derived tonal scheme (theme-aware; neutral on grayscale art). The card takes the muted
+  // secondary container; the play chip takes the bolder primary so it stands out (and stays
+  // near-black for monochrome art).
+  val scheme = albumScheme(palette?.value, dark)
   val containerColor by animateColorAsState(
-    targetValue = colors.container,
+    targetValue = scheme.secondaryContainer,
     animationSpec = tween(durationMillis = 450),
     label = "miniContainer"
   )
   val onContainerColor by animateColorAsState(
-    targetValue = colors.onContainer,
+    targetValue = scheme.onSecondaryContainer,
     animationSpec = tween(durationMillis = 450),
     label = "miniOnContainer"
   )
-  val accent = colors.accent
-  val onAccent = colors.onAccent
+  val accent = scheme.primary
+  val onAccent = scheme.onPrimary
 
   // Swipe-left/right-to-dismiss (stop playback).
   val scope = rememberCoroutineScope()

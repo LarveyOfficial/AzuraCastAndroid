@@ -45,6 +45,7 @@ import com.larvey.azuracastplayer.ui.nowplaying.components.BlurImageBackground
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
+import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingTopBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 
 @OptIn(
@@ -96,9 +97,9 @@ fun NowPlayingPane(
           .fillMaxSize()
           .windowInsetsPadding(WindowInsets.systemBars),
         containerColor = Color.Transparent,
-        bottomBar = {
-          NowPlayingBottomBar(
-            toggleQueueVisibility = {
+        topBar = {
+          NowPlayingTopBar(
+            onToggleHistory = {
               if (navController.currentDestination?.route == "nowPlaying") {
                 navController.navigate("queue")
               } else {
@@ -107,7 +108,11 @@ fun NowPlayingPane(
                   inclusive = false
                 )
               }
-            },
+            }
+          )
+        },
+        bottomBar = {
+          NowPlayingBottomBar(
             stop = {
               nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
             },

@@ -66,7 +66,7 @@ import com.larvey.azuracastplayer.session.sleepTimer.SleepItem
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
-import com.larvey.azuracastplayer.utils.albumColors
+import com.larvey.azuracastplayer.utils.albumButtonScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -100,11 +100,14 @@ fun MediaControls(
   val isPlaying = playerState.isPlaying
   val buffering = playerState.playbackState == 2
 
-  // Album-tinted light play button (icon carries the album hue); translucent glass side buttons.
-  val colors = albumColors(palette)
-  val playColor = colors.lightChip
-  val playIconColor = colors.onLightChip
-  val sideColor = Color.White.copy(alpha = 0.15f)
+  // Muted, album-derived pastel controls from a real Material tonal scheme (neutral on grayscale
+  // art): the play/pause takes the primary container; the side buttons take the tertiary (a
+  // hue-rotated accent) so they read as a distinct pastel rather than a near-copy of the primary.
+  val scheme = albumButtonScheme(palette)
+  val playColor = scheme.primaryContainer
+  val playIconColor = scheme.onPrimaryContainer
+  val sideColor = scheme.tertiaryContainer
+  val sideIconColor = scheme.onTertiaryContainer
 
   // Press-to-expand: the tapped button grows and its neighbours compress (play/pause never
   // compresses — it stays the dominant control).
@@ -158,7 +161,7 @@ fun MediaControls(
         imageVector = Icons.Rounded.Stop,
         contentDescription = "Stop",
         modifier = Modifier.size(30.dp),
-        tint = Color.White
+        tint = sideIconColor
       )
     }
 
@@ -216,7 +219,7 @@ fun MediaControls(
         imageVector = if (isSleeping?.value != true) Icons.Rounded.NightsStay else Icons.Rounded.Timer,
         contentDescription = "Sleep timer",
         modifier = Modifier.size(28.dp),
-        tint = if (isSleeping?.value != true) Color.White else MaterialTheme.colorScheme.primary
+        tint = if (isSleeping?.value != true) sideIconColor else scheme.primary
       )
     }
   }

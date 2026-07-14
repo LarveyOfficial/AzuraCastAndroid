@@ -2,19 +2,17 @@ package com.larvey.azuracastplayer.ui.nowplaying.components
 
 import androidx.annotation.OptIn
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,6 +23,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.state.PlayerState
+import com.larvey.azuracastplayer.utils.albumButtonScheme
 import com.larvey.azuracastplayer.utils.albumColors
 import java.util.Locale
 import kotlin.time.DurationUnit
@@ -44,6 +43,7 @@ fun ProgressBar(
 ) {
   Column {
     val colors = albumColors(palette)
+    val scheme = albumButtonScheme(palette)
 
     val isPlaying = animateFloatAsState(
       targetValue = if (playerState.isPlaying) 1f else 0f,
@@ -91,31 +91,23 @@ fun ProgressBar(
       )
       Spacer(modifier = Modifier.weight(1f))
       if ((currentMount?.bitrate != null && currentMount.format != null) || playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
-        SuggestionChip(
-          onClick = {},
-          label = {
-            if (playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
-              Text(
-                "HLS",
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                color = Color.White
-              )
-            } else {
-              Text(
-                "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps",
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                color = Color.White
-              )
-            }
-
-          },
-          border = BorderStroke(
-            width = 1.dp,
-            color = Color.White
-          ),
-          modifier = Modifier.heightIn(max = 24.dp)
+        val qualityLabel = if (playerState.currentMediaItem?.mediaId?.endsWith("m3u8") == true) {
+          "HLS"
+        } else {
+          "${currentMount?.format?.uppercase()} ${currentMount?.bitrate}kbps"
+        }
+        Text(
+          text = qualityLabel,
+          style = MaterialTheme.typography.labelSmall,
+          maxLines = 1,
+          color = scheme.onSecondaryContainer,
+          modifier = Modifier
+            .clip(RoundedCornerShape(percent = 50))
+            .background(scheme.secondaryContainer)
+            .padding(
+              horizontal = 12.dp,
+              vertical = 4.dp
+            )
         )
       }
       Spacer(modifier = Modifier.weight(1f))

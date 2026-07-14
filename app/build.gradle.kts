@@ -103,6 +103,9 @@ dependencies {
 
   implementation("androidx.compose.material3:material3:1.4.0-alpha11")
 
+  // Generates a full Material tonal color scheme from an album-art seed color.
+  implementation("com.materialkolor:material-kolor:4.0.0")
+
   implementation("androidx.window:window:1.4.0-rc01")
 
   implementation("androidx.compose.material3.adaptive:adaptive:1.1.0")

@@ -108,7 +108,7 @@ import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
-import com.larvey.azuracastplayer.utils.albumColors
+import com.larvey.azuracastplayer.utils.albumScheme
 import com.larvey.azuracastplayer.utils.isDark
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -257,14 +257,17 @@ class MainActivity : ComponentActivity() {
         //endregion
 
         //region Animated Add Button Colors
-        val fabColors = albumColors(mainActivityViewModel?.palette?.value)
+        val fabScheme = albumScheme(
+          mainActivityViewModel?.palette?.value,
+          MaterialTheme.colorScheme.isDark()
+        )
         val animatedFabColor = animateColorAsState(
-          targetValue = fabColors.accent,
+          targetValue = fabScheme.primary,
           label = "Fab Color"
         )
 
         val animatedFabIconTint = animateColorAsState(
-          targetValue = fabColors.onAccent,
+          targetValue = fabScheme.onPrimary,
           label = "Fab Icon Color"
         )
         //endregion

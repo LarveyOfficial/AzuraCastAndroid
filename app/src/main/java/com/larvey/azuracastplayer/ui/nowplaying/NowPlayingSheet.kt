@@ -17,11 +17,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,6 +57,7 @@ import com.larvey.azuracastplayer.ui.nowplaying.components.BlurImageBackground
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingAlbumArt
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
+import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingTopBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
 import kotlinx.coroutines.CancellationException
@@ -95,15 +97,15 @@ fun NowPlayingSheet(
 
     ModalBottomSheet(
       modifier = Modifier
-        .fillMaxSize()
-        .graphicsLayer {
-          scaleX = sheetSize
-          scaleY = sheetSize
-          transformOrigin = TransformOrigin(
-            0.5f,
-            sheetOriginYOffset
-          )
-        },
+          .fillMaxSize()
+          .graphicsLayer {
+              scaleX = sheetSize
+              scaleY = sheetSize
+              transformOrigin = TransformOrigin(
+                  0.5f,
+                  sheetOriginYOffset
+              )
+          },
       containerColor = Color.Transparent,
       sheetState = sheetState,
       shape = RoundedCornerShape(getRoundedCornerRadius()),
@@ -160,10 +162,10 @@ fun NowPlayingSheet(
 
       Box(
         modifier = Modifier
-          .fillMaxSize()
-          .clip(
-            RoundedCornerShape(getRoundedCornerRadius())
-          )
+            .fillMaxSize()
+            .clip(
+                RoundedCornerShape(getRoundedCornerRadius())
+            )
       ) {
         if (Build.VERSION.SDK_INT <= 28 || legacyBackground) {
           BlurImageBackground(playerState = nowPlayingViewModel.sharedMediaController.playerState.value)
@@ -172,18 +174,34 @@ fun NowPlayingSheet(
         }
         Scaffold(
           modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars),
+              .fillMaxSize()
+              // Static system-bars inset (captured once) rather than the position-aware
+            // windowInsetsPadding, so the top bar stays fixed to the sheet and translates with it
+            // during the swipe-to-dismiss instead of pinning to the screen's status bar.
+            .padding(WindowInsets.systemBars.asPaddingValues()),
           containerColor = Color.Transparent,
-          bottomBar = {
-            NowPlayingBottomBar(
-              toggleQueueVisibility = {
+          topBar = {
+            NowPlayingTopBar(
+              onClose = {
+                scope.launch {
+                  sheetState.hide()
+                  hideNowPlaying()
+                }
+              },
+              onToggleHistory = {
                 if (navController.currentDestination?.route == "nowPlaying") {
                   navController.navigate("queue")
                 } else {
-                  navController.navigateUp()
+                  navController.popBackStack(
+                    route = "nowPlaying",
+                    inclusive = false
+                  )
                 }
-              },
+              }
+            )
+          },
+          bottomBar = {
+            NowPlayingBottomBar(
               sheetState = sheetState,
               stop = {
                 nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
@@ -242,9 +260,10 @@ fun NowPlayingSheet(
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.Bottom,
                   modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxHeight()
-                    .padding(bottom = 16.dp)
+                      .padding(bottom = innerPadding.calculateBottomPadding())
+                      .fillMaxHeight()
+                      .fillMaxWidth()
+                      .padding(bottom = 32.dp)
                 ) {
                   NowPlayingAlbumArt(
                     modifier = Modifier.fillMaxHeight(.75f),
