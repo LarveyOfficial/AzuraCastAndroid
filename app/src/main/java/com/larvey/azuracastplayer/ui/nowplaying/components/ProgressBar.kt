@@ -23,7 +23,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.Mount
 import com.larvey.azuracastplayer.state.PlayerState
-import com.larvey.azuracastplayer.utils.albumButtonScheme
 import com.larvey.azuracastplayer.utils.albumColors
 import java.util.Locale
 import kotlin.time.DurationUnit
@@ -43,7 +42,6 @@ fun ProgressBar(
 ) {
   Column {
     val colors = albumColors(palette)
-    val scheme = albumButtonScheme(palette)
 
     val isPlaying = animateFloatAsState(
       targetValue = if (playerState.isPlaying) 1f else 0f,
@@ -100,10 +98,10 @@ fun ProgressBar(
           text = qualityLabel,
           style = MaterialTheme.typography.labelSmall,
           maxLines = 1,
-          color = scheme.onSecondaryContainer,
+          color = colors.onLightChip,
           modifier = Modifier
             .clip(RoundedCornerShape(percent = 50))
-            .background(scheme.secondaryContainer)
+            .background(colors.lightChip)
             .padding(
               horizontal = 12.dp,
               vertical = 4.dp

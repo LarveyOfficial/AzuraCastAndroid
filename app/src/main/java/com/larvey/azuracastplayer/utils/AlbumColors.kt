@@ -1,6 +1,5 @@
 package com.larvey.azuracastplayer.utils
 
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -8,8 +7,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.core.graphics.ColorUtils.HSLToColor
 import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.palette.graphics.Palette
-import com.materialkolor.PaletteStyle
-import com.materialkolor.rememberDynamicColorScheme
 
 /**
  * A coherent set of album-derived color roles, all computed from ONE seed swatch so they are
@@ -107,37 +104,3 @@ fun albumColors(palette: Palette?): AlbumColors {
     track = track
   )
 }
-
-/** The album's representative seed color (from the resilient seed swatch), or null if none. */
-fun Palette?.albumSeedColor(): Color? {
-  val rgb = this?.seedSwatch()?.rgb ?: return null
-  return Color(rgb)
-}
-
-/**
- * A full Material tonal color scheme generated from the album's seed color. Because it runs the
- * real Material tonal-palette algorithm, a low-chroma seed (grayscale / monochrome art) yields a
- * neutral scheme instead of an invented hue, and colorful art yields muted, pastel roles.
- *
- * Pass [isDark] to match the surface the colors sit on.
- */
-@Composable
-fun albumScheme(
-  palette: Palette?,
-  isDark: Boolean
-): ColorScheme {
-  val seed = palette.albumSeedColor() ?: MaterialTheme.colorScheme.primary
-  return rememberDynamicColorScheme(
-    seedColor = seed,
-    isDark = isDark,
-    style = PaletteStyle.TonalSpot
-  )
-}
-
-/**
- * Scheme for the Now Playing controls, which sit on the always-dark gradient backdrop: built as a
- * LIGHT scheme so its light container tones read as soft pastel fills there regardless of app theme.
- */
-@Composable
-fun albumButtonScheme(palette: Palette?): ColorScheme = albumScheme(palette, isDark = false)
-
