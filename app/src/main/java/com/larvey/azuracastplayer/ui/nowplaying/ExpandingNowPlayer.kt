@@ -3,6 +3,7 @@ package com.larvey.azuracastplayer.ui.nowplaying
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -17,10 +18,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,8 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -40,9 +45,12 @@ import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayerContent
+import com.larvey.azuracastplayer.ui.mainActivity.components.miniPlayerDismissHorizontalGesture
+import com.larvey.azuracastplayer.ui.mainActivity.components.rememberMiniPlayerDismissGestureHandler
 import com.larvey.azuracastplayer.utils.albumColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Resting height of the collapsed mini bar. */
@@ -107,6 +115,23 @@ fun ExpandingNowPlayer(
       label = "expandingCardColor"
     )
 
+    // Swipe the collapsed mini bar sideways to stop playback (slides the whole card off, same as the
+    // standalone mini player). Only wired while the mini row is composed (collapsed).
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+    val dismissOffset = remember { Animatable(0f) }
+    val dismissHandler = rememberMiniPlayerDismissGestureHandler(
+      scope = scope,
+      density = density,
+      hapticFeedback = haptics,
+      offsetAnimatable = dismissOffset,
+      screenWidthPx = screenWidthPx,
+      onDismiss = stop
+    )
+    val dismissProgress = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
+    SideEffect { onDismissProgress(dismissProgress) }
+
     val isOpen by remember { derivedStateOf { state.expansion() > 0.001f } }
     // Mini row is only present (and interactive) while collapsed-ish, so it never blocks the
     // expanded controls; the card drag lives on the card, so un-composing it never cancels a drag.
@@ -148,12 +173,14 @@ fun ExpandingNowPlayer(
           val placeable = measurable.measure(Constraints.fixed(cardW, cardH))
           layout(constraints.maxWidth, cardH) { placeable.place(hInset.roundToInt(), 0) }
         }
-        // One shape + shadow for the whole card; both flatten as it opens.
+        // One shape + shadow for the whole card; both flatten as it opens. translationX slides the
+        // whole card when the collapsed mini bar is swiped away to dismiss.
         .graphicsLayer {
           val f = state.expansion()
           shape = RoundedCornerShape(lerp(CollapsedCorner, 0.dp, f))
           clip = true
           shadowElevation = lerp(shadowPx, 0f, f)
+          translationX = dismissOffset.value
         }
         // INNER: content laid out at full height, bottom-aligned, revealed by the clip (not stretched).
         .layout { measurable, constraints ->
@@ -202,6 +229,10 @@ fun ExpandingNowPlayer(
             .fillMaxWidth()
             .height(MiniBarHeight)
             .graphicsLayer { alpha = (1f - state.expansion() * 2f).coerceIn(0f, 1f) }
+            .miniPlayerDismissHorizontalGesture(
+              enabled = true,
+              handler = dismissHandler
+            )
         ) {
           MiniPlayerContent(
             playerState = playerState,
