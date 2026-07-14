@@ -68,7 +68,6 @@ import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
@@ -559,7 +558,21 @@ class MainActivity : ComponentActivity() {
                           FabPosition.End
                         },
                         bottomBar = {
-                          val miniPlayerVisible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded)
+                          // On wide layouts the Now Playing surface lives in the supporting pane
+                          // whenever something is playing and no Discover station's detail is up, so
+                          // the bottom mini bar must be its exact complement — visible only when the
+                          // pane is suppressed (a Discover station is being viewed / while it docks).
+                          // Derived from the same flags as the pane rather than the scaffold
+                          // navigator's pane-adapted value, which stops reporting "Expanded" across a
+                          // fold/unfold and would let the mini and the pane both show at once.
+                          // On phones the mini is the expanding overlay and this flag only drives the
+                          // nav-bar fuse, so it's simply "is something playing".
+                          val miniPlayerVisible = if (isWide) {
+                            playerState?.currentMediaItem?.mediaId != null &&
+                              (discoveryViewingStation.value || hidingDiscoverDetail)
+                          } else {
+                            playerState?.currentMediaItem?.mediaId != null
+                          }
 
                           val miniPlayer = @Composable {
                             MiniPlayer(
