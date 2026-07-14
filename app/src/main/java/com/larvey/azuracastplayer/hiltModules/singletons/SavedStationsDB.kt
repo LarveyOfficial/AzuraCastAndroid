@@ -25,7 +25,9 @@ object SavedStationsDBModule {
       context = applicationContext,
       klass = SavedStationsDatabase::class.java,
       name = "datamodel.db"
-    ).fallbackToDestructiveMigration().fallbackToDestructiveMigrationOnDowngrade().build()
+    ).fallbackToDestructiveMigration(dropAllTables = true)
+      .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+      .build()
     return SavedStationsDB(db.dao)
   }
 }

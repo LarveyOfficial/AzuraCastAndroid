@@ -65,18 +65,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
-import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
@@ -91,9 +87,6 @@ import com.larvey.azuracastplayer.utils.isDark
 fun MiniPlayer(
   playerState: PlayerState?,
   showNowPlaying: () -> Unit,
-  // nowPlaying / lifecycleOwner are kept for signature stability with the call site; the
-  // mini player no longer shows progress, so it no longer needs to poll play position.
-  nowPlaying: () -> NowPlaying?,
   pause: () -> Unit,
   play: () -> Unit,
   // Swiped-away → stop playback entirely (same action as the Now Playing Stop button).
@@ -101,10 +94,8 @@ fun MiniPlayer(
   // Reports swipe-away progress (0 = at rest, 1 = at the dismiss threshold) so the nav bar
   // below can round its top corners back in sync — making them feel like they detach.
   onDismissProgress: (Float) -> Unit = {},
-  palette: MutableState<Palette?>?,
-  lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+  palette: MutableState<Palette?>?
 ) {
-  val dark = MaterialTheme.colorScheme.isDark()
   val colors = albumColors(palette?.value)
   val containerColor by animateColorAsState(
     targetValue = colors.container,
@@ -133,9 +124,8 @@ fun MiniPlayer(
     screenWidthPx = screenWidthPx,
     onDismiss = stop
   )
-  // 0 at rest → 1 at the dismiss threshold; drives the "detach" corner rounding.
+  // 0 at rest → 1 at the dismiss threshold; still reported so callers can react to the swipe.
   val dragProgress = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
-  val bottomCorner = lerp(14.dp, 24.dp, dragProgress)
   SideEffect { onDismissProgress(dragProgress) }
 
   Box(
@@ -156,94 +146,121 @@ fun MiniPlayer(
           enabled = true,
           handler = dismissHandler
         ),
-      // Bottom corners squared off to nest against the nav bar's squared top below it;
-      // they round back up to match the top as the card is swiped away (detaching).
-      shape = RoundedCornerShape(
-        topStart = 24.dp,
-        topEnd = 24.dp,
-        bottomStart = bottomCorner,
-        bottomEnd = bottomCorner
-      ),
+      // Fully rounded card — this bar is used only on wide/tablet layouts (in the pane's bottom
+      // bar), where there is no navigation bar beneath it to nest against.
+      shape = RoundedCornerShape(24.dp),
       color = containerColor,
       shadowElevation = 4.dp
     ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-          .fillMaxSize()
-          .clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = ripple()
-          ) { showNowPlaying() }
-          .padding(start = 8.dp)
-      ) {
-        AnimatedContent(
-          targetState = playerState?.mediaMetadata?.artworkUri.toString(),
-          label = "miniArtwork"
-        ) {
-          AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-              .data(it.fixHttps())
-              .crossfade(true)
-              .placeholderMemoryCacheKey(it.fixHttps())
-              .placeholder(
-                if (dark) {
-                  R.drawable.loading_image_dark
-                } else {
-                  R.drawable.loading_image
-                }
-              )
-              .diskCacheKey(it.fixHttps())
-              .build(),
-            contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
-            error = if (dark) {
-              painterResource(R.drawable.image_loading_failed_dark)
-            } else {
-              painterResource(R.drawable.image_loading_failed)
-            },
-            modifier = Modifier
-              .fillMaxHeight()
-              .padding(vertical = 10.dp)
-              .clip(expressiveShape(12.dp)),
-          )
-        }
-        Spacer(modifier = Modifier.size(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-          EdgeFadeMarquee(
-            text = playerState?.mediaMetadata?.displayTitle?.toString() ?: " ",
-            style = MaterialTheme.typography.titleSmall.copy(
-              fontSize = 15.sp,
-              lineHeight = 20.sp,
-              fontWeight = FontWeight.SemiBold,
-              letterSpacing = (-0.2).sp,
-              color = onContainerColor
-            ),
-            gradientEdgeColor = containerColor,
-            modifier = Modifier.fillMaxWidth()
-          )
-          EdgeFadeMarquee(
-            text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
-            style = MaterialTheme.typography.bodySmall.copy(
-              fontSize = 13.sp,
-              lineHeight = 17.sp,
-              color = onContainerColor.copy(alpha = 0.7f)
-            ),
-            gradientEdgeColor = containerColor,
-            modifier = Modifier.fillMaxWidth()
-          )
-        }
-        Spacer(modifier = Modifier.size(8.dp))
-        MiniPlayPauseChip(
-          playbackState = playerState?.playbackState,
-          isPlaying = playerState?.isPlaying == true,
-          accent = accent,
-          onAccent = onAccent,
-          play = play,
-          pause = pause,
-          modifier = Modifier.padding(end = 10.dp)
-        )
-      }
+      MiniPlayerContent(
+        playerState = playerState,
+        showNowPlaying = showNowPlaying,
+        play = play,
+        pause = pause,
+        containerColor = containerColor,
+        onContainerColor = onContainerColor,
+        accent = accent,
+        onAccent = onAccent
+      )
     }
+  }
+}
+
+/**
+ * The bare mini-player content row — album art, title/artist, play chip — with **no background of
+ * its own** (the caller provides it). This lets the expanding player use the mini content directly
+ * on top of the one growing card background, so the mini bar reads as the card itself expanding
+ * rather than a separate sheet appearing behind it. [MiniPlayer] wraps this in its own [Surface];
+ * the expanding surface draws its own shared background behind it.
+ */
+@Composable
+fun MiniPlayerContent(
+  playerState: PlayerState?,
+  showNowPlaying: () -> Unit,
+  play: () -> Unit,
+  pause: () -> Unit,
+  containerColor: Color,
+  onContainerColor: Color,
+  accent: Color,
+  onAccent: Color,
+  modifier: Modifier = Modifier
+) {
+  val dark = MaterialTheme.colorScheme.isDark()
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = modifier
+      .fillMaxSize()
+      .clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = ripple()
+      ) { showNowPlaying() }
+      .padding(start = 8.dp)
+  ) {
+    AnimatedContent(
+      targetState = playerState?.mediaMetadata?.artworkUri.toString(),
+      label = "miniArtwork"
+    ) {
+      AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+          .data(it.fixHttps())
+          .crossfade(true)
+          .placeholderMemoryCacheKey(it.fixHttps())
+          .placeholder(
+            if (dark) {
+              R.drawable.loading_image_dark
+            } else {
+              R.drawable.loading_image
+            }
+          )
+          .diskCacheKey(it.fixHttps())
+          .build(),
+        contentDescription = "${playerState?.mediaMetadata?.albumTitle}",
+        error = if (dark) {
+          painterResource(R.drawable.image_loading_failed_dark)
+        } else {
+          painterResource(R.drawable.image_loading_failed)
+        },
+        modifier = Modifier
+          .fillMaxHeight()
+          .padding(vertical = 10.dp)
+          .clip(expressiveShape(12.dp)),
+      )
+    }
+    Spacer(modifier = Modifier.size(12.dp))
+    Column(modifier = Modifier.weight(1f)) {
+      EdgeFadeMarquee(
+        text = playerState?.mediaMetadata?.displayTitle?.toString() ?: " ",
+        style = MaterialTheme.typography.titleSmall.copy(
+          fontSize = 15.sp,
+          lineHeight = 20.sp,
+          fontWeight = FontWeight.SemiBold,
+          letterSpacing = (-0.2).sp,
+          color = onContainerColor
+        ),
+        gradientEdgeColor = containerColor,
+        modifier = Modifier.fillMaxWidth()
+      )
+      EdgeFadeMarquee(
+        text = playerState?.mediaMetadata?.artist?.toString() ?: " ",
+        style = MaterialTheme.typography.bodySmall.copy(
+          fontSize = 13.sp,
+          lineHeight = 17.sp,
+          color = onContainerColor.copy(alpha = 0.7f)
+        ),
+        gradientEdgeColor = containerColor,
+        modifier = Modifier.fillMaxWidth()
+      )
+    }
+    Spacer(modifier = Modifier.size(8.dp))
+    MiniPlayPauseChip(
+      playbackState = playerState?.playbackState,
+      isPlaying = playerState?.isPlaying == true,
+      accent = accent,
+      onAccent = onAccent,
+      play = play,
+      pause = pause,
+      modifier = Modifier.padding(end = 10.dp)
+    )
   }
 }
 

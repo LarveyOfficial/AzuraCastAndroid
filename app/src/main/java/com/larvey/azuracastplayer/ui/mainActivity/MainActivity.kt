@@ -17,8 +17,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -30,10 +30,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,7 +67,6 @@ import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
@@ -82,11 +83,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -100,16 +104,18 @@ import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.state.state
 import com.larvey.azuracastplayer.ui.discovery.Discovery
 import com.larvey.azuracastplayer.ui.mainActivity.addStations.AddStationSheet
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import com.larvey.azuracastplayer.ui.mainActivity.components.FloatingExpressiveNavBar
 import com.larvey.azuracastplayer.ui.mainActivity.components.MiniPlayer
 import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.mainActivity.settings.SettingsSheet
+import com.larvey.azuracastplayer.ui.nowplaying.ExpandingNowPlayer
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
-import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
+import com.larvey.azuracastplayer.ui.nowplaying.rememberExpandingPlayerState
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
 import com.larvey.azuracastplayer.utils.albumColors
-import com.larvey.azuracastplayer.utils.isDark
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -228,7 +234,15 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
 
         val showAddDialog = remember { mutableStateOf(false) }
-        val showNowPlayingSheet = remember { mutableStateOf(false) }
+
+        // Phone Now Playing is one continuous surface that grows from the mini bar into the full
+        // screen; this drives its 0..1 expansion. (Tablets keep the side pane and the modal sheet.)
+        val expandingPlayerState = rememberExpandingPlayerState()
+        // Mini-player swipe-away progress, shared so the floating nav bar rounds its top corners
+        // back in sync as the bar detaches. Written by the mini bar, read by the nav bar.
+        var miniDismissProgress by remember { mutableFloatStateOf(0f) }
+        // Measured nav-bar height, so it can slide straight down by its own height as the player opens.
+        var navBarHeightPx by remember { mutableIntStateOf(0) }
         val settingsModel: SettingsViewModel = viewModel(factory = SettingsModelProvider.Factory)
         val radioListMode by settingsModel.gridView.collectAsState() // false = list, true = grid
 
@@ -245,6 +259,12 @@ class MainActivity : ComponentActivity() {
         val navigator = rememberSupportingPaneScaffoldNavigator(scaffoldDirective = customDirective)
         var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.STATIONS) }
         val discoveryViewingStation = remember { mutableStateOf(false) }
+        // Briefly true while the discover detail pane is animating away, so the Now Playing pane
+        // waits for it to finish instead of both moving at once (which jitters).
+        var hidingDiscoverDetail by remember { mutableStateOf(false) }
+        // Hides the wide mini bar first (before the discover detail closes), so it disappears at its
+        // resting width instead of snapping to full width when its pane-reserved padding drops.
+        var hideMiniForDock by remember { mutableStateOf(false) }
 
         //region List States for MyRadios
         val lazyListState = rememberLazyListState()
@@ -272,6 +292,13 @@ class MainActivity : ComponentActivity() {
         val settingsDrawer = rememberDrawerState(DrawerValue.Closed)
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
+
+        // Lift the FAB above the mini player when it's showing. The mini bar is now an overlay
+        // (not in the Scaffold's bottomBar), so the Scaffold no longer reserves space for it.
+        val fabMiniInset by animateDpAsState(
+          targetValue = if (!isWide && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp,
+          label = "Fab Mini Inset"
+        )
 
         // Phones get the custom FloatingExpressiveNavBar (rendered in the bottomBar), so suppress
         // the NavigationSuiteScaffold's own bar; tablets keep the stock NavigationRail.
@@ -480,6 +507,7 @@ class MainActivity : ComponentActivity() {
                               onClick = {
                                 showAddDialog.value = true
                               },
+                              modifier = Modifier.padding(bottom = fabMiniInset),
                               containerColor = animatedFabColor.value
                             ) {
                               Icon(
@@ -510,6 +538,7 @@ class MainActivity : ComponentActivity() {
                               onClick = {
                                 confirmEdit.value = true
                               },
+                              modifier = Modifier.padding(bottom = fabMiniInset),
                               containerColor = MaterialTheme.colorScheme.tertiary
                             ) {
                               Icon(
@@ -526,19 +555,40 @@ class MainActivity : ComponentActivity() {
                           FabPosition.End
                         },
                         bottomBar = {
-                          val miniPlayerVisible = playerState?.currentMediaItem?.mediaId != null && (navigator.scaffoldState.currentState.secondary != PaneAdaptedValue.Expanded || discoveryViewingStation.value) && !(isWide && currentDestination != AppDestinations.DISCOVER && navigator.scaffoldState.currentState.secondary == PaneAdaptedValue.Expanded)
-
-                          // Shared mini-player swipe-away progress so the nav bar can round its
-                          // top corners back in sync (they detach together).
-                          var dismissProgress by remember { mutableStateOf(0f) }
+                          // On wide layouts the Now Playing surface lives in the supporting pane
+                          // whenever something is playing and no Discover station's detail is up, so
+                          // the bottom mini bar must be its exact complement — visible only when the
+                          // pane is suppressed (a Discover station is being viewed / while it docks).
+                          // Derived from the same flags as the pane rather than the scaffold
+                          // navigator's pane-adapted value, which stops reporting "Expanded" across a
+                          // fold/unfold and would let the mini and the pane both show at once.
+                          // On phones the mini is the expanding overlay and this flag only drives the
+                          // nav-bar fuse, so it's simply "is something playing".
+                          val miniPlayerVisible = if (isWide) {
+                            playerState?.currentMediaItem?.mediaId != null &&
+                              (discoveryViewingStation.value || hidingDiscoverDetail)
+                          } else {
+                            playerState?.currentMediaItem?.mediaId != null
+                          }
 
                           val miniPlayer = @Composable {
                             MiniPlayer(
                               playerState = playerState,
                               showNowPlaying = {
-                                showNowPlayingSheet.value = true
+                                // Wide layouts: instead of a full-screen sheet, sequence it so nothing
+                                // collides: hide the mini bar first (at its resting width), then close
+                                // the discover detail, then — once it's gone — dock the resizable Now
+                                // Playing pane.
+                                scope.launch {
+                                  hideMiniForDock = true
+                                  delay(120)
+                                  hidingDiscoverDetail = true
+                                  discoveryViewingStation.value = false
+                                  delay(350)
+                                  hidingDiscoverDetail = false
+                                  hideMiniForDock = false
+                                }
                               },
-                              nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
                               pause = {
                                 mediaController?.pause()
                               },
@@ -548,7 +598,7 @@ class MainActivity : ComponentActivity() {
                               stop = {
                                 mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop()
                               },
-                              onDismissProgress = { dismissProgress = it },
+                              onDismissProgress = { miniDismissProgress = it },
                               palette = mainActivityViewModel?.palette,
                             )
                           }
@@ -556,7 +606,7 @@ class MainActivity : ComponentActivity() {
                           if (isWide) {
                             // Tablets keep the stock NavigationRail; the mini player sits in the bar.
                             AnimatedVisibility(
-                              visible = miniPlayerVisible,
+                              visible = miniPlayerVisible && !hideMiniForDock,
                               enter = slideInVertically(
                                 initialOffsetY = { fullHeight -> fullHeight * 2 },
                                 animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
@@ -567,39 +617,53 @@ class MainActivity : ComponentActivity() {
                                 containerColor = androidx.compose.ui.graphics.Color.Transparent,
                                 contentPadding = PaddingValues(0.dp)
                               ) {
-                                miniPlayer()
+                                // Keep the bar over the left (main/browse) column. On the Discover
+                                // detail split the station details occupy the right pane (its width is
+                                // the directive's preferred pane width), so reserve that on the right;
+                                // otherwise cap the bar to a card width instead of stretching a wide
+                                // layout edge-to-edge.
+                                Box(
+                                  modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                      end = if (currentDestination == AppDestinations.DISCOVER && discoveryViewingStation.value) {
+                                        customDirective.defaultPanePreferredWidth
+                                      } else {
+                                        0.dp
+                                      }
+                                    )
+                                ) {
+                                  Box(
+                                    modifier = Modifier
+                                      .fillMaxHeight()
+                                      .widthIn(max = 560.dp)
+                                      .align(Alignment.CenterStart)
+                                  ) {
+                                    miniPlayer()
+                                  }
+                                }
                               }
                             }
                           } else {
-                            // Phones: floating mini player stacked above the floating nav bar.
+                            // Phones: only the floating nav bar lives in the bar. The mini player is
+                            // now the collapsed state of the expanding Now Playing surface, rendered
+                            // as an overlay above everything (see ExpandingNowPlayer below), so it can
+                            // grow out of this slot into the full screen. As that surface expands the
+                            // nav bar slides straight down (by its own height) to make room.
                             Column(
                               modifier = Modifier
                                 .fillMaxWidth()
+                                .onSizeChanged { navBarHeightPx = it.height }
+                                .graphicsLayer {
+                                  translationY = navBarHeightPx.toFloat() * expandingPlayerState.expansion()
+                                }
                                 .navigationBarsPadding()
                             ) {
-                              AnimatedVisibility(
-                                visible = miniPlayerVisible,
-                                enter = slideInHorizontally(
-                                  initialOffsetX = { fullWidth -> fullWidth },
-                                  animationSpec = tween(delayMillis = if (currentDestination == AppDestinations.DISCOVER) 200 else 0)
-                                ),
-                                // Fade out (rather than slide) so it doesn't fight the swipe-to-dismiss,
-                                // which has already flung the card off-screen in the swipe direction.
-                                exit = fadeOut(animationSpec = tween(200))
-                              ) {
-                                Box(
-                                  modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(76.dp)
-                                ) {
-                                  miniPlayer()
-                                }
-                              }
                               FloatingExpressiveNavBar(
                                 destinations = AppDestinations.entries,
                                 current = currentDestination,
                                 fusedTop = miniPlayerVisible,
-                                detachProgress = { dismissProgress },
+                                detachProgress = { miniDismissProgress },
                                 onSelect = { destination ->
                                   currentDestination = destination
                                   discoveryViewingStation.value = false
@@ -686,7 +750,7 @@ class MainActivity : ComponentActivity() {
                 },
                 supportingPane = {
                   AnimatedVisibility(
-                    visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value,
+                    visible = playerState?.currentMediaItem != null && !discoveryViewingStation.value && !hidingDiscoverDetail,
                     enter = slideInHorizontally(
                       initialOffsetX = { fullWidth -> fullWidth * 2 }
                     ),
@@ -749,14 +813,36 @@ class MainActivity : ComponentActivity() {
                 ?: 0
             )
           }
+        }
 
-          showNowPlayingSheet.value -> {
-            NowPlayingSheet(
-              hideNowPlaying = {
-                showNowPlayingSheet.value = false
-              },
+        // Phone Now Playing: a single surface that grows from the mini bar into the full screen.
+        // Rendered last so it overlays the app; the collapsed bar sits above the floating nav bar.
+        // Tablets keep the side pane.
+        if (!isWide) {
+          // When playback ends, snap the surface back to the mini bar so the next song opens as the
+          // mini bar (sliding in) rather than reappearing full-screen where it was left.
+          LaunchedEffect(playerState?.currentMediaItem?.mediaId) {
+            if (playerState?.currentMediaItem?.mediaId == null) {
+              expandingPlayerState.snapToCollapsed()
+            }
+          }
+          AnimatedVisibility(
+            visible = playerState?.currentMediaItem?.mediaId != null,
+            // Slide the (collapsed) mini bar in from the side, like the standalone mini player did.
+            // Exit is instant — the animated stop already slides the bar away before it disappears.
+            enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+            exit = ExitTransition.None
+          ) {
+            ExpandingNowPlayer(
+              state = expandingPlayerState,
+              playerState = playerState,
               palette = mainActivityViewModel?.palette,
-              colorList = mainActivityViewModel?.colorList
+              colorList = mainActivityViewModel?.colorList,
+              nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
+              play = { mediaController?.play() },
+              pause = { mediaController?.pause() },
+              stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
+              onDismissProgress = { miniDismissProgress = it }
             )
           }
         }
