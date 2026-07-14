@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -113,7 +112,6 @@ import com.larvey.azuracastplayer.ui.mainActivity.radios.MyRadios
 import com.larvey.azuracastplayer.ui.mainActivity.settings.SettingsSheet
 import com.larvey.azuracastplayer.ui.nowplaying.ExpandingNowPlayer
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
-import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingSheet
 import com.larvey.azuracastplayer.ui.nowplaying.rememberExpandingPlayerState
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
@@ -236,7 +234,6 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
 
         val showAddDialog = remember { mutableStateOf(false) }
-        val showNowPlayingSheet = remember { mutableStateOf(false) }
 
         // Phone Now Playing is one continuous surface that grows from the mini bar into the full
         // screen; this drives its 0..1 expansion. (Tablets keep the side pane and the modal sheet.)
@@ -592,7 +589,6 @@ class MainActivity : ComponentActivity() {
                                   hideMiniForDock = false
                                 }
                               },
-                              nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
                               pause = {
                                 mediaController?.pause()
                               },
@@ -815,16 +811,6 @@ class MainActivity : ComponentActivity() {
               },
               currentStationCount = mainActivityViewModel?.savedStationsDB?.savedStations?.value?.size
                 ?: 0
-            )
-          }
-
-          showNowPlayingSheet.value -> {
-            NowPlayingSheet(
-              hideNowPlaying = {
-                showNowPlayingSheet.value = false
-              },
-              palette = mainActivityViewModel?.palette,
-              colorList = mainActivityViewModel?.colorList
             )
           }
         }

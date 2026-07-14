@@ -34,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,7 +48,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +66,6 @@ import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
 import com.larvey.azuracastplayer.utils.albumColors
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 private enum class ControlSlot { NONE, STOP, PLAY_PAUSE, SLEEP }
@@ -80,7 +77,6 @@ private enum class ControlSlot { NONE, STOP, PLAY_PAUSE, SLEEP }
 @Composable
 fun MediaControls(
   modifier: Modifier = Modifier,
-  sheetState: SheetState?,
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,
@@ -91,7 +87,6 @@ fun MediaControls(
   val context = LocalContext.current
   val scheduler = AndroidAlarmScheduler(context)
   val sleepTimer: MutableState<SleepItem> = remember { mutableStateOf(SleepItem(LocalDateTime.now())) }
-  val scope = rememberCoroutineScope()
   val haptics = LocalHapticFeedback.current
 
   var showTimePicker by remember { mutableStateOf(false) }
@@ -148,10 +143,7 @@ fun MediaControls(
       color = sideColor,
       onClick = {
         lastClicked = ControlSlot.STOP
-        scope.launch {
-          sheetState?.hide()
-          stop()
-        }
+        stop()
       }
     ) {
       Icon(

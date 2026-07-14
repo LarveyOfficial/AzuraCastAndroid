@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -36,7 +35,6 @@ import com.larvey.azuracastplayer.utils.updateTime
 )
 @Composable
 fun NowPlayingBottomBar(
-  sheetState: SheetState? = null,
   stop: () -> Unit,
   pause: () -> Unit,
   play: () -> Unit,
@@ -86,7 +84,6 @@ fun NowPlayingBottomBar(
     )
     Spacer(Modifier.weight(0.05f))
     MediaControls(
-      sheetState = sheetState,
       stop = stop,
       pause = pause,
       play = play,

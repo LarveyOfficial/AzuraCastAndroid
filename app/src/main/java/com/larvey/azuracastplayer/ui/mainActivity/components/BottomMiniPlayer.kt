@@ -67,15 +67,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.placeholder
 import com.larvey.azuracastplayer.R
-import com.larvey.azuracastplayer.classes.data.NowPlaying
 import com.larvey.azuracastplayer.state.PlayerState
 import com.larvey.azuracastplayer.ui.theme.AppMotion
 import com.larvey.azuracastplayer.ui.theme.expressiveShape
@@ -90,9 +87,6 @@ import com.larvey.azuracastplayer.utils.isDark
 fun MiniPlayer(
   playerState: PlayerState?,
   showNowPlaying: () -> Unit,
-  // nowPlaying / lifecycleOwner are kept for signature stability with the call site; the
-  // mini player no longer shows progress, so it no longer needs to poll play position.
-  nowPlaying: () -> NowPlaying?,
   pause: () -> Unit,
   play: () -> Unit,
   // Swiped-away → stop playback entirely (same action as the Now Playing Stop button).
@@ -100,8 +94,7 @@ fun MiniPlayer(
   // Reports swipe-away progress (0 = at rest, 1 = at the dismiss threshold) so the nav bar
   // below can round its top corners back in sync — making them feel like they detach.
   onDismissProgress: (Float) -> Unit = {},
-  palette: MutableState<Palette?>?,
-  lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+  palette: MutableState<Palette?>?
 ) {
   val colors = albumColors(palette?.value)
   val containerColor by animateColorAsState(

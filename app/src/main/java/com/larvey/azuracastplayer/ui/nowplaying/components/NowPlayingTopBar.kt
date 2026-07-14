@@ -28,9 +28,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Total height of [NowPlayingTopBar] (44dp button + 6dp vertical padding each side). */
-val NowPlayingTopBarHeight: Dp = 56.dp
-
 /**
  * The Now Playing top bar: an optional collapse button on the left and a song-history button on
  * the right. Styled as neutral translucent "glass" so it reads on the dark backdrop without
