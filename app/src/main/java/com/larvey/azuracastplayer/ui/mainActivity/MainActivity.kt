@@ -29,6 +29,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -94,6 +96,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.session.MediaController
@@ -672,6 +675,18 @@ class MainActivity : ComponentActivity() {
                             }
                           }
                         }) { innerPadding ->
+                        // The mini / expanding player is an OVERLAY (not in the Scaffold's bottomBar),
+                        // so the Scaffold reserves no space for it. Add its footprint to the scroll
+                        // content's bottom inset so the last list/grid items clear it instead of
+                        // scrolling behind it (matches the FAB's 84dp mini inset).
+                        val layoutDirection = LocalLayoutDirection.current
+                        val contentInnerPadding = PaddingValues(
+                          start = innerPadding.calculateStartPadding(layoutDirection),
+                          top = innerPadding.calculateTopPadding(),
+                          end = innerPadding.calculateEndPadding(layoutDirection),
+                          bottom = innerPadding.calculateBottomPadding() +
+                            (if (!isWide && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp)
+                        )
                         AnimatedVisibility(
                           radioListMode != null,
                           enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight * 2 }),
@@ -707,7 +722,7 @@ class MainActivity : ComponentActivity() {
                             when (destination) {
                               AppDestinations.STATIONS -> {
                                 MyRadios(
-                                  innerPadding = innerPadding,
+                                  innerPadding = contentInnerPadding,
                                   deleteRadio = { station ->
                                     mainActivityViewModel?.deleteStation(station)
                                   },
@@ -728,7 +743,7 @@ class MainActivity : ComponentActivity() {
 
                               AppDestinations.DISCOVER -> {
                                 Discovery(
-                                  innerPadding,
+                                  contentInnerPadding,
                                   discoveryViewingStation,
                                   isWide
                                 )
