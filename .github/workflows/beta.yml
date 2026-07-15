@@ -63,9 +63,9 @@ jobs:
             NEXT=$(python3 -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")
           fi
           COMMITS=$(git rev-list --count HEAD)
-          echo "version_name=${NEXT}-beta.${COMMITS}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${NEXT}-beta" >> "$GITHUB_OUTPUT"
           echo "version_code=$((COMMITS + 75))" >> "$GITHUB_OUTPUT"
-          echo "Beta ${NEXT}-beta.${COMMITS} (versionCode $((COMMITS + 75)))"
+          echo "Beta ${NEXT}-beta (versionCode $((COMMITS + 75)))"
 
       - name: Decode signing keystore
         env:
