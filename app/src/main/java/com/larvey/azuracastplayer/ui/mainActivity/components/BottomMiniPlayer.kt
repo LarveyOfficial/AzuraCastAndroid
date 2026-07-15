@@ -191,8 +191,10 @@ fun MiniPlayerContent(
     modifier = modifier
       .fillMaxSize()
       .clickable(
+        // No ripple on the mini player itself — tapping it expands/opens the player; the ripple felt
+        // heavy on the whole bar. (The play/pause button below keeps its own ripple.)
         interactionSource = remember { MutableInteractionSource() },
-        indication = ripple()
+        indication = null
       ) { showNowPlaying() }
       .padding(start = 8.dp)
   ) {

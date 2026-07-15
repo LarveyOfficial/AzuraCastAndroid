@@ -86,7 +86,8 @@ fun MediaControls(
 ) {
   val context = LocalContext.current
   val scheduler = AndroidAlarmScheduler(context)
-  val sleepTimer: MutableState<SleepItem> = remember { mutableStateOf(SleepItem(LocalDateTime.now())) }
+  val sleepTimer: MutableState<SleepItem> =
+    remember { mutableStateOf(SleepItem(LocalDateTime.now())) }
   val haptics = LocalHapticFeedback.current
 
   var showTimePicker by remember { mutableStateOf(false) }
@@ -118,9 +119,22 @@ fun MediaControls(
       else -> 0.78f
     }
   }
-  val stopWeight by animateFloatAsState(weightFor(ControlSlot.STOP), AppMotion.spatialFast(), label = "stopWeight")
-  val playWeight by animateFloatAsState(weightFor(ControlSlot.PLAY_PAUSE), AppMotion.spatialFast(), label = "playWeight")
-  val sleepWeight by animateFloatAsState(weightFor(ControlSlot.SLEEP), AppMotion.spatialFast(), label = "sleepWeight")
+
+  val stopWeight by animateFloatAsState(
+    weightFor(ControlSlot.STOP),
+    AppMotion.spatialFast(),
+    label = "stopWeight"
+  )
+  val playWeight by animateFloatAsState(
+    weightFor(ControlSlot.PLAY_PAUSE),
+    AppMotion.spatialFast(),
+    label = "playWeight"
+  )
+  val sleepWeight by animateFloatAsState(
+    weightFor(ControlSlot.SLEEP),
+    AppMotion.spatialFast(),
+    label = "sleepWeight"
+  )
 
   // paused → full pill (half of the 80dp height), playing → squircle
   val playCorner by animateDpAsState(
@@ -135,6 +149,7 @@ fun MediaControls(
     modifier = modifier
       .fillMaxWidth()
       .padding(horizontal = 16.dp)
+      .padding(bottom = 32.dp)
   ) {
     // Stop
     ControlPill(

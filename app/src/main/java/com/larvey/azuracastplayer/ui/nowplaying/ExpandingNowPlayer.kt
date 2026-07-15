@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -65,7 +66,14 @@ private val NavBarArea: Dp = 82.dp
 
 /** Container corner radius / shadow at rest; both flatten to nothing as it fills the screen. */
 private val CollapsedCorner: Dp = 24.dp
-private val CollapsedShadow: Dp = 4.dp
+private val CollapsedShadow: Dp = 2.dp
+
+/**
+ * The collapsed mini bar's BOTTOM corners are tighter than its top so it nests against the floating
+ * nav bar below (whose fused top corner is the same 14dp). They round back to [CollapsedCorner] as
+ * the bar is swiped away (detaching from the nav bar), and flatten to 0 as the card fills the screen.
+ */
+private val CollapsedBottomCorner: Dp = 14.dp
 
 /** Max dim of the app behind the surface, at full expansion. */
 private const val ScrimMaxAlpha = 0.4f
@@ -104,6 +112,7 @@ fun ExpandingNowPlayer(
     val thresholdPx = with(density) { 5.dp.toPx() }
     remember(collapsedY, thresholdPx) {
       state.dragThresholdPx = thresholdPx
+      state.overDragPx = miniBarPx * 0.2f
       state.setCollapsedBounds(collapsedY)
       collapsedY
     }
@@ -157,7 +166,8 @@ fun ExpandingNowPlayer(
     PredictiveBackHandler(enabled = isOpen && onNowPlayingRoute) { progress: Flow<BackEventCompat> ->
       try {
         progress.collect { event -> state.onPredictiveBack(event.progress) }
-        state.collapse()
+        // The back gesture is drag-like, so finish with the momentum spring (bounce), not a glide.
+        state.collapseWithMomentum()
       } catch (_: CancellationException) {
         state.expand()
       }
@@ -192,10 +202,28 @@ fun ExpandingNowPlayer(
         // whole card when the collapsed mini bar is swiped away to dismiss.
         .graphicsLayer {
           val f = state.expansion()
-          shape = RoundedCornerShape(lerp(CollapsedCorner, 0.dp, f))
+          // Bottom corners nest against the floating nav bar at rest (14dp), round back to the top
+          // radius as the mini bar is swiped away, then flatten with the top corners as it opens.
+          val dismiss = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
+          val topC = lerp(CollapsedCorner, 0.dp, f)
+          val bottomC = lerp(lerp(CollapsedBottomCorner, CollapsedCorner, dismiss), 0.dp, f)
+          shape = RoundedCornerShape(
+            topStart = topC,
+            topEnd = topC,
+            bottomStart = bottomC,
+            bottomEnd = bottomC
+          )
           clip = true
           shadowElevation = lerp(shadowPx, 0f, f)
           translationX = dismissOffset.value
+          // Momentum overshoot: render the part of the settle/drag position that goes PAST the
+          // [0, collapsedY] end-stops as a real vertical offset, so a fast collapse physically dips
+          // past the mini-bar rest and springs back while geometry stays saturated at the end.
+          val ty = state.translationY.value
+          translationY = ty - ty.coerceIn(0f, state.collapsedY)
+          // Small cosmetic squash accent on collapse, anchored to the bottom edge.
+          scaleY = state.squashScaleY.value
+          transformOrigin = TransformOrigin(0.5f, 1f)
         }
         // INNER: content laid out at full height, bottom-aligned, revealed by the clip (not stretched).
         .layout { measurable, constraints ->
