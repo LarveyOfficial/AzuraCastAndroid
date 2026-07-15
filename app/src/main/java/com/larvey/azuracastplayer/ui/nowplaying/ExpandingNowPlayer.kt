@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -111,6 +112,7 @@ fun ExpandingNowPlayer(
     val thresholdPx = with(density) { 5.dp.toPx() }
     remember(collapsedY, thresholdPx) {
       state.dragThresholdPx = thresholdPx
+      state.overDragPx = miniBarPx * 0.2f
       state.setCollapsedBounds(collapsedY)
       collapsedY
     }
@@ -164,7 +166,8 @@ fun ExpandingNowPlayer(
     PredictiveBackHandler(enabled = isOpen && onNowPlayingRoute) { progress: Flow<BackEventCompat> ->
       try {
         progress.collect { event -> state.onPredictiveBack(event.progress) }
-        state.collapse()
+        // The back gesture is drag-like, so finish with the momentum spring (bounce), not a glide.
+        state.collapseWithMomentum()
       } catch (_: CancellationException) {
         state.expand()
       }
@@ -213,6 +216,14 @@ fun ExpandingNowPlayer(
           clip = true
           shadowElevation = lerp(shadowPx, 0f, f)
           translationX = dismissOffset.value
+          // Momentum overshoot: render the part of the settle/drag position that goes PAST the
+          // [0, collapsedY] end-stops as a real vertical offset, so a fast collapse physically dips
+          // past the mini-bar rest and springs back while geometry stays saturated at the end.
+          val ty = state.translationY.value
+          translationY = ty - ty.coerceIn(0f, state.collapsedY)
+          // Small cosmetic squash accent on collapse, anchored to the bottom edge.
+          scaleY = state.squashScaleY.value
+          transformOrigin = TransformOrigin(0.5f, 1f)
         }
         // INNER: content laid out at full height, bottom-aligned, revealed by the clip (not stretched).
         .layout { measurable, constraints ->
