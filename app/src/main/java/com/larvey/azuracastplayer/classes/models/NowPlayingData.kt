@@ -141,11 +141,12 @@ class NowPlayingData(
     mediaPlayer: Player?,
     reset: Boolean
   ) {
-    // NOTE: Map.put() returns the PREVIOUS value, so staticData intentionally
-    // lags one refresh behind staticDataMap. The service's live-position math
-    // and the progress UI were built against this timing — do not "fix" this
-    // to `= data` without re-verifying playback position behavior.
-    staticData.value = staticDataMap.put(
+    // Set the currently-playing snapshot and the per-station cache to the freshly-fetched data.
+    // The previous `staticData.value = staticDataMap.put(...)` used put()'s return — which is the
+    // OLD value for the key, not the new one — so staticData lagged one fetch behind the player
+    // metadata. That was a bug (put()'s return was misread as the new value), not a deliberate delay.
+    staticData.value = data
+    staticDataMap.put(
       Pair(
         url,
         shortCode
