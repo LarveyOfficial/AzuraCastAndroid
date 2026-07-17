@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -186,7 +185,7 @@ fun NowPlayingContent(
                 .padding(bottom = innerPadding.calculateBottomPadding())
                 .fillMaxHeight()
                 .fillMaxWidth()
-                .padding(bottom = 32.dp)
+//                .padding(bottom = 32.dp)
             ) {
               NowPlayingAlbumArt(
                 modifier = Modifier.fillMaxHeight(.75f),
