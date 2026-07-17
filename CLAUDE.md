@@ -320,10 +320,13 @@ Which checks actually run is decided by a lightweight always-on **`changes`** jo
 
 ### Beta channel — [.github/workflows/beta.yml](.github/workflows/beta.yml)
 Beta is a **distribution channel, not a separate version lineage** — release-please still owns the single stable SemVer line; betas are just builds of the *upcoming* version delivered to a testing track. Deliberately **not** using release-please's prerelease mode (it wants a separate branch/component and fights a single-`main` flow).
-- **Triggers (opt-in):** merging a PR into `main` that carries the **`beta`** label, or a manual **workflow_dispatch** ("Run workflow") to queue the current state of `main`.
-- **Version:** `versionName` = `<next>-beta.<commitCount>` where `<next>` is read from release-please's open release PR title (falls back to the manifest). Passed to Gradle via `VERSION_NAME_OVERRIDE`.
-- **Delivery:** signed **AAB → Play internal track as a `draft`** (nothing goes live until you publish/promote it), plus a sideloadable **APK as a run artifact**. You promote internal → your beta track manually in the console.
-- Betas do **not** touch the stable production line, the GitHub Releases, or the `nightly` pre-release.
+- **Triggers (opt-in):** a **push to `main`** whose associated PR carried the **`beta`** label, or a manual **workflow_dispatch** ("Run workflow"). It runs on `push` (not the `pull_request` event) **on purpose** — a `pull_request` run attaches to the PR branch head, which is gone after a squash merge, so it never showed up in the merge commit's checks list. A checkout-free **`gate`** job resolves the PR for the pushed commit (`gh api commits/{sha}/pulls`) and reads its labels; the heavy `beta` job `needs: gate` and only runs when `beta` is present (dispatch always proceeds). Trade-off: the `gate` job now reports on **every** `main` push (skipping the build when not a beta) — that's the cost of making the run visible on the commit.
+- **Version:** `versionName` = `<next>-beta` where `<next>` is read from release-please's open release PR title (falls back to the manifest). Passed to Gradle via `VERSION_NAME_OVERRIDE`. (No commit-count suffix — see "Change beta names to not include commit number".)
+- **Delivery:** three outputs of the same signed build —
+  1. a **GitHub pre-release** named `<next>-beta` (the same name given to the Play release), marked `--prerelease`, with the APK attached. It's a **rolling** pre-release per beta version: an existing `<next>-beta` is deleted + recreated (tag moved to the new commit, APK replaced), so repeat beta builds of the same upcoming version update one pre-release rather than piling up.
+  2. the signed **AAB → Play internal track as a `draft`** (nothing goes live until you publish/promote it in the console).
+  3. the **APK as a run artifact** (sideload copy).
+- Betas do **not** touch the stable production line or the rolling `nightly` pre-release (that one is separate, owned by [release-please.yml](.github/workflows/release-please.yml)). The `<next>-beta` pre-releases are **not** auto-deleted when `<next>` cuts stable — prune them by hand if you don't want the beta history lingering.
 
 ### Where the version lives
 - **`versionName`** in [app/build.gradle.kts](app/build.gradle.kts) is owned by release-please — it's the line tagged `// x-release-please-version`. **Never edit the version string by hand** and keep that trailing comment or the updater won't find it. Beta CI builds relabel it via the `VERSION_NAME_OVERRIDE` env override (the annotated line is untouched).

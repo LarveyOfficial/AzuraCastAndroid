@@ -26,11 +26,11 @@ private const val TAG = "NowPlayingData"
  * The Compose-observable fields below are read and written from both the UI
  * (Activity/ViewModels) and [com.larvey.azuracastplayer.session.MusicPlayerService];
  * they are the app's core wiring:
- * - [staticDataMap] — cache of every known station's static now-playing JSON,
+ * - [staticDataMap] — cache of every known station's now-playing metadata,
  *   keyed by (host, shortCode). Written here; read by the station list UI and
  *   discovery details.
- * - [staticData] — the currently-playing station's entry (see the note in
- *   [applyNowPlayingMetadata] about its one-poll lag). Read by the service's
+ * - [staticData] — the currently-playing station's entry, set to the freshly-
+ *   fetched data in [applyNowPlayingMetadata]. Read by the service's
  *   live-position math and the Now Playing UI.
  * - [nowPlayingURL]/[nowPlayingShortCode]/[nowPlayingMount] — the tuple
  *   identifying the active station. Written by [setPlaybackSource] and by the
