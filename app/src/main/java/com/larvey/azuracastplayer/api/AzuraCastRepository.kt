@@ -58,7 +58,7 @@ class AzuraCastRepository @Inject constructor(
      */
     @VisibleForTesting
     internal fun nowPlayingStaticUrl(host: String, shortCode: String): String =
-      "https://$host/api/nowplaying_static/$shortCode.json"
+      "https://$host/api/nowplaying/$shortCode"
 
     @VisibleForTesting
     internal fun nowPlayingUrl(host: String): String = "https://$host/api/nowplaying"
