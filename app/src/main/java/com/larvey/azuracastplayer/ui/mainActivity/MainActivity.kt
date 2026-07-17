@@ -123,6 +123,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Width of the side navigation rail shown on tablets (Material3 `NavigationRail` container width).
+ * The expanding Now Playing overlay is inset by this on portrait tablets so it never draws over the
+ * rail (see the `startInset` passed to [ExpandingNowPlayer]).
+ */
+private val NavigationRailWidth = 80.dp
+
 enum class AppDestinations(
   val label: String,
   val icon: ImageVector,
@@ -296,10 +303,17 @@ class MainActivity : ComponentActivity() {
 
         val isWide = (windowSizeClass.minWidthDp != 0 && windowSizeClass.minHeightDp != 0)
 
+        // Whether the Now Playing side pane can actually dock beside the content (two horizontal
+        // partitions — expanded width, i.e. a landscape tablet). A portrait tablet is `isWide` but
+        // has only ONE partition, so it can't split: it falls through to the expanding overlay player
+        // like a phone. Derived from the directive (fresh window metrics), NOT the flaky navigator
+        // pane value. This — not `isWide` — is what gates which Now Playing surface is used.
+        val splitViewActive = customDirective.maxHorizontalPartitions > 1
+
         // Lift the FAB above the mini player when it's showing. The mini bar is now an overlay
         // (not in the Scaffold's bottomBar), so the Scaffold no longer reserves space for it.
         val fabMiniInset by animateDpAsState(
-          targetValue = if (!isWide && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp,
+          targetValue = if (!splitViewActive && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp,
           label = "Fab Mini Inset"
         )
 
@@ -567,7 +581,7 @@ class MainActivity : ComponentActivity() {
                           // fold/unfold and would let the mini and the pane both show at once.
                           // On phones the mini is the expanding overlay and this flag only drives the
                           // nav-bar fuse, so it's simply "is something playing".
-                          val miniPlayerVisible = if (isWide) {
+                          val miniPlayerVisible = if (splitViewActive) {
                             playerState?.currentMediaItem?.mediaId != null &&
                               (discoveryViewingStation.value || hidingDiscoverDetail)
                           } else {
@@ -606,8 +620,9 @@ class MainActivity : ComponentActivity() {
                             )
                           }
 
-                          if (isWide) {
-                            // Tablets keep the stock NavigationRail; the mini player sits in the bar.
+                          if (splitViewActive) {
+                            // Landscape tablet: the Now Playing side pane docks, so keep the stock
+                            // NavigationRail and let this bottom mini bar re-dock the pane.
                             AnimatedVisibility(
                               visible = miniPlayerVisible && !hideMiniForDock,
                               enter = slideInVertically(
@@ -647,7 +662,7 @@ class MainActivity : ComponentActivity() {
                                 }
                               }
                             }
-                          } else {
+                          } else if (!isWide) {
                             // Phones: only the floating nav bar lives in the bar. The mini player is
                             // now the collapsed state of the expanding Now Playing surface, rendered
                             // as an overlay above everything (see ExpandingNowPlayer below), so it can
@@ -674,6 +689,8 @@ class MainActivity : ComponentActivity() {
                               )
                             }
                           }
+                          // else: portrait tablet — the rail owns navigation and the expanding overlay
+                          // owns the player, so the bottom bar stays empty.
                         }) { innerPadding ->
                         // The mini / expanding player is an OVERLAY (not in the Scaffold's bottomBar),
                         // so the Scaffold reserves no space for it. Add its footprint to the scroll
@@ -685,7 +702,7 @@ class MainActivity : ComponentActivity() {
                           top = innerPadding.calculateTopPadding(),
                           end = innerPadding.calculateEndPadding(layoutDirection),
                           bottom = innerPadding.calculateBottomPadding() +
-                            (if (!isWide && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp)
+                            (if (!splitViewActive && playerState?.currentMediaItem?.mediaId != null) 84.dp else 0.dp)
                         )
                         AnimatedVisibility(
                           radioListMode != null,
@@ -810,11 +827,13 @@ class MainActivity : ComponentActivity() {
               )
             }
 
-            // Phone Now Playing lives here — a SECOND child of the drawer content, stacked over the
-            // scaffold, so the settings drawer sheet draws OVER it. It used to be a sibling of the
-            // whole drawer and painted on top of the opened settings sheet. Re-wrapped in
-            // ReverseLayoutDirection because the entire drawer is flipped to sit on the right edge.
-            if (!isWide) {
+            // The expanding Now Playing surface lives here — a SECOND child of the drawer content,
+            // stacked over the scaffold, so the settings drawer sheet draws OVER it. It used to be a
+            // sibling of the whole drawer and painted on top of the opened settings sheet. Re-wrapped
+            // in ReverseLayoutDirection because the entire drawer is flipped to sit on the right edge.
+            // Shown whenever the side pane can't dock (phones AND portrait tablets) — the docking side
+            // pane replaces it only when the horizontal split is actually available.
+            if (!splitViewActive) {
               // When playback ends, snap back to the mini bar so the next song opens collapsed.
               LaunchedEffect(playerState?.currentMediaItem?.mediaId) {
                 if (playerState?.currentMediaItem?.mediaId == null) {
@@ -838,7 +857,12 @@ class MainActivity : ComponentActivity() {
                     play = { mediaController?.play() },
                     pause = { mediaController?.pause() },
                     stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
-                    onDismissProgress = { miniDismissProgress = it }
+                    onDismissProgress = { miniDismissProgress = it },
+                    // Portrait tablet keeps the side rail (no floating bottom nav bar), so the mini bar
+                    // rests just above the system nav inset instead of reserving the nav bar footprint,
+                    // and is inset past the rail so it never draws over it. Phones: neither applies.
+                    reserveNavBarArea = !isWide,
+                    startInset = if (isWide) NavigationRailWidth else 0.dp
                   )
                 }
               }

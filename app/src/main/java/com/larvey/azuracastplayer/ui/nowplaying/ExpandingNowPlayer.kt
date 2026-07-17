@@ -97,16 +97,25 @@ fun ExpandingNowPlayer(
   pause: () -> Unit,
   stop: () -> Unit,
   onDismissProgress: (Float) -> Unit,
+  reserveNavBarArea: Boolean = true,
+  startInset: Dp = 0.dp,
   modifier: Modifier = Modifier
 ) {
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val density = LocalDensity.current
-    val fullHeightPx = with(density) { maxHeight.toPx() }
+    // Bind the scope to a `this` local: its constraints give the container's full height (px). This
+    // also satisfies the "unused BoxWithConstraints scope" lint — the scope is otherwise only read
+    // inside nested lambdas (with/remember/layout), which the check doesn't count as a use.
+    val boxScope = this
+    val fullHeightPx = boxScope.constraints.maxHeight.toFloat()
     val miniBarPx = with(density) { MiniBarHeight.toPx() }
     val sideMarginPx = with(density) { CollapsedSideMargin.toPx() }
+    val startInsetPx = with(density) { startInset.toPx() }
     val shadowPx = with(density) { CollapsedShadow.toPx() }
+    // Phones float above the bottom nav bar (reserve its 82dp footprint); tablets use a side rail and
+    // have no bottom bar, so the mini bar rests just above the system nav inset.
     val navAreaPx = WindowInsets.navigationBars.getBottom(density) +
-      with(density) { NavBarArea.toPx() }
+      if (reserveNavBarArea) with(density) { NavBarArea.toPx() } else 0f
     val collapsedY = (fullHeightPx - miniBarPx - navAreaPx).coerceAtLeast(0f)
 
     val thresholdPx = with(density) { 5.dp.toPx() }
@@ -191,12 +200,15 @@ fun ExpandingNowPlayer(
         .layout { measurable, constraints ->
           val f = state.expansion()
           val hInset = lerp(sideMarginPx, 0f, f)
-          val cardW = (constraints.maxWidth - 2f * hInset).roundToInt()
+          // Left inset that clears the side nav rail while collapsed and closes to 0 as the card fills
+          // the screen — so the collapsed mini bar sits beside the rail but the full player covers it.
+          val railInset = lerp(startInsetPx, 0f, f)
+          val cardW = (constraints.maxWidth - railInset - 2f * hInset).roundToInt()
             .coerceIn(0, constraints.maxWidth)
           val cardH = lerp(miniBarPx, fullHeightPx, f).roundToInt()
             .coerceIn(0, constraints.maxHeight)
           val placeable = measurable.measure(Constraints.fixed(cardW, cardH))
-          layout(constraints.maxWidth, cardH) { placeable.place(hInset.roundToInt(), 0) }
+          layout(constraints.maxWidth, cardH) { placeable.place((railInset + hInset).roundToInt(), 0) }
         }
         // One shape + shadow for the whole card; both flatten as it opens. translationX slides the
         // whole card when the collapsed mini bar is swiped away to dismiss.
@@ -206,7 +218,11 @@ fun ExpandingNowPlayer(
           // radius as the mini bar is swiped away, then flatten with the top corners as it opens.
           val dismiss = (abs(dismissOffset.value) / (screenWidthPx * 0.4f)).coerceIn(0f, 1f)
           val topC = lerp(CollapsedCorner, 0.dp, f)
-          val bottomC = lerp(lerp(CollapsedBottomCorner, CollapsedCorner, dismiss), 0.dp, f)
+          // Phones nest the bottom against the nav bar (tight 14dp); tablets float free with no bar
+          // below, so the bottom is fully rounded like the top. Both round back to [CollapsedCorner]
+          // on swipe-away and flatten to 0 as the card fills the screen.
+          val restingBottomCorner = if (reserveNavBarArea) CollapsedBottomCorner else CollapsedCorner
+          val bottomC = lerp(lerp(restingBottomCorner, CollapsedCorner, dismiss), 0.dp, f)
           shape = RoundedCornerShape(
             topStart = topC,
             topEnd = topC,
