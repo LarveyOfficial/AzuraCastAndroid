@@ -146,13 +146,10 @@ class NowPlayingData(
     // OLD value for the key, not the new one — so staticData lagged one fetch behind the player
     // metadata. That was a bug (put()'s return was misread as the new value), not a deliberate delay.
     staticData.value = data
-    staticDataMap.put(
-      Pair(
-        url,
-        shortCode
-      ),
-      data
-    )
+    staticDataMap[Pair(
+      url,
+      shortCode
+    )] = data
 
     val metaData = MediaMetadata.Builder()
       .setMediaType(MEDIA_TYPE_MUSIC) // Hint for session consumers (e.g. Android Auto content styling).
