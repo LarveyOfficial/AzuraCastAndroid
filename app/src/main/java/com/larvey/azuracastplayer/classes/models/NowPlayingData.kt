@@ -67,7 +67,7 @@ class NowPlayingData(
     // before the request was enqueued.
     val mountUri = nowPlayingMount.value
     applicationScope.launch {
-      when (val result = repository.getNowPlayingStatic(
+      when (val result = repository.getNowPlayingData(
         url,
         shortCode
       )) {
@@ -111,7 +111,7 @@ class NowPlayingData(
   /** Fetches a station's metadata into [staticDataMap] (list/grid display). */
   fun getStationInformation(url: String, shortCode: String) {
     applicationScope.launch {
-      when (val result = repository.getNowPlayingStatic(
+      when (val result = repository.getNowPlayingData(
         url,
         shortCode
       )) {
