@@ -26,11 +26,11 @@ private const val TAG = "NowPlayingData"
  * The Compose-observable fields below are read and written from both the UI
  * (Activity/ViewModels) and [com.larvey.azuracastplayer.session.MusicPlayerService];
  * they are the app's core wiring:
- * - [staticDataMap] — cache of every known station's static now-playing JSON,
+ * - [staticDataMap] — cache of every known station's now-playing metadata,
  *   keyed by (host, shortCode). Written here; read by the station list UI and
  *   discovery details.
- * - [staticData] — the currently-playing station's entry (see the note in
- *   [applyNowPlayingMetadata] about its one-poll lag). Read by the service's
+ * - [staticData] — the currently-playing station's entry, set to the freshly-
+ *   fetched data in [applyNowPlayingMetadata]. Read by the service's
  *   live-position math and the Now Playing UI.
  * - [nowPlayingURL]/[nowPlayingShortCode]/[nowPlayingMount] — the tuple
  *   identifying the active station. Written by [setPlaybackSource] and by the
@@ -67,7 +67,7 @@ class NowPlayingData(
     // before the request was enqueued.
     val mountUri = nowPlayingMount.value
     applicationScope.launch {
-      when (val result = repository.getNowPlayingStatic(
+      when (val result = repository.getNowPlayingData(
         url,
         shortCode
       )) {
@@ -111,7 +111,7 @@ class NowPlayingData(
   /** Fetches a station's metadata into [staticDataMap] (list/grid display). */
   fun getStationInformation(url: String, shortCode: String) {
     applicationScope.launch {
-      when (val result = repository.getNowPlayingStatic(
+      when (val result = repository.getNowPlayingData(
         url,
         shortCode
       )) {
@@ -141,17 +141,15 @@ class NowPlayingData(
     mediaPlayer: Player?,
     reset: Boolean
   ) {
-    // NOTE: Map.put() returns the PREVIOUS value, so staticData intentionally
-    // lags one refresh behind staticDataMap. The service's live-position math
-    // and the progress UI were built against this timing — do not "fix" this
-    // to `= data` without re-verifying playback position behavior.
-    staticData.value = staticDataMap.put(
-      Pair(
-        url,
-        shortCode
-      ),
-      data
-    )
+    // Set the currently-playing snapshot and the per-station cache to the freshly-fetched data.
+    // The previous `staticData.value = staticDataMap.put(...)` used put()'s return — which is the
+    // OLD value for the key, not the new one — so staticData lagged one fetch behind the player
+    // metadata. That was a bug (put()'s return was misread as the new value), not a deliberate delay.
+    staticData.value = data
+    staticDataMap[Pair(
+      url,
+      shortCode
+    )] = data
 
     val metaData = MediaMetadata.Builder()
       .setMediaType(MEDIA_TYPE_MUSIC) // Hint for session consumers (e.g. Android Auto content styling).

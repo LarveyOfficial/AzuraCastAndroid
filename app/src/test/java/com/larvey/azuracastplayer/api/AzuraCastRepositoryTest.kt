@@ -53,16 +53,16 @@ class AzuraCastRepositoryTest {
   }
 
   @Test
-  fun `now-playing static call hits the expected path and parses the body`() = runTest {
+  fun `now-playing call hits the expected path and parses the body`() = runTest {
     server.enqueue(
       MockResponse().setResponseCode(200).setBody(fixture("nowplaying_static_full.json"))
     )
 
-    val url = server.url("/api/nowplaying_static/test_radio.json").toString()
-    val result = safeApiCall { api.getNowPlayingStatic(url) }
+    val url = server.url("/api/nowplaying/test_radio").toString()
+    val result = safeApiCall { api.getNowPlayingData(url) }
 
     val request = server.takeRequest()
-    assertThat(request.path).isEqualTo("/api/nowplaying_static/test_radio.json")
+    assertThat(request.path).isEqualTo("/api/nowplaying/test_radio")
     assertThat(result).isInstanceOf(ApiResult.Success::class.java)
     val station = (result as ApiResult.Success<StationJSON>).data
     assertThat(station.station.shortcode).isEqualTo("test_radio")

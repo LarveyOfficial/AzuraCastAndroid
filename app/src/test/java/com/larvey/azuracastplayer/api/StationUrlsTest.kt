@@ -11,23 +11,23 @@ import org.junit.Test
 class StationUrlsTest {
 
   @Test
-  fun `builds static now-playing url`() {
+  fun `builds station now-playing url`() {
     assertThat(
-      AzuraCastRepository.nowPlayingStaticUrl(
+      AzuraCastRepository.nowPlayingUrl(
         "radio.example.com",
         "my_station"
       )
-    ).isEqualTo("https://radio.example.com/api/nowplaying_static/my_station.json")
+    ).isEqualTo("https://radio.example.com/api/nowplaying/my_station")
   }
 
   @Test
-  fun `builds static now-playing url for host with port`() {
+  fun `builds station now-playing url for host with port`() {
     assertThat(
-      AzuraCastRepository.nowPlayingStaticUrl(
+      AzuraCastRepository.nowPlayingUrl(
         "radio.example.com:8080",
         "my_station"
       )
-    ).isEqualTo("https://radio.example.com:8080/api/nowplaying_static/my_station.json")
+    ).isEqualTo("https://radio.example.com:8080/api/nowplaying/my_station")
   }
 
   @Test

@@ -28,12 +28,11 @@ interface AzuraCastApi {
   suspend fun getDiscoveryCatalog(): Response<DiscoveryJSON>
 
   /**
-   * A single station's "static now-playing" JSON — the cheap, cacheable
-   * metadata file AzuraCast regenerates on every song change. This is the
-   * app's primary metadata source.
+   * A single station's now-playing metadata — the app's primary metadata
+   * source. The per-station URL is built by [AzuraCastRepository].
    */
   @GET
-  suspend fun getNowPlayingStatic(@Url url: String): Response<StationJSON>
+  suspend fun getNowPlayingData(@Url url: String): Response<StationJSON>
 
   /**
    * Every station on a host, with live now-playing data. Used only by the

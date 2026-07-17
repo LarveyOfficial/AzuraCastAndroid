@@ -26,13 +26,13 @@ class AzuraCastRepository @Inject constructor(
   private val api: AzuraCastApi
 ) {
 
-  /** Fetches one station's static now-playing JSON (primary metadata source). */
-  suspend fun getNowPlayingStatic(
+  /** Fetches one station's now-playing metadata (primary metadata source). */
+  suspend fun getNowPlayingData(
     host: String,
     shortCode: String
   ): ApiResult<StationJSON> = safeApiCall {
-    api.getNowPlayingStatic(
-      nowPlayingStaticUrl(
+    api.getNowPlayingData(
+      nowPlayingUrl(
         host,
         shortCode
       )
@@ -54,11 +54,12 @@ class AzuraCastRepository @Inject constructor(
     /**
      * URL builders are pure and kept visible for tests. [host] may include a
      * port (e.g. "radio.example.com:8080") and is always addressed over HTTPS,
-     * matching the app-wide `fixHttps` convention.
+     * matching the app-wide `fixHttps` convention. The two overloads build the
+     * single-station now-playing URL and the host-wide station-list URL.
      */
     @VisibleForTesting
-    internal fun nowPlayingStaticUrl(host: String, shortCode: String): String =
-      "https://$host/api/nowplaying_static/$shortCode.json"
+    internal fun nowPlayingUrl(host: String, shortCode: String): String =
+      "https://$host/api/nowplaying/$shortCode"
 
     @VisibleForTesting
     internal fun nowPlayingUrl(host: String): String = "https://$host/api/nowplaying"

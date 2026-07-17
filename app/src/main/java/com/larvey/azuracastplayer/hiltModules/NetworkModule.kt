@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.hiltModules
 
 import com.larvey.azuracastplayer.api.AzuraCastApi
+import com.larvey.azuracastplayer.api.CacheBustingInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,16 +15,18 @@ import javax.inject.Singleton
 /**
  * Provides the app's single OkHttp/Retrofit stack for API traffic.
  *
- * The client is deliberately default-configured: the previous per-call clients
- * used OkHttp defaults, and this refactor must not change network behavior. Do
- * not add timeouts or interceptors here without a deliberate follow-up change.
+ * The client is otherwise default-configured (no timeouts) — keep it that way
+ * unless a change is deliberate. The one interceptor it carries is
+ * [CacheBustingInterceptor], which appends a per-request timestamp so stale
+ * metadata can never be served from a URL-keyed cache.
  *
  * The base URL points at the one fixed-host endpoint (the discovery catalog);
  * the per-station endpoints pass fully-qualified URLs via [retrofit2.http.Url]
  * (see [AzuraCastApi]).
  *
  * Note: Coil builds its own OkHttp client for image loading — unifying that is
- * intentionally out of scope for this module.
+ * intentionally out of scope for this module, and album art is left cacheable
+ * on purpose (only API metadata is cache-busted).
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -42,6 +45,8 @@ object NetworkModule {
     val dispatcher = Dispatcher().apply { maxRequestsPerHost = maxRequests }
     return OkHttpClient.Builder()
       .dispatcher(dispatcher)
+      // Cache-bust every API request so metadata is always fresh (never a cached snapshot).
+      .addInterceptor(CacheBustingInterceptor())
       .build()
   }
 
