@@ -104,7 +104,6 @@ fun NowPlayingContent(
     CastDeviceSheet(
       castManager = castManager,
       castConnectivity = nowPlayingViewModel.castConnectivity,
-      palette = palette?.value,
       onDismiss = { showCastSheet = false }
     )
   }

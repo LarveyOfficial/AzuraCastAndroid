@@ -98,7 +98,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.mediarouter.media.MediaRouter
-import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.session.cast.CastConnectivity
 import com.larvey.azuracastplayer.utils.RoundedStarShape
@@ -118,7 +117,6 @@ import kotlinx.coroutines.launch
 fun CastDeviceSheet(
   castManager: CastManager,
   castConnectivity: CastConnectivity,
-  palette: Palette?,
   onDismiss: () -> Unit
 ) {
   val context = LocalContext.current
