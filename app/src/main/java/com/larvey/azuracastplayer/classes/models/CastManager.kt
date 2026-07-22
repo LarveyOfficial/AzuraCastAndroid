@@ -1,6 +1,7 @@
 package com.larvey.azuracastplayer.classes.models
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
@@ -78,8 +79,13 @@ class CastManager(
   private var castSession: CastSession? = null
   private var castRadioPlayer: CastRadioPlayer? = null
 
-  /** Guards the local↔receiver sync from feeding back on itself. */
-  private var isApplyingSync = false
+  /**
+   * When we push a receiver-driven play/pause onto the local player, suppress the
+   * local→receiver mirror for a moment so the two-way sync doesn't feed back on
+   * itself (Media3 listener callbacks are delivered asynchronously, so a boolean
+   * flag set/reset around the call wouldn't cover them).
+   */
+  private var suppressLocalMirrorUntilMs = 0L
 
   /** Identity of what is currently loaded on the receiver, to skip song-change reloads. */
   private var lastLoadedKey: String? = null
@@ -270,8 +276,16 @@ class CastManager(
 
   private val localPlayerListener = object : Player.Listener {
     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-      if (!isCasting.value || isApplyingSync) return
-      if (playWhenReady) castRadioPlayer?.play() else castRadioPlayer?.pause()
+      if (!isCasting.value) return
+      if (SystemClock.elapsedRealtime() < suppressLocalMirrorUntilMs) return
+      if (playWhenReady) {
+        // Live radio: resuming must rejoin the live edge, not resume from the
+        // stale point where the receiver paused — so reload the stream rather
+        // than plain play().
+        loadCurrentStation()
+      } else {
+        castRadioPlayer?.pause()
+      }
     }
   }
 
@@ -286,9 +300,10 @@ class CastManager(
     val shouldPlay = CastRemotePlaybackState.shouldLocalBePlaying(client.mediaStatus) ?: return
     val player = localPlayer() ?: return
     if (player.playWhenReady == shouldPlay) return
-    isApplyingSync = true
+    // Applying a remote-driven change to the local player; don't let the local
+    // listener echo it back to the receiver.
+    suppressLocalMirrorUntilMs = SystemClock.elapsedRealtime() + 1000
     if (shouldPlay) player.play() else player.pause()
-    isApplyingSync = false
   }
 
   // --- Route discovery / selection / volume (used by the cast sheet) ---
@@ -344,15 +359,39 @@ class CastManager(
     mediaRouter.selectRoute(route)
   }
 
-  /** Disconnect: return to the default route. Audio returns to the phone. */
+  /**
+   * Disconnect: stop the receiver and return audio to the phone. We end the
+   * session with `stopReceiverApplication = true` so playback actually stops on
+   * the Cast device (selecting the default route alone leaves the receiver
+   * playing, since the framework default is to leave the receiver running).
+   */
   fun disconnect() {
-    mediaRouter.selectRoute(mediaRouter.defaultRoute)
-    syncFromRouter(mediaRouter)
+    val manager = sessionManager
+    if (manager?.currentCastSession != null) {
+      manager.endCurrentSession(true)
+    } else {
+      mediaRouter.selectRoute(mediaRouter.defaultRoute)
+      syncFromRouter(mediaRouter)
+    }
+  }
+
+  /** Ends the session (stopping the receiver) on app teardown. */
+  fun endSessionForShutdown() {
+    runCatching {
+      if (sessionManager?.currentCastSession != null) {
+        sessionManager?.endCurrentSession(true)
+      }
+    }
   }
 
   fun setRouteVolume(volume: Int) {
     routeVolume.value = volume
     selectedRoute.value?.requestSetVolume(volume)
+  }
+
+  /** Relative volume change for the receiver (used by the phone's hardware volume keys). */
+  fun adjustRouteVolume(delta: Int) {
+    selectedRoute.value?.requestUpdateVolume(delta)
   }
 
   private fun syncFromRouter(router: MediaRouter) {

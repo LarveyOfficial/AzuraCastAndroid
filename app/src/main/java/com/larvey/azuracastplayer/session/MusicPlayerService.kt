@@ -901,6 +901,8 @@ class MusicPlayerService : MediaLibraryService() {
 
   // The user dismissed the app from the recent tasks
   override fun onTaskRemoved(rootIntent: Intent?) {
+    // Stop the Cast receiver too when the app is swiped away.
+    castManager.endSessionForShutdown()
     val player = mediaSession?.player!!
     player.stop()
     player.release()
@@ -909,6 +911,8 @@ class MusicPlayerService : MediaLibraryService() {
 
   // Remember to release the player and media session in onDestroy
   override fun onDestroy() {
+    // Stop the Cast receiver on shutdown so it doesn't keep playing after the app dies.
+    castManager.endSessionForShutdown()
     mediaSession?.run {
       player.stop()
       player.release()
