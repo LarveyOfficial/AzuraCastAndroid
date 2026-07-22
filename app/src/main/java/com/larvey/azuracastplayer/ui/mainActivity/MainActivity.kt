@@ -117,14 +117,11 @@ import com.larvey.azuracastplayer.ui.nowplaying.ExpandingNowPlayer
 import com.larvey.azuracastplayer.ui.nowplaying.NowPlayingPane
 import com.larvey.azuracastplayer.ui.nowplaying.rememberExpandingPlayerState
 import com.larvey.azuracastplayer.ui.theme.AzuraCastPlayerTheme
-import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.utils.ReverseLayoutDirection
 import com.larvey.azuracastplayer.utils.albumColors
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.view.KeyEvent
-import javax.inject.Inject
 
 /**
  * Width of the side navigation rail shown on tablets (Material3 `NavigationRail` container width).
@@ -159,33 +156,9 @@ enum class AppDestinations(
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-  @Inject
-  lateinit var castManager: CastManager
-
   private var mainActivityViewModel: MainActivityViewModel? = null
 
   private var mediaController: MediaController? = null
-
-  /**
-   * While casting, the phone's hardware volume keys control the Cast receiver's
-   * volume (consuming the event so the local media stream isn't changed instead).
-   * When not casting, keys behave normally.
-   */
-  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-    if (::castManager.isInitialized && castManager.isCasting.value) {
-      when (event.keyCode) {
-        KeyEvent.KEYCODE_VOLUME_UP -> {
-          if (event.action == KeyEvent.ACTION_DOWN) castManager.adjustRouteVolume(1)
-          return true
-        }
-        KeyEvent.KEYCODE_VOLUME_DOWN -> {
-          if (event.action == KeyEvent.ACTION_DOWN) castManager.adjustRouteVolume(-1)
-          return true
-        }
-      }
-    }
-    return super.dispatchKeyEvent(event)
-  }
 
   override fun onPause() {
     super.onPause()

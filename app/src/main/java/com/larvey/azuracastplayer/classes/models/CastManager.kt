@@ -489,11 +489,6 @@ class CastManager(
     selectedRoute.value?.requestSetVolume(volume)
   }
 
-  /** Relative volume change for the receiver (used by the phone's hardware volume keys). */
-  fun adjustRouteVolume(delta: Int) {
-    selectedRoute.value?.requestUpdateVolume(delta)
-  }
-
   private fun syncFromRouter(router: MediaRouter) {
     castRoutes.value = router.routes.filter { it.isCastRoute() }.distinctBy { it.id }
     val selected = router.selectedRoute
