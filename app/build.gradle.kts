@@ -22,7 +22,7 @@ android {
     versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 75
     // versionName is managed by release-please — it is bumped in the release PR.
     // Do not edit the version string by hand, and keep the trailing comment.
-    versionName = "1.2.1" // x-release-please-version
+    versionName = "1.3.0" // x-release-please-version
     // Beta CI builds relabel the version (e.g. 1.3.0-beta.245) via this env
     // override; stable and local builds keep the release-please-managed value above.
     System.getenv("VERSION_NAME_OVERRIDE")?.takeIf { it.isNotBlank() }?.let { versionName = it }
