@@ -856,7 +856,15 @@ class MainActivity : ComponentActivity() {
                     nowPlaying = { mainActivityViewModel?.nowPlayingData?.staticData?.value?.nowPlaying },
                     play = { mediaController?.play() },
                     pause = { mediaController?.pause() },
-                    stop = { mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop() },
+                    stop = {
+                      // While casting, Stop must end the cast session entirely; otherwise
+                      // just stop the local player.
+                      if (mainActivityViewModel?.castManager?.isCasting?.value == true) {
+                        mainActivityViewModel?.castManager?.stopCasting()
+                      } else {
+                        mainActivityViewModel?.sharedMediaController?.mediaSession?.value?.player?.stop()
+                      }
+                    },
                     onDismissProgress = { miniDismissProgress = it },
                     // Portrait tablet keeps the side rail (no floating bottom nav bar), so the mini bar
                     // rests just above the system nav inset instead of reserving the nav bar footprint,

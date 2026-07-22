@@ -28,6 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +50,7 @@ import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingBottomBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingHistory
 import com.larvey.azuracastplayer.ui.nowplaying.components.NowPlayingTopBar
 import com.larvey.azuracastplayer.ui.nowplaying.components.SongAndArtist
+import com.larvey.azuracastplayer.ui.nowplaying.cast.CastDeviceSheet
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -62,6 +66,16 @@ fun NowPlayingPane(
 
   val nowPlayingViewModel: NowPlayingViewModel = viewModel()
 
+  val castManager = nowPlayingViewModel.castManager
+  var showCastSheet by remember { mutableStateOf(false) }
+
+  if (showCastSheet) {
+    CastDeviceSheet(
+      castManager = castManager,
+      castConnectivity = nowPlayingViewModel.castConnectivity,
+      onDismiss = { showCastSheet = false }
+    )
+  }
 
   AnimatedVisibility(
     visible = nowPlayingViewModel.sharedMediaController.playerState.value?.currentMediaItem != null,
@@ -99,6 +113,7 @@ fun NowPlayingPane(
         containerColor = Color.Transparent,
         topBar = {
           NowPlayingTopBar(
+            palette = palette?.value,
             onToggleHistory = {
               if (navController.currentDestination?.route == "nowPlaying") {
                 navController.navigate("queue")
@@ -108,13 +123,22 @@ fun NowPlayingPane(
                   inclusive = false
                 )
               }
-            }
+            },
+            onCast = if (castManager.isCastAvailable.value) {
+              { showCastSheet = true }
+            } else null,
+            isCasting = castManager.isCasting.value,
+            isConnecting = castManager.isConnecting.value
           )
         },
         bottomBar = {
           NowPlayingBottomBar(
             stop = {
-              nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
+              if (castManager.isCasting.value) {
+                castManager.stopCasting()
+              } else {
+                nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.stop()
+              }
             },
             pause = {
               nowPlayingViewModel.sharedMediaController.mediaSession.value?.player?.pause()

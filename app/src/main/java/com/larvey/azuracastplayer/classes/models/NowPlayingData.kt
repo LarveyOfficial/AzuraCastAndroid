@@ -151,13 +151,18 @@ class NowPlayingData(
       shortCode
     )] = data
 
+    // Some stations occasionally send an empty title/artist for the current song; fall back to
+    // explicit placeholders so the UI/notification/Android Auto never show a blank (or "null").
+    val songTitle = data.nowPlaying.song.title.ifBlank { "No title" }
+    val songArtist = data.nowPlaying.song.artist.ifBlank { "No artist" }
+
     val metaData = MediaMetadata.Builder()
       .setMediaType(MEDIA_TYPE_MUSIC) // Hint for session consumers (e.g. Android Auto content styling).
-      .setDisplayTitle(data.nowPlaying.song.title)
-      .setSubtitle(data.nowPlaying.song.artist) // Android Auto renders the subtitle as the artist line.
-      .setArtist(data.nowPlaying.song.artist)
+      .setDisplayTitle(songTitle)
+      .setSubtitle(songArtist) // Android Auto renders the subtitle as the artist line.
+      .setArtist(songArtist)
       .setAlbumTitle(data.nowPlaying.song.album)
-      .setAlbumArtist(data.nowPlaying.song.artist)
+      .setAlbumArtist(songArtist)
       .setDescription(data.nowPlaying.song.album) // Android Auto renders the description as the album line.
       .setGenre(data.nowPlaying.song.genre)
       .setArtworkUri(data.nowPlaying.song.art.fixHttps().toUri())

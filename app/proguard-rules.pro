@@ -39,6 +39,10 @@
 
 -keep class com.larvey.azuracastplayer.classes.models.* { *; }
 -keep class com.larvey.azuracastplayer.classes.data.* { *; }
+
+# Cast: the OptionsProvider is instantiated reflectively from the manifest meta-data.
+-keep class com.larvey.azuracastplayer.session.cast.CastOptionsProvider { *; }
+-keep class * implements com.google.android.gms.cast.framework.OptionsProvider
 -keep class com.google.gson.reflect.TypeToken
 -keep class * extends com.google.gson.reflect.TypeToken
 -keep public class * implements java.lang.reflect.Type

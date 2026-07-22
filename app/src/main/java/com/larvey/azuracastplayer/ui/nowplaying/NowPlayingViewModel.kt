@@ -1,9 +1,11 @@
 package com.larvey.azuracastplayer.ui.nowplaying
 
 import androidx.lifecycle.ViewModel
+import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
+import com.larvey.azuracastplayer.session.cast.CastConnectivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -11,5 +13,7 @@ import javax.inject.Inject
 class NowPlayingViewModel @Inject constructor(
   val nowPlayingData: NowPlayingData,
   val savedStationsDB: SavedStationsDB,
-  val sharedMediaController: SharedMediaController
+  val sharedMediaController: SharedMediaController,
+  val castManager: CastManager,
+  val castConnectivity: CastConnectivity
 ) : ViewModel()
