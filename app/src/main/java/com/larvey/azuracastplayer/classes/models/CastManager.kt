@@ -319,6 +319,7 @@ class CastManager(
     }
   }
 
+  /** Passive, low-battery discovery kept running app-wide so the button state is fresh. */
   fun startDiscovery() {
     mediaRouter.addCallback(
       castSelector,
@@ -330,11 +331,42 @@ class CastManager(
 
   private var refreshJob: kotlinx.coroutines.Job? = null
 
-  /** A short active-scan burst for the device sheet's "refresh" affordance. */
+  /**
+   * Active discovery while the device sheet is open. This must stay on for the
+   * whole time the sheet is visible: once a session connects, the Cast provider
+   * stops advertising the *other* devices under passive discovery, so they'd
+   * vanish from the list. Active scanning keeps them visible.
+   */
+  fun beginActiveDiscovery() {
+    refreshJob?.cancel()
+    mediaRouter.removeCallback(mediaRouterCallback)
+    mediaRouter.addCallback(
+      castSelector,
+      mediaRouterCallback,
+      MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY or MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN
+    )
+    syncFromRouter(mediaRouter)
+  }
+
+  /** Sheet closed: drop back to passive discovery to save battery. */
+  fun endActiveDiscovery() {
+    refreshJob?.cancel()
+    isRefreshingRoutes.value = false
+    mediaRouter.removeCallback(mediaRouterCallback)
+    mediaRouter.addCallback(
+      castSelector,
+      mediaRouterCallback,
+      MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
+    )
+    syncFromRouter(mediaRouter)
+  }
+
+  /** The sheet's "refresh" affordance: re-arm the active scan and show a brief spinner. */
   fun refreshRoutes() {
     refreshJob?.cancel()
     refreshJob = applicationScope.launch {
       isRefreshingRoutes.value = true
+      // Re-arm active scanning (already on while the sheet is open) to force a fresh sweep.
       mediaRouter.removeCallback(mediaRouterCallback)
       mediaRouter.addCallback(
         castSelector,
@@ -342,13 +374,7 @@ class CastManager(
         MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY or MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN
       )
       syncFromRouter(mediaRouter)
-      delay(5000)
-      mediaRouter.removeCallback(mediaRouterCallback)
-      mediaRouter.addCallback(
-        castSelector,
-        mediaRouterCallback,
-        MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
-      )
+      delay(4000)
       syncFromRouter(mediaRouter)
       isRefreshingRoutes.value = false
     }

@@ -129,7 +129,6 @@ fun CastDeviceSheet(
     missingPermissions = missingPermissions(context, requiredPermissions)
     if (missingPermissions.isEmpty()) {
       castConnectivity.refresh()
-      castManager.refreshRoutes()
     }
   }
 
@@ -147,6 +146,16 @@ fun CastDeviceSheet(
     }
     lifecycleOwner.lifecycle.addObserver(observer)
     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+  }
+
+  // Keep active device discovery running for the whole time the sheet is open, so
+  // other Cast devices stay visible even after connecting to one. Drop back to
+  // passive discovery when the sheet closes.
+  DisposableEffect(missingPermissions.isEmpty()) {
+    if (missingPermissions.isEmpty()) {
+      castManager.beginActiveDiscovery()
+    }
+    onDispose { castManager.endActiveDiscovery() }
   }
 
   fun animatedDismiss() {
