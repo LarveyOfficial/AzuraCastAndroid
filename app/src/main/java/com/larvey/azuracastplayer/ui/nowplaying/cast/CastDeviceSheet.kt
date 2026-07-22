@@ -9,25 +9,35 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -51,13 +61,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -69,11 +79,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -86,15 +102,16 @@ import androidx.palette.graphics.Palette
 import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.session.cast.CastConnectivity
 import com.larvey.azuracastplayer.utils.RoundedStarShape
-import com.larvey.azuracastplayer.utils.albumColors
 import com.larvey.azuracastplayer.utils.getRoundedCornerRadius
+import kotlin.math.abs
 import kotlinx.coroutines.launch
 
 /**
  * The Cast device sheet. Opened from the Now Playing top-bar cast button. Shows
  * nearby Cast devices, the connected device + volume + disconnect, plus Wi-Fi and
- * Bluetooth connectivity tiles, across a Controls / Devices tab pair. Themed from
- * the current station's palette via [albumColors].
+ * Bluetooth connectivity tiles, across a Controls / Devices tab pair. The tab pair
+ * animates on switch (scale bounce + neighbour nudge, see [CastTab]) and the sheet
+ * height animates between the two tabs' content sizes.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,7 +190,8 @@ fun CastDeviceSheet(
       topStart = getRoundedCornerRadius(),
       topEnd = getRoundedCornerRadius()
     ),
-    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    tonalElevation = 12.dp
   ) {
     if (missingPermissions.isNotEmpty()) {
       CastPermissionStep(
@@ -197,7 +215,6 @@ fun CastDeviceSheet(
       CastSheetBody(
         castManager = castManager,
         castConnectivity = castConnectivity,
-        palette = palette,
         onDisconnect = {
           castManager.disconnect()
           animatedDismiss()
@@ -259,15 +276,14 @@ private fun CastPermissionStep(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CastSheetBody(
   castManager: CastManager,
   castConnectivity: CastConnectivity,
-  palette: Palette?,
   onDisconnect: () -> Unit
 ) {
   val context = LocalContext.current
-  val colors = albumColors(palette)
 
   val isCasting = castManager.isCasting.value
   val isConnecting = castManager.isConnecting.value
@@ -277,89 +293,159 @@ private fun CastSheetBody(
   val isRefreshing = castManager.isRefreshingRoutes.value
   val btDevices = castConnectivity.bluetoothDevices.value
 
+  val refresh: () -> Unit = {
+    castManager.refreshRoutes()
+    castConnectivity.refresh()
+  }
+
   val pagerState = rememberPagerState(
     initialPage = if (isCasting || isConnecting) 0 else 1,
     pageCount = { 2 }
   )
   val scope = rememberCoroutineScope()
 
+  // Bound the pager so a long device list can't push the sheet past the screen; the
+  // sheet animates between the two tabs' content heights within this cap.
+  val configuration = LocalConfiguration.current
+  val safeInsets = WindowInsets.safeDrawing.asPaddingValues()
+  val maxPagerHeight = (
+    configuration.screenHeightDp.dp -
+      safeInsets.calculateTopPadding() -
+      safeInsets.calculateBottomPadding() -
+      212.dp
+    ).coerceAtLeast(280.dp)
+
+  // Skip the height animation for the first couple of frames so the sheet opens at its
+  // natural size instead of growing from zero; animate every switch after that.
+  var heightAnimationEnabled by remember { mutableStateOf(false) }
+  LaunchedEffect(Unit) {
+    withFrameNanos { }
+    withFrameNanos { }
+    heightAnimationEnabled = true
+  }
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(
-      text = "Connect device",
-      style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-      modifier = Modifier.padding(horizontal = 24.dp)
-    )
+    Box(
+      modifier = Modifier
+        .padding(horizontal = 24.dp)
+        .background(
+          color = MaterialTheme.colorScheme.surfaceContainerLow,
+          shape = CircleShape
+        )
+    ) {
+      Text(
+        text = "Connect device",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold)
+      )
+    }
     Spacer(Modifier.height(8.dp))
 
-    HorizontalPager(
-      state = pagerState,
-      modifier = Modifier.fillMaxWidth()
-    ) { page ->
-      when (page) {
-        0 -> CastControlsTab(
-          colors = colors,
-          isCasting = isCasting,
-          isConnecting = isConnecting,
-          deviceName = selectedRoute?.name,
-          volume = routeVolume,
-          volumeMax = (selectedRoute?.volumeMax ?: 20).coerceAtLeast(1),
-          onVolumeChange = { castManager.setRouteVolume(it) },
-          onDisconnect = onDisconnect,
-          wifiConnected = castConnectivity.isWifiEnabled.value,
-          wifiName = castConnectivity.wifiName.value,
-          bluetoothConnected = castConnectivity.isBluetoothEnabled.value,
-          onOpenWifi = { context.openSettings(Settings.ACTION_WIFI_SETTINGS) },
-          onOpenBluetooth = { context.openSettings(Settings.ACTION_BLUETOOTH_SETTINGS) },
-          onRefresh = {
-            castManager.refreshRoutes()
-            castConnectivity.refresh()
-          }
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .heightIn(max = maxPagerHeight)
+        .animateContentSize(
+          animationSpec = if (heightAnimationEnabled) {
+            tween(durationMillis = 280, easing = FastOutSlowInEasing)
+          } else {
+            snap()
+          },
+          alignment = Alignment.TopCenter
         )
-        1 -> CastDevicesTab(
-          colors = colors,
-          routes = routes,
-          selectedRouteId = selectedRoute?.id,
-          isCasting = isCasting,
-          isRefreshing = isRefreshing,
-          btDevices = btDevices,
-          onSelect = { route -> castManager.selectRoute(route) },
-          onDisconnect = onDisconnect,
-          onOpenBluetooth = { context.openSettings(Settings.ACTION_BLUETOOTH_SETTINGS) }
-        )
+    ) {
+      HorizontalPager(
+        state = pagerState,
+        modifier = Modifier
+          .wrapContentHeight()
+          .fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+      ) { page ->
+        when (page) {
+          0 -> CastControlsTab(
+            isCasting = isCasting,
+            isConnecting = isConnecting,
+            deviceName = selectedRoute?.name,
+            volume = routeVolume,
+            volumeMax = (selectedRoute?.volumeMax ?: 20).coerceAtLeast(1),
+            onVolumeChange = { castManager.setRouteVolume(it) },
+            onDisconnect = onDisconnect,
+            wifiConnected = castConnectivity.isWifiEnabled.value,
+            wifiName = castConnectivity.wifiName.value,
+            bluetoothConnected = castConnectivity.isBluetoothEnabled.value,
+            onOpenWifi = { context.openSettings(Settings.ACTION_WIFI_SETTINGS) },
+            onOpenBluetooth = { context.openSettings(Settings.ACTION_BLUETOOTH_SETTINGS) },
+            onRefresh = refresh
+          )
+          1 -> CastDevicesTab(
+            routes = routes,
+            selectedRouteId = selectedRoute?.id,
+            isCasting = isCasting,
+            isRefreshing = isRefreshing,
+            btDevices = btDevices,
+            maxContentHeight = maxPagerHeight,
+            onSelect = { route -> castManager.selectRoute(route) },
+            onDisconnect = onDisconnect,
+            onOpenBluetooth = { context.openSettings(Settings.ACTION_BLUETOOTH_SETTINGS) },
+            onRefresh = refresh
+          )
+        }
       }
     }
 
-    SingleChoiceSegmentedButtonRow(
+    PrimaryTabRow(
+      selectedTabIndex = pagerState.currentPage,
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 20.dp)
-        .padding(bottom = 12.dp)
+        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .clip(CircleShape)
+        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        .padding(5.dp),
+      containerColor = Color.Transparent,
+      divider = {},
+      indicator = {}
     ) {
-      SegmentedButton(
-        selected = pagerState.currentPage == 0,
-        onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-        icon = {
-          Icon(Icons.Rounded.Speaker, contentDescription = null, modifier = Modifier.size(18.dp))
-        },
-        label = { Text("Controls") }
-      )
-      SegmentedButton(
-        selected = pagerState.currentPage == 1,
-        onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-        icon = {
-          Icon(Icons.Rounded.Devices, contentDescription = null, modifier = Modifier.size(18.dp))
-        },
-        label = { Text("Devices") }
-      )
+      CastTab(
+        index = 0,
+        selectedIndex = pagerState.currentPage,
+        transformOrigin = TransformOrigin(0f, 0.5f),
+        onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Icon(
+            Icons.Rounded.Speaker,
+            contentDescription = null,
+            modifier = Modifier
+              .padding(horizontal = 4.dp)
+              .size(18.dp)
+          )
+          Spacer(Modifier.width(4.dp))
+          Text("Controls", fontWeight = FontWeight.Bold)
+        }
+      }
+      CastTab(
+        index = 1,
+        selectedIndex = pagerState.currentPage,
+        transformOrigin = TransformOrigin(1f, 0.5f),
+        onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Icon(
+            Icons.Rounded.Devices,
+            contentDescription = null,
+            modifier = Modifier
+              .padding(horizontal = 4.dp)
+              .size(18.dp)
+          )
+          Spacer(Modifier.width(4.dp))
+          Text("Devices", fontWeight = FontWeight.Bold)
+        }
+      }
     }
   }
 }
 
 @Composable
 private fun CastControlsTab(
-  colors: com.larvey.azuracastplayer.utils.AlbumColors,
   isCasting: Boolean,
   isConnecting: Boolean,
   deviceName: String?,
@@ -480,14 +566,22 @@ private fun CastControlsTab(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(
-        text = "Connectivity",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold
-      )
-      IconButton(onClick = onRefresh) {
-        Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
+      Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+          text = "Connectivity",
+          style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Text(
+          text = if (!wifiConnected && !bluetoothConnected) {
+            "Turn on Wi-Fi or Bluetooth"
+          } else {
+            "Manage active radios and rescan"
+          },
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
       }
+      FilledRefreshButton(onClick = onRefresh)
     }
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -553,71 +647,206 @@ private fun QuickTile(
 
 @Composable
 private fun CastDevicesTab(
-  colors: com.larvey.azuracastplayer.utils.AlbumColors,
   routes: List<MediaRouter.RouteInfo>,
   selectedRouteId: String?,
   isCasting: Boolean,
   isRefreshing: Boolean,
   btDevices: List<com.larvey.azuracastplayer.session.cast.BluetoothAudioDevice>,
+  maxContentHeight: androidx.compose.ui.unit.Dp,
   onSelect: (MediaRouter.RouteInfo) -> Unit,
   onDisconnect: () -> Unit,
-  onOpenBluetooth: () -> Unit
+  onOpenBluetooth: () -> Unit,
+  onRefresh: () -> Unit
 ) {
-  val context = LocalContext.current
-  Column(modifier = Modifier.fillMaxWidth()) {
-    if (isRefreshing) {
-      LinearProgressIndicator(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 20.dp)
-          .clip(RoundedCornerShape(50))
-      )
-      Spacer(Modifier.height(8.dp))
+  val hasDevices = routes.isNotEmpty() || btDevices.isNotEmpty()
+  LazyColumn(
+    modifier = Modifier
+      .fillMaxWidth()
+      .heightIn(max = maxContentHeight),
+    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp)
+  ) {
+    item(key = "nearbyHeader") {
+      DeviceSectionHeader(hasDevices = hasDevices, onRefresh = onRefresh)
     }
-    LazyColumn(
-      modifier = Modifier
-        .fillMaxWidth()
-        .heightIn(max = 360.dp),
-      contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-      if (routes.isEmpty() && btDevices.isEmpty()) {
-        item {
-          Text(
-            text = if (isRefreshing) "Searching for devices…" else "No devices found",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 24.dp)
-          )
+    if (isRefreshing) {
+      item(key = "refreshIndicator") {
+        LinearProgressIndicator(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50))
+        )
+      }
+    }
+    if (!hasDevices) {
+      item(key = "empty") {
+        Text(
+          text = if (isRefreshing) "Searching for devices…" else "No devices found",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(vertical = 24.dp)
+        )
+      }
+    }
+    items(routes, key = { it.id }) { route ->
+      val isSelected = route.id == selectedRouteId
+      CastDeviceRow(
+        name = route.name,
+        description = route.description,
+        isTv = route.deviceType == MediaRouter.RouteInfo.DEVICE_TYPE_TV,
+        isBluetooth = false,
+        isSelected = isSelected && isCasting,
+        isConnecting = isSelected && !isCasting,
+        onClick = {
+          if (isSelected && isCasting) onDisconnect() else onSelect(route)
         }
+      )
+    }
+    items(btDevices, key = { "bt_" + it.address }) { device ->
+      CastDeviceRow(
+        name = device.name,
+        description = if (device.isConnected) "Connected" else "Bluetooth",
+        isTv = false,
+        isBluetooth = true,
+        isSelected = false,
+        isConnecting = false,
+        onClick = onOpenBluetooth
+      )
+    }
+  }
+}
+
+@Composable
+private fun DeviceSectionHeader(
+  hasDevices: Boolean,
+  onRefresh: () -> Unit
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    Column(
+      modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+      verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+      Text(
+        text = "Nearby devices",
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+      )
+      Text(
+        text = if (hasDevices) "Tap to connect" else "No devices yet",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+      )
+    }
+    FilledRefreshButton(onClick = onRefresh)
+  }
+}
+
+/** Material3 filled icon button (tonal surface background) used by both refresh affordances. */
+@Composable
+private fun FilledRefreshButton(onClick: () -> Unit) {
+  IconButton(
+    onClick = onClick,
+    colors = IconButtonDefaults.iconButtonColors(
+      containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+      contentColor = MaterialTheme.colorScheme.onSurface
+    ),
+    modifier = Modifier.clip(RoundedCornerShape(16.dp))
+  ) {
+    Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
+  }
+}
+
+/**
+ * A single pill tab in the Controls / Devices switch. On selection change it does a brief
+ * scale bounce (1 → 1.05 → 1) and nudges its direct neighbour aside (±12px), then settles —
+ * so switching tabs feels springy rather than instant. The first composition does not animate.
+ */
+@Composable
+private fun CastTab(
+  index: Int,
+  selectedIndex: Int,
+  onClick: () -> Unit,
+  transformOrigin: TransformOrigin,
+  content: @Composable () -> Unit
+) {
+  val haptics = LocalHapticFeedback.current
+  val isSelected = index == selectedIndex
+
+  val selectedColor = MaterialTheme.colorScheme.primary
+  val unselectedColor = MaterialTheme.colorScheme.surface
+  val onSelectedColor = MaterialTheme.colorScheme.onPrimary
+  val onUnselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+
+  val animationSpec = tween<Float>(durationMillis = 250, easing = FastOutSlowInEasing)
+  val scale = remember { Animatable(1f) }
+  val offsetX = remember { Animatable(0f) }
+  var hasAnimatedSelectionChange by remember { mutableStateOf(false) }
+
+  val backgroundColor by animateColorAsState(
+    targetValue = if (isSelected) selectedColor else unselectedColor,
+    animationSpec = tween(durationMillis = 200),
+    label = "castTabBackground"
+  )
+  val contentColor by animateColorAsState(
+    targetValue = if (isSelected) onSelectedColor else onUnselectedColor,
+    animationSpec = tween(durationMillis = 200),
+    label = "castTabContent"
+  )
+
+  // Animate only on actual selection changes, not on first composition.
+  LaunchedEffect(selectedIndex) {
+    if (!hasAnimatedSelectionChange) {
+      hasAnimatedSelectionChange = true
+      scale.snapTo(1f)
+      offsetX.snapTo(0f)
+      return@LaunchedEffect
+    }
+    if (isSelected) {
+      launch {
+        scale.animateTo(1.05f, animationSpec = animationSpec)
+        scale.animateTo(1f, animationSpec = animationSpec)
       }
-      items(routes, key = { it.id }) { route ->
-        val isSelected = route.id == selectedRouteId
-        CastDeviceRow(
-          name = route.name,
-          description = route.description,
-          isTv = route.deviceType == MediaRouter.RouteInfo.DEVICE_TYPE_TV,
-          isBluetooth = false,
-          isSelected = isSelected && isCasting,
-          isConnecting = isSelected && !isCasting,
-          onClick = {
-            if (isSelected && isCasting) onDisconnect() else onSelect(route)
-          }
-        )
-      }
-      items(btDevices, key = { "bt_" + it.address }) { device ->
-        CastDeviceRow(
-          name = device.name,
-          description = if (device.isConnected) "Connected" else "Bluetooth",
-          isTv = false,
-          isBluetooth = true,
-          isSelected = false,
-          isConnecting = false,
-          onClick = onOpenBluetooth
-        )
+      offsetX.snapTo(0f)
+    } else {
+      scale.snapTo(1f)
+      val distance = index - selectedIndex
+      if (abs(distance) == 1) {
+        val direction = if (distance > 0) 1 else -1
+        launch {
+          offsetX.animateTo(12f * direction, animationSpec = animationSpec)
+          offsetX.animateTo(0f, animationSpec = animationSpec)
+        }
+      } else {
+        offsetX.snapTo(0f)
       }
     }
   }
+
+  Tab(
+    modifier = Modifier
+      .padding(all = 5.dp)
+      .graphicsLayer {
+        scaleX = scale.value
+        translationX = offsetX.value
+        this.transformOrigin = transformOrigin
+      }
+      .clip(CircleShape)
+      .background(
+        color = backgroundColor,
+        shape = RoundedCornerShape(50)
+      ),
+    selected = isSelected,
+    text = content,
+    onClick = {
+      haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+      onClick()
+    },
+    selectedContentColor = contentColor,
+    unselectedContentColor = contentColor
+  )
 }
 
 @Composable

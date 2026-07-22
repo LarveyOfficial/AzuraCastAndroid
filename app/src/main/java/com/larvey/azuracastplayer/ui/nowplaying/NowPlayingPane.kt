@@ -114,6 +114,7 @@ fun NowPlayingPane(
         containerColor = Color.Transparent,
         topBar = {
           NowPlayingTopBar(
+            palette = palette?.value,
             onToggleHistory = {
               if (navController.currentDestination?.route == "nowPlaying") {
                 navController.navigate("queue")

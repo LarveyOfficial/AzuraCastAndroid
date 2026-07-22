@@ -124,6 +124,7 @@ fun NowPlayingContent(
         // its own status-bar inset.
         Box(modifier = Modifier.statusBarsPadding()) {
           NowPlayingTopBar(
+            palette = palette?.value,
             onClose = onCollapse,
             onToggleHistory = {
               if (navController.currentDestination?.route == "nowPlaying") {
