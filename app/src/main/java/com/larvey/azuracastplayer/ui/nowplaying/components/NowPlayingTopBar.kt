@@ -15,7 +15,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -29,18 +32,24 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * The Now Playing top bar: an optional collapse button on the left and a song-history button on
- * the right. Styled as neutral translucent "glass" so it reads on the dark backdrop without
- * competing with the album-tinted controls. The history button is shaped like the right half of a
- * split button — squared-off inner (left) edge, fully rounded outer (right) edge.
+ * The Now Playing top bar: an optional collapse button on the left, and (right-aligned) an
+ * optional Cast button followed by the song-history button. Styled as neutral translucent "glass"
+ * so it reads on the dark backdrop without competing with the album-tinted controls. The history
+ * button is shaped like the right half of a split button — squared inner (left) edge, fully rounded
+ * outer (right) edge; the Cast button mirrors it (rounded outer-left, squared inner-right) so the
+ * two read as a split pair.
  *
  * [onClose] is nullable so the side-pane layout (which has nothing to collapse) can omit it.
+ * [onCast] is nullable so the button is omitted when casting is unavailable.
  */
 @Composable
 fun NowPlayingTopBar(
   onToggleHistory: () -> Unit,
   modifier: Modifier = Modifier,
-  onClose: (() -> Unit)? = null
+  onClose: (() -> Unit)? = null,
+  onCast: (() -> Unit)? = null,
+  isCasting: Boolean = false,
+  isConnecting: Boolean = false
 ) {
   Row(
     modifier = modifier
@@ -66,6 +75,36 @@ fun NowPlayingTopBar(
     }
 
     Spacer(modifier = Modifier.weight(1f))
+
+    if (onCast != null) {
+      GlassButton(
+        onClick = onCast,
+        // Mirror of the history button: rounded outer (left) edge, squared inner (right) edge.
+        shape = RoundedCornerShape(
+          topStart = 22.dp,
+          bottomStart = 22.dp,
+          topEnd = 6.dp,
+          bottomEnd = 6.dp
+        ),
+        width = 42.dp
+      ) {
+        when {
+          isConnecting -> CircularProgressIndicator(
+            modifier = Modifier.size(20.dp),
+            strokeWidth = 2.dp,
+            color = Color.White
+          )
+          else -> Icon(
+            imageVector = if (isCasting) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+            contentDescription = "Cast",
+            modifier = Modifier.size(22.dp),
+            tint = Color.White
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.width(8.dp))
+    }
 
     GlassButton(
       onClick = onToggleHistory,

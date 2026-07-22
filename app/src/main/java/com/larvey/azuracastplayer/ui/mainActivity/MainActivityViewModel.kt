@@ -18,6 +18,7 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.larvey.azuracastplayer.classes.data.SavedStation
+import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
@@ -39,6 +40,7 @@ class MainActivityViewModel @Inject constructor(
   val nowPlayingData: NowPlayingData,
   val savedStationsDB: SavedStationsDB,
   val sharedMediaController: SharedMediaController,
+  val castManager: CastManager,
   private val application: Application
 ) : ViewModel() {
 

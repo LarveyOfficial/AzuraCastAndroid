@@ -39,6 +39,7 @@ import com.larvey.azuracastplayer.AppSetup
 import com.larvey.azuracastplayer.R
 import com.larvey.azuracastplayer.classes.data.DiscoveryJSON
 import com.larvey.azuracastplayer.classes.data.DiscoveryStation
+import com.larvey.azuracastplayer.classes.models.CastManager
 import com.larvey.azuracastplayer.classes.models.NowPlayingData
 import com.larvey.azuracastplayer.classes.models.SavedStationsDB
 import com.larvey.azuracastplayer.classes.models.SharedMediaController
@@ -106,6 +107,9 @@ class MusicPlayerService : MediaLibraryService() {
   @Inject
   lateinit var discoveryJSON: MutableState<DiscoveryJSON?>
 
+  @Inject
+  lateinit var castManager: CastManager
+
   lateinit var savedChildrenStyle: AndroidAutoLayouts
 
 
@@ -117,7 +121,11 @@ class MusicPlayerService : MediaLibraryService() {
         TAG,
         "Sleep timer fired; stopping playback"
       )
-      mediaSession?.player?.stop()
+      if (castManager.isCasting.value) {
+        castManager.stopCasting()
+      } else {
+        mediaSession?.player?.stop()
+      }
     }
   }
 
@@ -264,6 +272,10 @@ class MusicPlayerService : MediaLibraryService() {
     mediaSession?.let {
       sharedMediaController.mediaSession.value = mediaSession
     }
+
+    // Cast: register the session listener + route discovery now that the local
+    // player/session exist. Safe no-op when Play Services / a Cast device is absent.
+    castManager.initialize()
   }
 
   @UnstableApi
@@ -330,7 +342,13 @@ class MusicPlayerService : MediaLibraryService() {
       args: Bundle
     ): ListenableFuture<SessionResult> {
       if (customCommand.customAction == "STOP_RADIO") {
-        session.player.stop()
+        // While casting, Stop must end the cast session entirely (which also
+        // stops the local player); otherwise stop the local player as usual.
+        if (castManager.isCasting.value) {
+          castManager.stopCasting()
+        } else {
+          session.player.stop()
+        }
         return Futures.immediateFuture(
           SessionResult(SessionResult.RESULT_SUCCESS)
         )

@@ -115,6 +115,10 @@ dependencies {
 
   implementation(libs.androidx.media3.exoplayer.hls)
 
+  // Google Cast (Chromecast) support.
+  implementation(libs.androidx.mediarouter)
+  implementation(libs.play.services.cast.framework)
+
   implementation(libs.androidx.palette)
 
   implementation(libs.androidx.activity)
