@@ -49,8 +49,10 @@ class CastRadioPlayer(castSession: CastSession) {
     val metadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK).apply {
       putString(MediaMetadata.KEY_TITLE, info.title)
       putString(MediaMetadata.KEY_ARTIST, info.artist)
+      // [info.artUrl] is a phone-downscaled `data:` image URI (or null) prepared by
+      // CastManager, so the receiver never fetches an oversized remote image.
       info.artUrl?.takeIf { it.isNotBlank() }?.let {
-        addImage(WebImage(Uri.parse(it.fixHttps())))
+        addImage(WebImage(Uri.parse(it)))
       }
     }
 

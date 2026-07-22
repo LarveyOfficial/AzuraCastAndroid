@@ -54,9 +54,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -328,22 +329,29 @@ private fun CastSheetBody(
       }
     }
 
-    PrimaryTabRow(
-      selectedTabIndex = pagerState.currentPage,
-      containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-      modifier = Modifier.padding(bottom = 12.dp)
+    SingleChoiceSegmentedButtonRow(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 20.dp)
+        .padding(bottom = 12.dp)
     ) {
-      Tab(
+      SegmentedButton(
         selected = pagerState.currentPage == 0,
         onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-        text = { Text("CONTROLS") },
-        icon = { Icon(Icons.Rounded.Speaker, contentDescription = null) }
+        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+        icon = {
+          Icon(Icons.Rounded.Speaker, contentDescription = null, modifier = Modifier.size(18.dp))
+        },
+        label = { Text("Controls") }
       )
-      Tab(
+      SegmentedButton(
         selected = pagerState.currentPage == 1,
         onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-        text = { Text("DEVICES") },
-        icon = { Icon(Icons.Rounded.Devices, contentDescription = null) }
+        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+        icon = {
+          Icon(Icons.Rounded.Devices, contentDescription = null, modifier = Modifier.size(18.dp))
+        },
+        label = { Text("Devices") }
       )
     }
   }

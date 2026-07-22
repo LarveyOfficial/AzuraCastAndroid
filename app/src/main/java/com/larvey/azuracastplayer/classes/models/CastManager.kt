@@ -1,7 +1,9 @@
 package com.larvey.azuracastplayer.classes.models
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Base64
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
@@ -9,6 +11,11 @@ import androidx.media3.common.Player
 import androidx.mediarouter.media.MediaControlIntent
 import androidx.mediarouter.media.MediaRouteSelector
 import androidx.mediarouter.media.MediaRouter
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
@@ -20,11 +27,18 @@ import com.larvey.azuracastplayer.session.cast.CastRemotePlaybackState
 import com.larvey.azuracastplayer.session.cast.CastStationInfo
 import com.larvey.azuracastplayer.utils.fixHttps
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 
 private const val TAG = "CastManager"
+
+/** Target size for the downscaled artwork sent to the Cast receiver. */
+private const val RECEIVER_ART_SIZE = 384
 
 /**
  * App-wide singleton that owns everything about casting a radio station to a
@@ -225,6 +239,12 @@ class CastManager(
 
   // --- Station load / reload ---
 
+  // The receiver artwork is downscaled on the phone and sent as a small data: URI
+  // (the Default Media Receiver spins forever on oversized/redirecting art URLs).
+  // Cached per station so a resume/reload is instant.
+  private var cachedArtKey: String? = null
+  private var cachedArtDataUri: String? = null
+
   private fun observeStationForReload() {
     applicationScope.launch {
       snapshotFlow { buildStationInfoOrNull() }.collect { info ->
@@ -232,7 +252,7 @@ class CastManager(
         val key = stationKey(info)
         if (key != lastLoadedKey) {
           lastLoadedKey = key
-          castRadioPlayer?.loadStation(info)
+          launchLoad(info)
         }
       }
     }
@@ -241,7 +261,58 @@ class CastManager(
   private fun loadCurrentStation() {
     val info = buildStationInfoOrNull() ?: return
     lastLoadedKey = stationKey(info)
-    castRadioPlayer?.loadStation(info)
+    launchLoad(info)
+  }
+
+  /** Downscale the art (using the pre-warmed cache if available), then load the station. */
+  private fun launchLoad(info: CastStationInfo) {
+    val key = stationKey(info)
+    applicationScope.launch {
+      val artDataUri = resolveArtDataUri(info.artUrl, key)
+      if (isCasting.value) {
+        castRadioPlayer?.loadStation(info.copy(artUrl = artDataUri))
+      }
+    }
+  }
+
+  /**
+   * Kick off the (cached) art downscale early — during the connect handshake — so
+   * that by the time we load the station on the receiver the small data URI is
+   * ready and audio isn't delayed.
+   */
+  private fun prewarmArt() {
+    val info = buildStationInfoOrNull() ?: return
+    applicationScope.launch { resolveArtDataUri(info.artUrl, stationKey(info)) }
+  }
+
+  private suspend fun resolveArtDataUri(artUrl: String?, key: String): String? {
+    val url = artUrl?.takeIf { it.isNotBlank() } ?: return null
+    if (key == cachedArtKey) return cachedArtDataUri
+    val dataUri = withTimeoutOrNull(4000L) { withContext(Dispatchers.IO) { encodeArt(url) } }
+    cachedArtKey = key
+    cachedArtDataUri = dataUri
+    return dataUri
+  }
+
+  private suspend fun encodeArt(url: String): String? {
+    return try {
+      val request = ImageRequest.Builder(context)
+        .allowHardware(false)
+        .size(RECEIVER_ART_SIZE, RECEIVER_ART_SIZE)
+        .data(url.fixHttps())
+        .build()
+      val result = ImageLoader(context).execute(request)
+      if (result !is SuccessResult) return null
+      val bitmap = result.image.toBitmap()
+      val out = ByteArrayOutputStream()
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+      val base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+      // Keep the load message well under the Cast channel size limit.
+      if (base64.length > 90_000) null else "data:image/jpeg;base64,$base64"
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to prepare Cast artwork: ${e.message}")
+      null
+    }
   }
 
   private fun stationKey(info: CastStationInfo): String =
@@ -382,6 +453,9 @@ class CastManager(
 
   fun selectRoute(route: MediaRouter.RouteInfo) {
     isConnecting.value = true
+    // Downscale the artwork now, during the connect handshake, so it's ready by
+    // the time we load the station (audio isn't delayed waiting on the image).
+    prewarmArt()
     mediaRouter.selectRoute(route)
   }
 
